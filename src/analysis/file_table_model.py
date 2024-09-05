@@ -27,18 +27,19 @@ class FileTableModel(QAbstractTableModel):
     def setData(self, index, value, role=Qt.EditRole):
         if index.isValid() and role == Qt.EditRole:
             column = index.column()
-            if column == 0:  # Filename column is not editable by user
+            if column == 0:  # Filename column is not editable
                 return False
             else:
-                if column in [1, 2, 3, 4, 5]:  # Assuming these columns are numeric
+                # Ensure metadata fields are float values (except Filename)
+                if column in [1, 2, 3, 4, 5]:
                     try:
-                        value = float(value)
+                        value = float(value) if value else None  # Allow empty values
                     except ValueError:
                         return False  # Reject non-numeric input
                 self._files[index.row()][column] = value
                 self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
 
-                # Emit signal to notify ProjectManager to update the HDF5 file
+                # Emit signal to update the HDF5 file with the new value
                 filename = self._files[index.row()][0]
                 metadata = {
                     'chi_angle': self._files[index.row()][1],
@@ -82,13 +83,23 @@ class FileTableModel(QAbstractTableModel):
     def addFiles(self, filepaths):
         for filepath in filepaths:
             filename = os.path.basename(filepath)
-            print('"inside addFiles", filenames:')
-            print(filename)
 
-            self.blockSignals(True)  # Temporarily block signals while adding new files
+            # Add a new row with filename and empty metadata columns
+            self.blockSignals(True)  # Temporarily block signals
             self.insertRows(self.rowCount(), 1)
-            self.setData(self.index(self.rowCount() - 1, 0), filename, Qt.EditRole)
-            self.blockSignals(False)  # Re-enable signals after adding
+            self._files[-1] = [filename, None, None, None, None, None]  # Set filename, others empty (None)
+            self.blockSignals(False)  # Re-enable signals
+
+            # Emit signal to notify ProjectManager about the new file with empty metadata
+            self.data_changed_signal.emit(self.rowCount() - 1, filename, {
+                'chi_angle': None,
+                'pinhole': None,
+                'power': None,
+                'polarization': None,
+                'scans': None
+            })
+
+        self.layoutChanged.emit()  # Refresh the view
 
     def sort(self, column, order=Qt.AscendingOrder):
         if column == 0:

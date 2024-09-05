@@ -3,6 +3,8 @@ import os
 import time
 import shutil
 
+import numpy as np
+
 
 class BrillouinProject:
     """
@@ -89,9 +91,6 @@ class BrillouinProject:
     def add_file_to_h5(self, file_path):
         """
         Adds the contents of a single .dat file to the temporary HDF5 file.
-
-        Parameters:
-            file_path (str): The full path to the .dat file to be added.
         """
         if self.h5file is None:
             raise ValueError(
@@ -103,16 +102,24 @@ class BrillouinProject:
             print(f"Dataset {dataset_name} already exists in the HDF5 file. Skipping.")
             return
 
+        # Create the dataset first to ensure it exists
+        group = self.h5file.create_group(dataset_name)
+
+        # Use np.nan for numeric fields instead of None
+        group.attrs['chi_angle'] = np.nan
+        group.attrs['pinhole'] = np.nan
+        group.attrs['power'] = np.nan
+        group.attrs['polarization'] = np.nan
+        group.attrs['scans'] = np.nan
+
+        # Optionally, add the file content
         with open(file_path, 'rb') as file:
             raw_data = file.read()
-
-        group = self.h5file.create_group(dataset_name)
         group.create_dataset('raw_content', data=raw_data)
 
         with open(file_path, 'r') as file:
             lines = file.readlines()
             numeric_data = [int(line.strip()) for line in lines[12:] if line.strip().isdigit()]
-
         group.create_dataset('original_data', data=numeric_data)
 
     def add_metadata_to_dataset(self, dataset_name, key, value):
@@ -162,17 +169,6 @@ class BrillouinProject:
     def get_metadata_from_dataset(self, dataset_name, key):
         """
         Retrieves the value of a specific metadata key from a given dataset in the temporary HDF5 file.
-
-        Parameters:
-            dataset_name (str): The name of the dataset from which to retrieve the metadata.
-            key (str): The metadata key to retrieve.
-
-        Returns:
-            The value associated with the metadata key.
-
-        Raises:
-            ValueError: If the temporary HDF5 file is not open or the dataset does not exist.
-            KeyError: If the specified key does not exist in the dataset's metadata.
         """
         if self.h5file is None:
             raise ValueError(
@@ -183,10 +179,12 @@ class BrillouinProject:
 
         group = self.h5file[dataset_name]
 
-        if key not in group.attrs:
-            raise KeyError(f"Key '{key}' not found in dataset '{dataset_name}'.")
+        value = group.attrs[key]
 
-        return group.attrs[key]
+        # Replace np.nan with None for display purposes
+        if isinstance(value, float) and np.isnan(value):
+            return None
+        return value
 
     def find_datasets_by_metadata(self, key, value):
         """

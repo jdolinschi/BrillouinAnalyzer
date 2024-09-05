@@ -1,4 +1,5 @@
 # src/analysis/project_manager.py
+import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
 from .brillouin_project import BrillouinProject
@@ -40,6 +41,11 @@ class ProjectManager:
                 # Ensure the file exists in the HDF5 file before updating metadata
                 if filename in self.project.h5file:
                     for key, value in metadata.items():
+                        # Replace None with np.nan for numeric fields
+                        if value is None:
+                            if key in ['chi_angle', 'pinhole', 'power', 'polarization', 'scans']:
+                                value = np.nan  # Use np.nan for missing numeric values
+
                         self.project.add_metadata_to_dataset(filename, key, value)
                 else:
                     print(f"Warning: Tried to update metadata for non-existent file: {filename}")
@@ -160,16 +166,12 @@ class ProjectManager:
                     filepaths, _ = file_dialog.getOpenFileNames(None, "Add Files", "", "Data Files (*.DAT)")
 
                     if filepaths:
-                        # Add filenames to the table view
-                        print('inside "add_files". filepaths:')
-                        print(filepaths)
-                        self.file_model.addFiles(filepaths)
-
                         try:
-                            # First, load all files into the HDF5 file
+                            # Add files to the HDF5 file first
                             self.project.load_all_files(filepaths)
 
-                            # No need to add metadata here; it will be added when the user edits the table
+                            # Now, add filenames to the table view and signal metadata
+                            self.file_model.addFiles(filepaths)
 
                         except Exception as e:
                             QMessageBox.critical(None, "Error", f"Failed to add files: {e}")
