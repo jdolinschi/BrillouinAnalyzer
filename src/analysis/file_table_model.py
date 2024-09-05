@@ -1,7 +1,9 @@
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal
 import os
 
 class FileTableModel(QAbstractTableModel):
+    data_changed_signal = Signal(int, str, dict)  # Signal to notify ProjectManager (row index, filename, metadata)
+
     def __init__(self, files=None, parent=None):
         super(FileTableModel, self).__init__(parent)
         self._files = files if files else []
@@ -25,15 +27,28 @@ class FileTableModel(QAbstractTableModel):
     def setData(self, index, value, role=Qt.EditRole):
         if index.isValid() and role == Qt.EditRole:
             column = index.column()
-            # Set data regardless of the column being editable by the user
-            if column >= 0:
-                if column > 0:  # Only allow numeric edits on columns after Filename
+            if column == 0:  # Filename column is not editable by user
+                return False
+            else:
+                if column in [1, 2, 3, 4, 5]:  # Assuming these columns are numeric
                     try:
                         value = float(value)
                     except ValueError:
                         return False  # Reject non-numeric input
                 self._files[index.row()][column] = value
                 self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
+
+                # Emit signal to notify ProjectManager to update the HDF5 file
+                filename = self._files[index.row()][0]
+                metadata = {
+                    'chi_angle': self._files[index.row()][1],
+                    'pinhole': self._files[index.row()][2],
+                    'power': self._files[index.row()][3],
+                    'polarization': self._files[index.row()][4],
+                    'scans': self._files[index.row()][5]
+                }
+                self.data_changed_signal.emit(index.row(), filename, metadata)
+
                 return True
         return False
 
@@ -67,15 +82,34 @@ class FileTableModel(QAbstractTableModel):
     def addFiles(self, filepaths):
         for filepath in filepaths:
             filename = os.path.basename(filepath)
+            print('"inside addFiles", filenames:')
+            print(filename)
+
+            self.blockSignals(True)  # Temporarily block signals while adding new files
             self.insertRows(self.rowCount(), 1)
             self.setData(self.index(self.rowCount() - 1, 0), filename, Qt.EditRole)
+            self.blockSignals(False)  # Re-enable signals after adding
 
     def sort(self, column, order=Qt.AscendingOrder):
-        """Sort the table by the given column."""
         if column == 0:
-            return  # Do not allow sorting by Filename
+            return  # Do not sort by Filename
         self.layoutAboutToBeChanged.emit()
-        self._files.sort(key=lambda x: x[column] if x[column] is not None else float('-inf'), reverse=(order == Qt.DescendingOrder))
+        try:
+            self._files.sort(key=lambda x: (x[column] if x[column] is not None else float('-inf')),
+                             reverse=(order == Qt.DescendingOrder))
+        except TypeError:
+            self._files.sort(key=lambda x: str(x[column]) if x[column] is not None else '',
+                             reverse=(order == Qt.DescendingOrder))
         self._sort_column = column
         self._sort_order = order
         self.layoutChanged.emit()
+
+    def clear(self):
+        self.removeRows(0, self.rowCount())
+
+    def removeFileByName(self, filename):
+        for i, row in enumerate(self._files):
+            if row[0] == filename:
+                self.removeRows(i, 1)
+                break
+

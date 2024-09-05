@@ -1,6 +1,6 @@
 # src/analysis/project_manager.py
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem, QInputDialog
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
 from .brillouin_project import BrillouinProject
 from .file_table_model import FileTableModel  # Import the custom model
 import os
@@ -15,6 +15,9 @@ class ProjectManager:
         self.file_model = FileTableModel()
         self.ui.tableView_files.setModel(self.file_model)
 
+        # Connect the signal to the slot
+        self.file_model.data_changed_signal.connect(self.update_metadata)
+
         # Connect buttons to their corresponding methods
         self.ui.pushButton_newProject.clicked.connect(self.new_project)
         self.ui.pushButton_loadProject.clicked.connect(self.load_project)
@@ -28,6 +31,21 @@ class ProjectManager:
         self.ui.pushButton_removeFiles.clicked.connect(self.remove_files)
         self.ui.lineEdit_currentProject.editingFinished.connect(self.rename_project)
 
+    def update_metadata(self, row, filename, metadata):
+        """
+        Slot to receive metadata changes from FileTableModel and update the HDF5 temp file.
+        """
+        if self.project:
+            try:
+                # Ensure the file exists in the HDF5 file before updating metadata
+                if filename in self.project.h5file:
+                    for key, value in metadata.items():
+                        self.project.add_metadata_to_dataset(filename, key, value)
+                else:
+                    print(f"Warning: Tried to update metadata for non-existent file: {filename}")
+            except Exception as e:
+                QMessageBox.critical(None, "Error", f"Failed to update metadata in temp file: {e}")
+
     def new_project(self):
         # Open a file dialog to select a folder
         folder_dialog = QFileDialog()
@@ -38,10 +56,9 @@ class ProjectManager:
             # Ask for the project name
             project_name, ok = QInputDialog.getText(None, "Project Name", "Enter a project name:")
             if ok and project_name:
-                # Define the HDF5 file path
-                hdf5_file_path = os.path.join(folder_path, f"{project_name}.h5")
-                self.project = BrillouinProject()
-                self.project.create_project(hdf5_file_path, project_name)
+                # Create the BrillouinProject instance
+                self.project = BrillouinProject(folder_path, project_name)
+                self.project.create_h5file()
                 self.ui.lineEdit_currentProject.setText(project_name)
 
     def load_project(self):
@@ -51,9 +68,11 @@ class ProjectManager:
         filepath, _ = file_dialog.getOpenFileName(None, "Load Project", "", "HDF5 Files (*.h5)")
 
         if filepath:
-            self.project = BrillouinProject()
-            self.project.load_project(filepath)
-            self.ui.lineEdit_currentProject.setText(self.project.project_name)
+            folder = os.path.dirname(filepath)
+            project_name = os.path.basename(filepath).replace('.h5', '')
+            self.project = BrillouinProject(folder, project_name)
+            self.project.load_h5file()
+            self.ui.lineEdit_currentProject.setText(project_name)
 
     def save_project(self):
         if self.project:
@@ -71,7 +90,7 @@ class ProjectManager:
                                            QMessageBox.Yes | QMessageBox.No)
             if confirm == QMessageBox.Yes:
                 try:
-                    self.project.delete_project()
+                    os.remove(self.project.h5file_path)
                     self.ui.lineEdit_currentProject.clear()
                     self.ui.tableView_files.clearContents()
                     self.project = None
@@ -88,69 +107,47 @@ class ProjectManager:
                                                f"Do you want to rename the project to '{new_name}'?",
                                                QMessageBox.Yes | QMessageBox.No)
                 if confirm == QMessageBox.Yes:
-                    self.project.rename_project(new_name)
+                    # Rename the project file and update the project name
+                    new_h5file_path = os.path.join(self.project.folder, f"{new_name}.h5")
+                    try:
+                        os.rename(self.project.h5file_path, new_h5file_path)
+                        self.project.h5file_path = new_h5file_path
+                        self.project.project_name = new_name
+                    except Exception as e:
+                        QMessageBox.critical(None, "Error", f"Failed to rename project: {e}")
 
     def new_pressure(self):
         if self.project:
             pressure, ok = QInputDialog.getDouble(None, "New Pressure", "Enter pressure in GPa:", decimals=2)
             if ok:
-                try:
-                    self.project.add_pressure(pressure)
-                    self.ui.comboBox_pressure.addItem(f"{pressure} GPa")
-                except Exception as e:
-                    QMessageBox.critical(None, "Error", f"Failed to add pressure: {e}")
-        else:
-            QMessageBox.warning(None, "Warning", "No project loaded.")
+                self.ui.comboBox_pressure.addItem(f"{pressure} GPa")
 
     def delete_pressure(self):
         if self.project:
             pressure = self.ui.comboBox_pressure.currentText()
             if pressure:
-                pressure_value = float(pressure.split()[0])
                 confirm = QMessageBox.question(None, "Confirm Delete", f"Do you want to delete pressure '{pressure}'?",
                                                QMessageBox.Yes | QMessageBox.No)
                 if confirm == QMessageBox.Yes:
-                    try:
-                        self.project.delete_pressure(pressure_value)
-                        self.ui.comboBox_pressure.removeItem(self.ui.comboBox_pressure.currentIndex())
-                    except Exception as e:
-                        QMessageBox.critical(None, "Error", f"Failed to delete pressure: {e}")
-        else:
-            QMessageBox.warning(None, "Warning", "No project loaded.")
+                    self.ui.comboBox_pressure.removeItem(self.ui.comboBox_pressure.currentIndex())
 
     def new_crystal(self):
         if self.project:
             pressure = self.ui.comboBox_pressure.currentText()
             if pressure:
-                pressure_value = float(pressure.split()[0])
                 crystal_name, ok = QInputDialog.getText(None, "New Crystal", "Enter crystal name:")
                 if ok and crystal_name:
-                    try:
-                        self.project.add_crystal(pressure_value, crystal_name)
-                        self.ui.comboBox_crystal.addItem(crystal_name)
-                    except Exception as e:
-                        QMessageBox.critical(None, "Error", f"Failed to add crystal: {e}")
-        else:
-            QMessageBox.warning(None, "Warning", "No project loaded.")
+                    self.ui.comboBox_crystal.addItem(crystal_name)
 
     def delete_crystal(self):
         if self.project:
-            pressure = self.ui.comboBox_pressure.currentText()
-            if pressure:
-                pressure_value = float(pressure.split()[0])
-                crystal_name = self.ui.comboBox_crystal.currentText()
-                if crystal_name:
-                    confirm = QMessageBox.question(None, "Confirm Delete",
-                                                   f"Do you want to delete crystal '{crystal_name}'?",
-                                                   QMessageBox.Yes | QMessageBox.No)
-                    if confirm == QMessageBox.Yes:
-                        try:
-                            self.project.delete_crystal(pressure_value, crystal_name)
-                            self.ui.comboBox_crystal.removeItem(self.ui.comboBox_crystal.currentIndex())
-                        except Exception as e:
-                            QMessageBox.critical(None, "Error", f"Failed to delete crystal: {e}")
-        else:
-            QMessageBox.warning(None, "Warning", "No project loaded.")
+            crystal_name = self.ui.comboBox_crystal.currentText()
+            if crystal_name:
+                confirm = QMessageBox.question(None, "Confirm Delete",
+                                               f"Do you want to delete crystal '{crystal_name}'?",
+                                               QMessageBox.Yes | QMessageBox.No)
+                if confirm == QMessageBox.Yes:
+                    self.ui.comboBox_crystal.removeItem(self.ui.comboBox_crystal.currentIndex())
 
     def add_files(self):
         if self.project:
@@ -163,11 +160,17 @@ class ProjectManager:
                     filepaths, _ = file_dialog.getOpenFileNames(None, "Add Files", "", "Data Files (*.DAT)")
 
                     if filepaths:
-                        # This line correctly populates the filename in the FileTableModel
+                        # Add filenames to the table view
+                        print('inside "add_files". filepaths:')
+                        print(filepaths)
                         self.file_model.addFiles(filepaths)
 
                         try:
-                            self.project.add_files(float(pressure.split()[0]), crystal_name, filepaths, metadata={})
+                            # First, load all files into the HDF5 file
+                            self.project.load_all_files(filepaths)
+
+                            # No need to add metadata here; it will be added when the user edits the table
+
                         except Exception as e:
                             QMessageBox.critical(None, "Error", f"Failed to add files: {e}")
         else:
@@ -175,21 +178,17 @@ class ProjectManager:
 
     def remove_files(self):
         if self.project:
-            pressure = self.ui.comboBox_pressure.currentText()
-            if pressure:
-                crystal_name = self.ui.comboBox_crystal.currentText()
-                if crystal_name:
-                    selected_row = self.ui.tableView_files.currentIndex().row()
-                    if selected_row >= 0:
-                        selected_file = self.file_model.data(self.file_model.index(selected_row, 0), Qt.DisplayRole)
-                        confirm = QMessageBox.question(None, "Confirm Delete", f"Do you want to delete file '{selected_file}'?",
-                                                       QMessageBox.Yes | QMessageBox.No)
-                        if confirm == QMessageBox.Yes:
-                            try:
-                                self.project.remove_file(float(pressure.split()[0]), crystal_name, selected_file)
-                                self.file_model.removeRows(selected_row, 1)
-                            except Exception as e:
-                                QMessageBox.critical(None, "Error", f"Failed to delete file: {e}")
+            selected_row = self.ui.tableView_files.currentIndex().row()
+            if selected_row >= 0:
+                selected_file = self.file_model.data(self.file_model.index(selected_row, 0), Qt.DisplayRole)
+                confirm = QMessageBox.question(None, "Confirm Delete", f"Do you want to delete file '{selected_file}'?",
+                                               QMessageBox.Yes | QMessageBox.No)
+                if confirm == QMessageBox.Yes:
+                    try:
+                        self.project.remove_dataset(selected_file)
+                        self.file_model.removeRows(selected_row, 1)
+                    except Exception as e:
+                        QMessageBox.critical(None, "Error", f"Failed to delete file: {e}")
         else:
             QMessageBox.warning(None, "Warning", "No project loaded.")
 
@@ -209,4 +208,6 @@ class ProjectManager:
                             'polarization': self.file_model.data(self.file_model.index(row, 4), Qt.DisplayRole),
                             'scans': self.file_model.data(self.file_model.index(row, 5), Qt.DisplayRole),
                         }
-                        self.project.add_files(float(pressure.split()[0]), crystal_name, [filename], metadata)
+                        for key, value in metadata.items():
+                            if value is not None:
+                                self.project.add_metadata_to_dataset(filename, key, value)
