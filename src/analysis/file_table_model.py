@@ -101,6 +101,22 @@ class FileTableModel(QAbstractTableModel):
 
         self.layoutChanged.emit()  # Refresh the view
 
+    def addFilesWithMetadata(self, files_with_metadata):
+        """
+        Add files with associated metadata to the table.
+        :param files_with_metadata: List of tuples where each tuple is (filename, chi_angle, pinhole, power, polarization, scans)
+        """
+        for file_metadata in files_with_metadata:
+            filename, chi_angle, pinhole, power, polarization, scans = file_metadata
+
+            # Add a new row with filename and metadata
+            self.blockSignals(True)  # Temporarily block signals
+            self.insertRows(self.rowCount(), 1)
+            self._files[-1] = [filename, chi_angle, pinhole, power, polarization, scans]  # Populate all columns
+            self.blockSignals(False)  # Re-enable signals
+
+        self.layoutChanged.emit()  # Refresh the view
+
     def sort(self, column, order=Qt.AscendingOrder):
         if column == 0:
             return  # Do not sort by Filename

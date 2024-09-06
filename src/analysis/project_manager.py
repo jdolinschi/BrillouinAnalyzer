@@ -1,7 +1,7 @@
 # src/analysis/project_manager.py
 import numpy as np
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QAbstractItemView
 from .brillouin_project import BrillouinProject
 from .file_table_model import FileTableModel  # Import the custom model
 import os
@@ -15,6 +15,10 @@ class ProjectManager:
         # Create an instance of the custom model
         self.file_model = FileTableModel()
         self.ui.tableView_files.setModel(self.file_model)
+
+        # Allow multiple selection but keep cells editable
+        self.ui.tableView_files.setSelectionMode(QAbstractItemView.ExtendedSelection)  # Enable multi-selection
+        self.ui.tableView_files.setSelectionBehavior(QAbstractItemView.SelectItems)  # Allow selecting individual cells
 
         # Connect the signal to the slot
         self.file_model.data_changed_signal.connect(self.update_metadata)
@@ -33,8 +37,8 @@ class ProjectManager:
         self.ui.lineEdit_currentProject.editingFinished.connect(self.rename_project)
 
         # Add logic to repopulate table when dropdowns change
-        self.ui.comboBox_pressure.currentTextChanged.connect(self.update_table_based_on_dropdown)
-        self.ui.comboBox_crystal.currentTextChanged.connect(self.update_table_based_on_dropdown)
+        self.ui.comboBox_pressure.currentIndexChanged.connect(self.update_table_based_on_dropdown)
+        self.ui.comboBox_crystal.currentIndexChanged.connect(self.update_table_based_on_dropdown)
 
     def update_metadata(self, row, filename, metadata):
         """
@@ -81,6 +85,40 @@ class ProjectManager:
             # Populate the dropdowns with all unique pressures and crystals from the project
             self.populate_dropdowns()
 
+            QMessageBox.information(None, "Project Loaded",
+                                    "Project loaded successfully. Please select a pressure and crystal to view the files.")
+
+    def update_table_based_on_dropdown(self):
+        """
+        Update the table view to show only the files that match the selected pressure and crystal,
+        and populate the metadata columns (chi_angle, pinhole, etc.).
+        """
+
+        if self.project:
+            selected_pressure = self.ui.comboBox_pressure.currentText().replace(" GPa", "")
+            selected_crystal = self.ui.comboBox_crystal.currentText()
+
+            if selected_pressure and selected_crystal:
+                # Clear the table before adding new data
+                self.file_model.clear()
+
+                # Find files that match the selected pressure and crystal
+                matching_files = self.project.find_files_by_pressure_and_crystal(float(selected_pressure),
+                                                                                 selected_crystal)
+
+                # Retrieve metadata for each file and populate the table
+                files_with_metadata = []
+                for filename in matching_files:
+                    chi_angle = self.project.get_metadata_from_dataset(filename, 'chi_angle')
+                    pinhole = self.project.get_metadata_from_dataset(filename, 'pinhole')
+                    power = self.project.get_metadata_from_dataset(filename, 'power')
+                    polarization = self.project.get_metadata_from_dataset(filename, 'polarization')
+                    scans = self.project.get_metadata_from_dataset(filename, 'scans')
+                    files_with_metadata.append((filename, chi_angle, pinhole, power, polarization, scans))
+
+                # Add matching files with metadata to the table
+                self.file_model.addFilesWithMetadata(files_with_metadata)
+
     def populate_dropdowns(self):
         """
         Populate the pressure and crystal dropdowns with all unique values in the project.
@@ -96,25 +134,6 @@ class ProjectManager:
             self.ui.comboBox_pressure.addItem(f"{pressure} GPa")
         for crystal in unique_crystals:
             self.ui.comboBox_crystal.addItem(crystal)
-
-    def update_table_based_on_dropdown(self):
-        """
-        Update the table view to show only the files that match the selected pressure and crystal.
-        """
-        if self.project:
-            selected_pressure = self.ui.comboBox_pressure.currentText().replace(" GPa", "")
-            selected_crystal = self.ui.comboBox_crystal.currentText()
-
-            if selected_pressure and selected_crystal:
-                # Clear the table before adding new data
-                self.file_model.clear()
-
-                # Find files that match the selected pressure and crystal
-                matching_files = self.project.find_files_by_pressure_and_crystal(float(selected_pressure),
-                                                                                 selected_crystal)
-
-                # Add matching files to the table
-                self.file_model.addFiles(matching_files)
 
     def save_project(self):
         if self.project:
@@ -216,17 +235,37 @@ class ProjectManager:
 
     def remove_files(self):
         if self.project:
-            selected_row = self.ui.tableView_files.currentIndex().row()
-            if selected_row >= 0:
-                selected_file = self.file_model.data(self.file_model.index(selected_row, 0), Qt.DisplayRole)
-                confirm = QMessageBox.question(None, "Confirm Delete", f"Do you want to delete file '{selected_file}'?",
-                                               QMessageBox.Yes | QMessageBox.No)
-                if confirm == QMessageBox.Yes:
+            # Get the selected rows by checking which rows contain selected cells
+            selected_indexes = self.ui.tableView_files.selectionModel().selectedIndexes()
+            selected_rows = list(set(index.row() for index in selected_indexes))  # Get unique rows
+
+            if selected_rows:
+                # Get the filenames of the selected rows
+                selected_files = [self.file_model.data(self.file_model.index(row, 0), Qt.DisplayRole) for row in
+                                  selected_rows]
+
+                # Prepare the list of files for confirmation
+                file_list_str = "\n".join(selected_files)
+
+                # Show a scrollable confirmation dialog
+                confirm = QMessageBox()
+                confirm.setIcon(QMessageBox.Question)
+                confirm.setWindowTitle("Confirm Delete")
+                confirm.setText("Are you sure you want to delete the following files?")
+                confirm.setDetailedText(file_list_str)  # Scrollable list
+                confirm.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+                confirm.setDefaultButton(QMessageBox.No)
+
+                if confirm.exec() == QMessageBox.Yes:
                     try:
-                        self.project.remove_dataset(selected_file)
-                        self.file_model.removeRows(selected_row, 1)
+                        # Remove the files from the project and the table model
+                        for file in selected_files:
+                            self.project.remove_dataset(file)
+                            self.file_model.removeFileByName(file)
                     except Exception as e:
-                        QMessageBox.critical(None, "Error", f"Failed to delete file: {e}")
+                        QMessageBox.critical(None, "Error", f"Failed to delete files: {e}")
+            else:
+                QMessageBox.warning(None, "Warning", "No files selected.")
         else:
             QMessageBox.warning(None, "Warning", "No project loaded.")
 

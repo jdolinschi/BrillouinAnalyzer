@@ -303,18 +303,27 @@ class BrillouinProject:
 
             # Copy the temporary file contents to the original HDF5 file
             with h5py.File(self.temp_h5file_path, 'r') as temp_file, h5py.File(self.h5file_path, 'w') as orig_file:
-                # Copy attributes
+
+                # Copy attributes of the root
                 for key, value in temp_file.attrs.items():
                     orig_file.attrs[key] = value
 
-                # Copy datasets and groups
+                # Copy datasets, groups, and their attributes
                 def copy_items(source, target):
                     for key in source.keys():
-                        if isinstance(source[key], h5py.Group):
+                        item = source[key]
+                        if isinstance(item, h5py.Group):
+                            # Create the group and copy its attributes
                             new_group = target.create_group(key)
-                            copy_items(source[key], new_group)
-                        else:
-                            target.create_dataset(key, data=source[key])
+                            for attr_key, attr_value in item.attrs.items():
+                                new_group.attrs[attr_key] = attr_value
+                            copy_items(item, new_group)
+                        elif isinstance(item, h5py.Dataset):
+                            # Create the dataset and copy its data
+                            target.create_dataset(key, data=item[()])
+                            # Copy dataset attributes
+                            for attr_key, attr_value in item.attrs.items():
+                                target[key].attrs[attr_key] = attr_value
 
                 copy_items(temp_file, orig_file)
 
@@ -385,33 +394,3 @@ class BrillouinProject:
                         differences["altered"].append(key)
 
         return differences
-
-if __name__ == '__main__':
-    # Usage
-    folder = r"E:\BrillouinAnalyzer\BrillouinAnalyzer\my_data\project"
-    project_name = "CTGS_Project"
-
-    brillouin_project = BrillouinProject(folder, project_name)
-    brillouin_project.create_h5file()
-
-    # Add files individually or in bulk
-    single_file = r"E:\BrillouinAnalyzer\BrillouinAnalyzer\my_data\CTGS_P0\CTGS_X1_0deg_ph200_pw100_pol0_3997.DAT"
-    brillouin_project.add_file_to_h5(single_file)
-
-    single_file = r"E:\BrillouinAnalyzer\BrillouinAnalyzer\my_data\CTGS_P0\CTGS_X1_0deg_ph200_pw100_pol0_77978.DAT"
-    brillouin_project.add_file_to_h5(single_file)
-
-    # Add metadata to a specific dataset
-    brillouin_project.add_metadata_to_dataset("CTGS_X1_0deg_ph200_pw100_pol0_3997.DAT", "pressure", 1.1)
-    brillouin_project.add_metadata_to_dataset("CTGS_X1_0deg_ph200_pw100_pol0_3997.DAT", "crystal", 'X1')
-
-    brillouin_project.add_metadata_to_dataset("CTGS_X1_0deg_ph200_pw100_pol0_77978.DAT", "pressure", 1.1)
-    brillouin_project.add_metadata_to_dataset("CTGS_X1_0deg_ph200_pw100_pol0_77978.DAT", "crystal", 'X1')
-
-    # Search for datasets that match multiple key-value pairs
-    search_criteria = {"pressure": 1.1, "crystal": 'X1'}
-    matching_datasets = brillouin_project.find_datasets_by_metadata_dict(search_criteria)
-    print(f"Datasets matching {search_criteria}: {matching_datasets}")
-
-    # Save the project (close the HDF5 file)
-    brillouin_project.save_project()
