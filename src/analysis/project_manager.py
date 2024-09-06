@@ -32,6 +32,10 @@ class ProjectManager:
         self.ui.pushButton_removeFiles.clicked.connect(self.remove_files)
         self.ui.lineEdit_currentProject.editingFinished.connect(self.rename_project)
 
+        # Add logic to repopulate table when dropdowns change
+        self.ui.comboBox_pressure.currentTextChanged.connect(self.update_table_based_on_dropdown)
+        self.ui.comboBox_crystal.currentTextChanged.connect(self.update_table_based_on_dropdown)
+
     def update_metadata(self, row, filename, metadata):
         """
         Slot to receive metadata changes from FileTableModel and update the HDF5 temp file.
@@ -41,11 +45,8 @@ class ProjectManager:
                 # Ensure the file exists in the HDF5 file before updating metadata
                 if filename in self.project.h5file:
                     for key, value in metadata.items():
-                        # Replace None with np.nan for numeric fields
-                        if value is None:
-                            if key in ['chi_angle', 'pinhole', 'power', 'polarization', 'scans']:
-                                value = np.nan  # Use np.nan for missing numeric values
-
+                        if value is None and key in ['chi_angle', 'pinhole', 'power', 'polarization', 'scans']:
+                            value = np.nan  # Use np.nan for missing numeric values
                         self.project.add_metadata_to_dataset(filename, key, value)
                 else:
                     print(f"Warning: Tried to update metadata for non-existent file: {filename}")
@@ -53,16 +54,13 @@ class ProjectManager:
                 QMessageBox.critical(None, "Error", f"Failed to update metadata in temp file: {e}")
 
     def new_project(self):
-        # Open a file dialog to select a folder
         folder_dialog = QFileDialog()
         folder_dialog.setFileMode(QFileDialog.Directory)
         folder_path = folder_dialog.getExistingDirectory(None, "Select Project Folder")
 
         if folder_path:
-            # Ask for the project name
             project_name, ok = QInputDialog.getText(None, "Project Name", "Enter a project name:")
             if ok and project_name:
-                # Create the BrillouinProject instance
                 self.project = BrillouinProject(folder_path, project_name)
                 self.project.create_h5file()
                 self.ui.lineEdit_currentProject.setText(project_name)
@@ -79,6 +77,44 @@ class ProjectManager:
             self.project = BrillouinProject(folder, project_name)
             self.project.load_h5file()
             self.ui.lineEdit_currentProject.setText(project_name)
+
+            # Populate the dropdowns with all unique pressures and crystals from the project
+            self.populate_dropdowns()
+
+    def populate_dropdowns(self):
+        """
+        Populate the pressure and crystal dropdowns with all unique values in the project.
+        """
+        unique_pressures, unique_crystals = self.project.get_unique_pressures_and_crystals()
+
+        # Clear the current items in dropdowns
+        self.ui.comboBox_pressure.clear()
+        self.ui.comboBox_crystal.clear()
+
+        # Add unique pressures and crystals to the dropdowns
+        for pressure in unique_pressures:
+            self.ui.comboBox_pressure.addItem(f"{pressure} GPa")
+        for crystal in unique_crystals:
+            self.ui.comboBox_crystal.addItem(crystal)
+
+    def update_table_based_on_dropdown(self):
+        """
+        Update the table view to show only the files that match the selected pressure and crystal.
+        """
+        if self.project:
+            selected_pressure = self.ui.comboBox_pressure.currentText().replace(" GPa", "")
+            selected_crystal = self.ui.comboBox_crystal.currentText()
+
+            if selected_pressure and selected_crystal:
+                # Clear the table before adding new data
+                self.file_model.clear()
+
+                # Find files that match the selected pressure and crystal
+                matching_files = self.project.find_files_by_pressure_and_crystal(float(selected_pressure),
+                                                                                 selected_crystal)
+
+                # Add matching files to the table
+                self.file_model.addFiles(matching_files)
 
     def save_project(self):
         if self.project:
@@ -157,24 +193,24 @@ class ProjectManager:
 
     def add_files(self):
         if self.project:
-            pressure = self.ui.comboBox_pressure.currentText()
-            if pressure:
-                crystal_name = self.ui.comboBox_crystal.currentText()
-                if crystal_name:
-                    file_dialog = QFileDialog()
-                    file_dialog.setFileMode(QFileDialog.ExistingFiles)
-                    filepaths, _ = file_dialog.getOpenFileNames(None, "Add Files", "", "Data Files (*.DAT)")
+            pressure = self.ui.comboBox_pressure.currentText().replace(" GPa", "")
+            crystal_name = self.ui.comboBox_crystal.currentText()
 
-                    if filepaths:
-                        try:
-                            # Add files to the HDF5 file first
-                            self.project.load_all_files(filepaths)
+            if pressure and crystal_name:
+                file_dialog = QFileDialog()
+                file_dialog.setFileMode(QFileDialog.ExistingFiles)
+                filepaths, _ = file_dialog.getOpenFileNames(None, "Add Files", "", "Data Files (*.DAT)")
 
-                            # Now, add filenames to the table view and signal metadata
-                            self.file_model.addFiles(filepaths)
+                if filepaths:
+                    try:
+                        # Add files to the HDF5 file with the current pressure and crystal
+                        self.project.load_all_files_with_metadata(filepaths, float(pressure), crystal_name)
 
-                        except Exception as e:
-                            QMessageBox.critical(None, "Error", f"Failed to add files: {e}")
+                        # Refresh the table
+                        self.file_model.addFiles(filepaths)
+
+                    except Exception as e:
+                        QMessageBox.critical(None, "Error", f"Failed to add files: {e}")
         else:
             QMessageBox.warning(None, "Warning", "No project loaded.")
 

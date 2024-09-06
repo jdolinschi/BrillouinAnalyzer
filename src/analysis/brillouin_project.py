@@ -88,7 +88,7 @@ class BrillouinProject:
         shutil.copyfile(self.h5file_path, self.temp_h5file_path)
         self.h5file = h5py.File(self.temp_h5file_path, 'a')
 
-    def add_file_to_h5(self, file_path):
+    def add_file_to_h5(self, file_path, pressure, crystal):
         """
         Adds the contents of a single .dat file to the temporary HDF5 file.
         """
@@ -106,6 +106,8 @@ class BrillouinProject:
         group = self.h5file.create_group(dataset_name)
 
         # Use np.nan for numeric fields instead of None
+        group.attrs['pressure'] = pressure
+        group.attrs['crystal'] = crystal
         group.attrs['chi_angle'] = np.nan
         group.attrs['pinhole'] = np.nan
         group.attrs['power'] = np.nan
@@ -121,6 +123,23 @@ class BrillouinProject:
             lines = file.readlines()
             numeric_data = [int(line.strip()) for line in lines[12:] if line.strip().isdigit()]
         group.create_dataset('original_data', data=numeric_data)
+
+    def get_unique_pressures_and_crystals(self):
+        unique_pressures = set()
+        unique_crystals = set()
+        for dataset in self.h5file.keys():
+            group = self.h5file[dataset]
+            unique_pressures.add(group.attrs['pressure'])
+            unique_crystals.add(group.attrs['crystal'])
+        return sorted(unique_pressures), sorted(unique_crystals)
+
+    def find_files_by_pressure_and_crystal(self, pressure, crystal):
+        matching_files = []
+        for dataset_name in self.h5file.keys():
+            group = self.h5file[dataset_name]
+            if group.attrs['pressure'] == pressure and group.attrs['crystal'] == crystal:
+                matching_files.append(dataset_name)
+        return matching_files
 
     def add_metadata_to_dataset(self, dataset_name, key, value):
         """
@@ -267,6 +286,10 @@ class BrillouinProject:
         """
         for file_path in file_paths:
             self.add_file_to_h5(file_path)
+
+    def load_all_files_with_metadata(self, file_paths, pressure, crystal):
+        for file_path in file_paths:
+            self.add_file_to_h5(file_path, pressure, crystal)
 
     def save_project(self):
         """
