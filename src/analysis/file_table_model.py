@@ -115,6 +115,14 @@ class FileTableModel(QAbstractTableModel):
             self._files[-1] = [filename, chi_angle, pinhole, power, polarization, scans]  # Populate all columns
             self.blockSignals(False)  # Re-enable signals
 
+            self.data_changed_signal.emit(self.rowCount() - 1, filename, {
+                'chi_angle': chi_angle,
+                'pinhole': pinhole,
+                'power': power,
+                'polarization': polarization,
+                'scans': scans
+            })
+
         self.layoutChanged.emit()  # Refresh the view
 
     def sort(self, column, order=Qt.AscendingOrder):
