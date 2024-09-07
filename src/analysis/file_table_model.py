@@ -1,3 +1,4 @@
+import numpy as np
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal
 import os
 
@@ -20,37 +21,23 @@ class FileTableModel(QAbstractTableModel):
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
             return None
-        if role == Qt.DisplayRole or role == Qt.EditRole:
-            return self._files[index.row()][index.column()]
+
+        value = self._files[index.row()][index.column()]
+
+        if role in (Qt.DisplayRole, Qt.EditRole):
+            # Convert np.float64 to Python float for display
+            if isinstance(value, np.float64):
+                value = float(value)
+            return "" if value is None else value  # Display empty string for None values
+
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
-        if index.isValid() and role == Qt.EditRole:
-            column = index.column()
-            if column == 0:  # Filename column is not editable
+        if index.isValid() and role == Qt.EditRole and self._is_editable_column(index.column()):
+            if not self._validate_and_set_data(index, value):
                 return False
-            else:
-                # Ensure metadata fields are float values (except Filename)
-                if column in [1, 2, 3, 4, 5]:
-                    try:
-                        value = float(value) if value else None  # Allow empty values
-                    except ValueError:
-                        return False  # Reject non-numeric input
-                self._files[index.row()][column] = value
-                self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
-
-                # Emit signal to update the HDF5 file with the new value
-                filename = self._files[index.row()][0]
-                metadata = {
-                    'chi_angle': self._files[index.row()][1],
-                    'pinhole': self._files[index.row()][2],
-                    'power': self._files[index.row()][3],
-                    'polarization': self._files[index.row()][4],
-                    'scans': self._files[index.row()][5]
-                }
-                self.data_changed_signal.emit(index.row(), filename, metadata)
-
-                return True
+            self._emit_data_changed(index)
+            return True
         return False
 
     def flags(self, index):
@@ -60,74 +47,68 @@ class FileTableModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
-            if orientation == Qt.Horizontal:
-                return self._headers[section]
-            elif orientation == Qt.Vertical:
-                return str(section + 1)
+            return self._headers[section] if orientation == Qt.Horizontal else str(section + 1)
         return None
 
     def insertRows(self, position, rows, parent=QModelIndex()):
         self.beginInsertRows(parent, position, position + rows - 1)
-        for i in range(rows):
-            self._files.insert(position, ['', None, None, None, None, None])  # None for numeric fields
+        self._files[position:position] = [['', None, None, None, None, None] for _ in range(rows)]
         self.endInsertRows()
         return True
 
     def removeRows(self, position, rows, parent=QModelIndex()):
         self.beginRemoveRows(parent, position, position + rows - 1)
-        for i in range(rows):
-            del self._files[position]
+        del self._files[position:position + rows]
         self.endRemoveRows()
         return True
 
     def addFiles(self, filepaths):
-        for filepath in filepaths:
-            filename = os.path.basename(filepath)
-
-            # Add a new row with filename and empty metadata columns
-            self.blockSignals(True)  # Temporarily block signals
-            self.insertRows(self.rowCount(), 1)
-            self._files[-1] = [filename, None, None, None, None, None]  # Set filename, others empty (None)
-            self.blockSignals(False)  # Re-enable signals
-
-            # Emit signal to notify ProjectManager about the new file with empty metadata
-            self.data_changed_signal.emit(self.rowCount() - 1, filename, {
-                'chi_angle': None,
-                'pinhole': None,
-                'power': None,
-                'polarization': None,
-                'scans': None
-            })
-
-        self.layoutChanged.emit()  # Refresh the view
+        new_files = [[os.path.basename(filepath), None, None, None, None, None] for filepath in filepaths]
+        self._add_files_to_model(new_files)
 
     def addFilesWithMetadata(self, files_with_metadata):
-        """
-        Add files with associated metadata to the table.
-        :param files_with_metadata: List of tuples where each tuple is (filename, chi_angle, pinhole, power, polarization, scans)
-        """
-        for file_metadata in files_with_metadata:
-            filename, chi_angle, pinhole, power, polarization, scans = file_metadata
-
-            # Add a new row with filename and metadata
-            self.blockSignals(True)  # Temporarily block signals
-            self.insertRows(self.rowCount(), 1)
-            self._files[-1] = [filename, chi_angle, pinhole, power, polarization, scans]  # Populate all columns
-            self.blockSignals(False)  # Re-enable signals
-
-            self.data_changed_signal.emit(self.rowCount() - 1, filename, {
-                'chi_angle': chi_angle,
-                'pinhole': pinhole,
-                'power': power,
-                'polarization': polarization,
-                'scans': scans
-            })
-
-        self.layoutChanged.emit()  # Refresh the view
+        self._add_files_to_model([list(metadata) for metadata in files_with_metadata])
 
     def sort(self, column, order=Qt.AscendingOrder):
-        if column == 0:
-            return  # Do not sort by Filename
+        if column == 0: return  # Avoid sorting by Filename
+        self._sort_files(column, order)
+        self._sort_column, self._sort_order = column, order
+
+    def clear(self):
+        self.removeRows(0, self.rowCount())
+
+    def removeFileByName(self, filename):
+        self._remove_file_by_condition(lambda row: row[0] == filename)
+
+    def _is_editable_column(self, column):
+        return column != 0  # Filename column is not editable
+
+    def _validate_and_set_data(self, index, value):
+        try:
+            if index.column() > 0:
+                value = float(value) if value else None  # Convert to float or None for empty
+            self._files[index.row()][index.column()] = value
+            return True
+        except ValueError:
+            return False
+
+    def _emit_data_changed(self, index):
+        self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
+        row = index.row()
+        filename = self._files[row][0]
+        metadata = self._get_metadata(row)
+        self.data_changed_signal.emit(row, filename, metadata)
+
+    def _add_files_to_model(self, files):
+        self.blockSignals(True)
+        self.insertRows(self.rowCount(), len(files))
+        self._files[-len(files):] = files
+        self.blockSignals(False)
+        for i, file in enumerate(files, start=self.rowCount() - len(files)):
+            self.data_changed_signal.emit(i, file[0], self._get_metadata(i))
+        self.layoutChanged.emit()
+
+    def _sort_files(self, column, order):
         self.layoutAboutToBeChanged.emit()
         try:
             self._files.sort(key=lambda x: (x[column] if x[column] is not None else float('-inf')),
@@ -135,16 +116,19 @@ class FileTableModel(QAbstractTableModel):
         except TypeError:
             self._files.sort(key=lambda x: str(x[column]) if x[column] is not None else '',
                              reverse=(order == Qt.DescendingOrder))
-        self._sort_column = column
-        self._sort_order = order
         self.layoutChanged.emit()
 
-    def clear(self):
-        self.removeRows(0, self.rowCount())
+    def _get_metadata(self, row):
+        return {
+            'chi_angle': self._files[row][1],
+            'pinhole': self._files[row][2],
+            'power': self._files[row][3],
+            'polarization': self._files[row][4],
+            'scans': self._files[row][5]
+        }
 
-    def removeFileByName(self, filename):
+    def _remove_file_by_condition(self, condition):
         for i, row in enumerate(self._files):
-            if row[0] == filename:
+            if condition(row):
                 self.removeRows(i, 1)
                 break
-
