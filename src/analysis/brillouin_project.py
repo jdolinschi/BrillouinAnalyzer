@@ -181,6 +181,26 @@ class BrillouinProject:
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
+    def cleanup_temp_file(self):
+        """
+        Closes the temporary HDF5 file if it is open and then deletes it.
+        """
+        try:
+            # Close the file if it is open
+            if self.h5file is not None and self.h5file.id:
+                self.h5file.close()
+                self.h5file = None
+                print(f"Temporary file {self.temp_h5file_path} has been closed.")
+
+            # Delete the temporary file
+            if os.path.exists(self.temp_h5file_path):
+                os.remove(self.temp_h5file_path)
+                print(f"Temporary file {self.temp_h5file_path} has been deleted.")
+            else:
+                print(f"Temporary file {self.temp_h5file_path} does not exist.")
+        except Exception as e:
+            print(f"Error deleting temporary file: {e}")
+
     def get_unique_pressures_and_crystals(self):
         """Return the unique pressures and crystals."""
         pressures = self.h5file.attrs.get('pressures', [])

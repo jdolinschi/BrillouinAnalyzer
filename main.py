@@ -21,6 +21,7 @@ class MainWindow(QMainWindow):
         if not self.project_manager.check_unsaved_changes():
             event.ignore()  # Ignore the close event if there are unsaved changes
         else:
+            self.project_manager.cleanup_project()
             event.accept()  # Accept the close event to close the window
 
 def main():

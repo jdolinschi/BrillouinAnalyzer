@@ -1,7 +1,9 @@
 # src/analysis/project_manager.py
 import numpy as np
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QAbstractItemView, QTableWidgetItem
+from PySide6.QtGui import QKeySequence, QClipboard
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QAbstractItemView, QTableWidgetItem, QMenu, \
+    QApplication, QTableView
 from .brillouin_project import BrillouinProject
 from .file_table_model import FileTableModel  # Import the custom model
 import os
@@ -32,6 +34,12 @@ class ProjectManager:
         self.ui.tableWidget_crystals.setColumnCount(1)
         self.ui.tableWidget_crystals.setHorizontalHeaderLabels(["Crystal"])
 
+        self.ui.tableView_files.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.tableView_files.customContextMenuRequested.connect(self.show_context_menu)
+
+        # Enable copy-paste shortcuts in the tableView_files
+        self.ui.tableView_files.keyPressEvent = self.table_keyPressEvent
+
         # Connect signals to corresponding slots
         self.setup_connections()
 
@@ -56,6 +64,90 @@ class ProjectManager:
         # Connect comboboxes
         self.ui.comboBox_pressure.currentIndexChanged.connect(self.pressure_combobox_changed)
         self.ui.comboBox_crystal.currentIndexChanged.connect(self.crystal_combobox_changed)
+
+    # Add a new method for context menu:
+    def show_context_menu(self, pos):
+        index = self.ui.tableView_files.indexAt(pos)
+        if not index.isValid():
+            return
+
+        menu = QMenu()
+        copy_action = menu.addAction("Copy")
+        paste_action = menu.addAction("Paste")
+        fill_column_action = menu.addAction("Fill column")
+
+        action = menu.exec_(self.ui.tableView_files.viewport().mapToGlobal(pos))
+
+        if action == copy_action:
+            self.copy_selection()
+        elif action == paste_action:
+            self.paste_selection()
+        elif action == fill_column_action:
+            self.fill_column(index)  # Call fill_column method with the selected index
+
+    def fill_column(self, index):
+        """
+        Fill the entire column with the value from the selected cell.
+        """
+        if not index.isValid():
+            return
+
+        value = self.file_model.data(index, Qt.DisplayRole)  # Get the value from the selected cell
+
+        if value is None or value == '':
+            return  # If the cell is empty, don't fill the column
+
+        column = index.column()
+
+        # Fill the entire column with the selected value
+        for row in range(self.file_model.rowCount()):
+            current_index = self.file_model.index(row, column)
+            self.file_model.setData(current_index, value, Qt.EditRole)
+
+    # Add copy and paste functions:
+    def copy_selection(self):
+        selection = self.ui.tableView_files.selectedIndexes()
+        if not selection:
+            return
+
+        data = []
+        rows = max(index.row() for index in selection) - min(index.row() for index in selection) + 1
+        cols = max(index.column() for index in selection) - min(index.column() for index in selection) + 1
+        data = [['' for _ in range(cols)] for _ in range(rows)]
+
+        for index in selection:
+            data[index.row() - min(i.row() for i in selection)][
+                index.column() - min(i.column() for i in selection)] = self.file_model.data(index, Qt.DisplayRole)
+
+        clipboard = QApplication.clipboard()
+        clipboard.setText('\n'.join('\t'.join(map(str, row)) for row in data))
+
+    def paste_selection(self):
+        clipboard = QApplication.clipboard()
+        data = [line.split('\t') for line in clipboard.text().split('\n')]
+
+        selected_indexes = self.ui.tableView_files.selectedIndexes()
+        if not selected_indexes:
+            return
+
+        row_offset = min(index.row() for index in selected_indexes)
+        col_offset = min(index.column() for index in selected_indexes)
+
+        for i, row_data in enumerate(data):
+            for j, value in enumerate(row_data):
+                row = row_offset + i
+                col = col_offset + j
+                index = self.file_model.index(row, col)
+                self.file_model.setData(index, value, Qt.EditRole)
+
+    # Handle keyboard shortcuts for copy-paste
+    def table_keyPressEvent(self, event):
+        if event.matches(QKeySequence.Copy):
+            self.copy_selection()
+        elif event.matches(QKeySequence.Paste):
+            self.paste_selection()
+        else:
+            QTableView.keyPressEvent(self.ui.tableView_files, event)
 
     def check_unsaved_changes(self):
         """Check if there are unsaved changes and show a popup with the changes."""
@@ -92,11 +184,18 @@ class ProjectManager:
 
         if ret == QMessageBox.Save:
             self.save_project()  # Save the project
+            self.cleanup_project()
             return True
         elif ret == QMessageBox.Discard:
+            self.cleanup_project()
             return True  # Exit without saving
         else:
             return False  # Cancel the close event
+
+    def cleanup_project(self):
+        if self.project:
+            self.project.cleanup_temp_file()
+            self.project = None
 
     def populate_table_widgets(self):
         """Populate the pressure and crystal tableWidgets with unique values."""
