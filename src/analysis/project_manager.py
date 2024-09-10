@@ -1,7 +1,7 @@
 # src/analysis/project_manager.py
 import numpy as np
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QAbstractItemView
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QAbstractItemView, QTableWidgetItem
 from .brillouin_project import BrillouinProject
 from .file_table_model import FileTableModel  # Import the custom model
 import os
@@ -19,6 +19,17 @@ class ProjectManager:
         # Allow multiple selection but keep cells editable
         self.ui.tableView_files.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.ui.tableView_files.setSelectionBehavior(QAbstractItemView.SelectItems)
+
+        # Ensure tables are not editable
+        self.ui.tableWidget_pressures.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ui.tableWidget_crystals.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+        # Define columns for the pressures and crystals tables
+        self.ui.tableWidget_pressures.setColumnCount(1)
+        self.ui.tableWidget_pressures.setHorizontalHeaderLabels(["Pressure (GPa)"])
+
+        self.ui.tableWidget_crystals.setColumnCount(1)
+        self.ui.tableWidget_crystals.setHorizontalHeaderLabels(["Crystal"])
 
         # Connect signals to corresponding slots
         self.setup_connections()
@@ -44,6 +55,25 @@ class ProjectManager:
         # Connect comboboxes
         self.ui.comboBox_pressure.currentIndexChanged.connect(self.pressure_combobox_changed)
         self.ui.comboBox_crystal.currentIndexChanged.connect(self.crystal_combobox_changed)
+
+    def populate_table_widgets(self):
+        """Populate the pressure and crystal tableWidgets with unique values."""
+        if self.project:
+            pressures, crystals = self.project.get_unique_pressures_and_crystals()
+
+            # Populate pressure tableWidget
+            self.ui.tableWidget_pressures.setRowCount(0)  # Clear previous entries
+            for pressure in pressures:
+                row_position = self.ui.tableWidget_pressures.rowCount()
+                self.ui.tableWidget_pressures.insertRow(row_position)
+                self.ui.tableWidget_pressures.setItem(row_position, 0, QTableWidgetItem(str(pressure)))
+
+            # Populate crystal tableWidget
+            self.ui.tableWidget_crystals.setRowCount(0)  # Clear previous entries
+            for crystal in crystals:
+                row_position = self.ui.tableWidget_crystals.rowCount()
+                self.ui.tableWidget_crystals.insertRow(row_position)
+                self.ui.tableWidget_crystals.setItem(row_position, 0, QTableWidgetItem(crystal))
 
     def update_metadata(self, row, filename, metadata):
         """
@@ -75,7 +105,7 @@ class ProjectManager:
         if not self.project:
             return
 
-        selected_pressure = self.ui.comboBox_pressure.currentText().replace(" GPa", "")
+        selected_pressure = self.ui.comboBox_pressure.currentText()
         selected_crystal = self.ui.comboBox_crystal.currentText()
 
         if selected_pressure and selected_crystal:
@@ -140,6 +170,7 @@ class ProjectManager:
         self.project.load_h5file()
         self.ui.lineEdit_currentProject.setText(project_name)
         self.populate_dropdowns()
+        self.populate_table_widgets()  # Populate tables after loading project
 
     def populate_dropdowns(self):
         """Populate pressure and crystal comboboxes with unique values from the project."""
@@ -150,7 +181,9 @@ class ProjectManager:
             self.ui.comboBox_crystal.clear()
 
             for pressure in unique_pressures:
-                self.ui.comboBox_pressure.addItem(f"{pressure} GPa")
+                print(str(pressure))
+                print(type(str(pressure)))
+                self.ui.comboBox_pressure.addItem(str(pressure))
             for crystal in unique_crystals:
                 self.ui.comboBox_crystal.addItem(crystal)
 
@@ -209,57 +242,49 @@ class ProjectManager:
 
     def new_pressure_clicked(self):
         """Handle the new pressure button click."""
-        self.add_new_pressure()
-
-    def add_new_pressure(self):
-        """Prompt the user for a new pressure and add it to the combobox."""
         pressure, ok = QInputDialog.getDouble(None, "New Pressure", "Enter pressure in GPa:", decimals=2)
         if ok:
-            self.ui.comboBox_pressure.addItem(f"{pressure} GPa")
+            self.project.add_pressure(float(pressure))  # Add to project file
+            self.populate_table_widgets()  # Update tableWidget
+            self.populate_dropdowns()
 
     def delete_pressure_clicked(self):
         """Handle the delete pressure button click."""
-        self.delete_pressure()
-
-    def delete_pressure(self):
-        """Delete the selected pressure after confirmation."""
-        pressure = self.ui.comboBox_pressure.currentText()
-        if pressure:
-            confirm = QMessageBox.question(
-                None, "Confirm Delete", f"Do you want to delete pressure '{pressure}'?",
-                QMessageBox.Yes | QMessageBox.No
-            )
+        selected_rows = self.ui.tableWidget_pressures.selectionModel().selectedRows()
+        if selected_rows:
+            confirm = QMessageBox.question(None, "Confirm Delete", "Do you want to delete the selected pressure(s)?",
+                                           QMessageBox.Yes | QMessageBox.No)
             if confirm == QMessageBox.Yes:
-                self.ui.comboBox_pressure.removeItem(self.ui.comboBox_pressure.currentIndex())
+                for row in selected_rows:
+                    pressure = float(self.ui.tableWidget_pressures.item(row.row(), 0).text())
+                    self.project.remove_pressure(pressure)  # Remove from project file
+                self.populate_table_widgets()  # Update tableWidget
+                self.populate_dropdowns()
 
     def new_crystal_clicked(self):
         """Handle the new crystal button click."""
-        self.add_new_crystal()
-
-    def add_new_crystal(self):
-        """Prompt the user for a new crystal and add it to the combobox."""
         crystal_name, ok = QInputDialog.getText(None, "New Crystal", "Enter crystal name:")
         if ok and crystal_name:
-            self.ui.comboBox_crystal.addItem(crystal_name)
+            self.project.add_crystal(crystal_name)  # Add to project file
+            self.populate_table_widgets()  # Update tableWidget
+            self.populate_dropdowns()
 
     def delete_crystal_clicked(self):
         """Handle the delete crystal button click."""
-        self.delete_crystal()
-
-    def delete_crystal(self):
-        """Delete the selected crystal after confirmation."""
-        crystal_name = self.ui.comboBox_crystal.currentText()
-        if crystal_name:
-            confirm = QMessageBox.question(
-                None, "Confirm Delete", f"Do you want to delete crystal '{crystal_name}'?",
-                QMessageBox.Yes | QMessageBox.No
-            )
+        selected_rows = self.ui.tableWidget_crystals.selectionModel().selectedRows()
+        if selected_rows:
+            confirm = QMessageBox.question(None, "Confirm Delete", "Do you want to delete the selected crystal(s)?",
+                                           QMessageBox.Yes | QMessageBox.No)
             if confirm == QMessageBox.Yes:
-                self.ui.comboBox_crystal.removeItem(self.ui.comboBox_crystal.currentIndex())
+                for row in selected_rows:
+                    crystal = self.ui.tableWidget_crystals.item(row.row(), 0).text()
+                    self.project.remove_crystal(crystal)  # Remove from project file
+                self.populate_table_widgets()  # Update tableWidget
+                self.populate_dropdowns()
 
     def add_files_clicked(self):
         """Handle the add files button click."""
-        pressure = self.ui.comboBox_pressure.currentText().replace(" GPa", "")
+        pressure = self.ui.comboBox_pressure.currentText()
         crystal_name = self.ui.comboBox_crystal.currentText()
 
         if pressure and crystal_name:

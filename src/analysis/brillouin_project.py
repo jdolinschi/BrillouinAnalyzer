@@ -57,6 +57,7 @@ class BrillouinProject:
         """
         if self.h5file is not None:
             self.h5file.attrs['modification_date'] = time.ctime()
+            self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
     def create_h5file(self):
         """
@@ -87,6 +88,60 @@ class BrillouinProject:
         # Copy the original file to the temporary file
         shutil.copyfile(self.h5file_path, self.temp_h5file_path)
         self.h5file = h5py.File(self.temp_h5file_path, 'a')
+
+    def add_pressure(self, pressure):
+        """Add a new pressure to the project."""
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        if 'pressures' not in self.h5file.attrs:
+            self.h5file.attrs['pressures'] = []
+
+        pressures = list(self.h5file.attrs['pressures'])
+        if pressure not in pressures:
+            pressures.append(pressure)
+            self.h5file.attrs['pressures'] = pressures
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def remove_pressure(self, pressure):
+        """Remove an existing pressure from the project."""
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        pressures = list(self.h5file.attrs['pressures'])
+        if pressure in pressures:
+            pressures.remove(pressure)
+            self.h5file.attrs['pressures'] = pressures
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def add_crystal(self, crystal):
+        """Add a new crystal to the project."""
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        if 'crystals' not in self.h5file.attrs:
+            self.h5file.attrs['crystals'] = []
+
+        crystals = list(self.h5file.attrs['crystals'])
+        if crystal not in crystals:
+            crystals.append(crystal)
+            self.h5file.attrs['crystals'] = crystals
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def remove_crystal(self, crystal):
+        """Remove an existing crystal from the project."""
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        crystals = list(self.h5file.attrs['crystals'])
+        if crystal in crystals:
+            crystals.remove(crystal)
+            self.h5file.attrs['crystals'] = crystals
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
     def add_file_to_h5(self, file_path, pressure, crystal):
         """
@@ -124,14 +179,13 @@ class BrillouinProject:
             numeric_data = [int(line.strip()) for line in lines[12:] if line.strip().isdigit()]
         group.create_dataset('original_data', data=numeric_data)
 
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
     def get_unique_pressures_and_crystals(self):
-        unique_pressures = set()
-        unique_crystals = set()
-        for dataset in self.h5file.keys():
-            group = self.h5file[dataset]
-            unique_pressures.add(group.attrs['pressure'])
-            unique_crystals.add(group.attrs['crystal'])
-        return sorted(unique_pressures), sorted(unique_crystals)
+        """Return the unique pressures and crystals."""
+        pressures = self.h5file.attrs.get('pressures', [])
+        crystals = self.h5file.attrs.get('crystals', [])
+        return sorted(pressures), sorted(crystals)
 
     def find_files_by_pressure_and_crystal(self, pressure, crystal):
         matching_files = []
@@ -163,6 +217,8 @@ class BrillouinProject:
         group = self.h5file[dataset_name]
         group.attrs[key] = value
 
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
     def add_array_to_dataset(self, dataset_name, array_name, array_data):
         """
         Adds a new array to the specified dataset within the temporary HDF5 file.
@@ -184,6 +240,8 @@ class BrillouinProject:
 
         group = self.h5file[dataset_name]
         group.create_dataset(array_name, data=array_data)
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
     def get_metadata_from_dataset(self, dataset_name, key):
         """
@@ -276,6 +334,8 @@ class BrillouinProject:
 
         del self.h5file[dataset_name]
         print(f"Dataset {dataset_name} has been removed from the HDF5 file.")
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
     def load_all_files(self, file_paths):
         """
