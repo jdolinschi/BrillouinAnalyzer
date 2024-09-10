@@ -11,6 +11,7 @@ class ProjectManager:
     def __init__(self, ui):
         self.ui = ui
         self.project = None
+        self.unsaved_changes = False
 
         # Create an instance of the custom model
         self.file_model = FileTableModel()
@@ -55,6 +56,47 @@ class ProjectManager:
         # Connect comboboxes
         self.ui.comboBox_pressure.currentIndexChanged.connect(self.pressure_combobox_changed)
         self.ui.comboBox_crystal.currentIndexChanged.connect(self.crystal_combobox_changed)
+
+    def check_unsaved_changes(self):
+        """Check if there are unsaved changes and show a popup with the changes."""
+        if self.project is None:
+            return True  # No project open, safe to close
+
+        # Get the unsaved changes
+        changes = self.project.check_unsaved_changes(detailed=True)
+
+        if not changes["added"] and not changes["removed"] and not changes["altered"]:
+            return True  # No unsaved changes, safe to close
+
+        # Build the list of changes
+        change_text = []
+        if changes["added"]:
+            change_text.append("ADDED:\n" + "\n".join(changes["added"]))
+        if changes["removed"]:
+            change_text.append("REMOVED:\n" + "\n".join(changes["removed"]))
+        if changes["altered"]:
+            change_text.append("ALTERED:\n" + "\n".join(changes["altered"]))
+
+        change_message = "\n\n".join(change_text)
+
+        # Display a popup with options to cancel, save and exit, or exit without saving
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle("Unsaved Changes")
+        msg_box.setText("There are unsaved changes in the project:")
+        msg_box.setInformativeText(change_message)
+        msg_box.setStandardButtons(QMessageBox.Cancel | QMessageBox.Save | QMessageBox.Discard)
+        msg_box.setDefaultButton(QMessageBox.Save)
+
+        ret = msg_box.exec()
+
+        if ret == QMessageBox.Save:
+            self.save_project()  # Save the project
+            return True
+        elif ret == QMessageBox.Discard:
+            return True  # Exit without saving
+        else:
+            return False  # Cancel the close event
 
     def populate_table_widgets(self):
         """Populate the pressure and crystal tableWidgets with unique values."""
@@ -181,8 +223,6 @@ class ProjectManager:
             self.ui.comboBox_crystal.clear()
 
             for pressure in unique_pressures:
-                print(str(pressure))
-                print(type(str(pressure)))
                 self.ui.comboBox_pressure.addItem(str(pressure))
             for crystal in unique_crystals:
                 self.ui.comboBox_crystal.addItem(crystal)

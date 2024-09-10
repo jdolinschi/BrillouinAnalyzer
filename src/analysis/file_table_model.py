@@ -1,5 +1,7 @@
 import numpy as np
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal
+from PySide6.QtGui import QKeySequence, QClipboard
+from PySide6.QtWidgets import QApplication, QTableView, QMenu
 import os
 
 class FileTableModel(QAbstractTableModel):

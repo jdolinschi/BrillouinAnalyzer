@@ -392,7 +392,7 @@ class BrillouinProject:
 
     def check_unsaved_changes(self, detailed=False):
         """
-        Checks if there are unsaved changes in the temporary HDF5 file.
+        Checks if there are unsaved changes in the temporary HDF5 file and returns them.
 
         Parameters:
             detailed (bool): If True, returns a dictionary with details of differences;
