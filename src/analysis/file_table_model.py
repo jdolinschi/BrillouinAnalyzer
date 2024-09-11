@@ -10,7 +10,8 @@ class FileTableModel(QAbstractTableModel):
     def __init__(self, files=None, parent=None):
         super(FileTableModel, self).__init__(parent)
         self._files = files if files else []
-        self._headers = ['Filename', 'CHI Angle', 'Pinhole', 'Power', 'Polarization', 'Scans']
+        self._headers = ['Filename', 'Chi angle (degrees)', 'Pinhole', 'Power', 'Polarization', 'Scans',
+                         'Laser wavelength (nm)', 'Mirror spacing (mm)', 'Scattering angle (degrees)']
         self._sort_order = Qt.AscendingOrder
         self._sort_column = -1  # No sorting by default
 
@@ -54,7 +55,7 @@ class FileTableModel(QAbstractTableModel):
 
     def insertRows(self, position, rows, parent=QModelIndex()):
         self.beginInsertRows(parent, position, position + rows - 1)
-        self._files[position:position] = [['', None, None, None, None, None] for _ in range(rows)]
+        self._files[position:position] = [['', None, None, None, None, None, None, None, None] for _ in range(rows)]
         self.endInsertRows()
         return True
 
@@ -65,7 +66,7 @@ class FileTableModel(QAbstractTableModel):
         return True
 
     def addFiles(self, filepaths):
-        new_files = [[os.path.basename(filepath), None, None, None, None, None] for filepath in filepaths]
+        new_files = [[os.path.basename(filepath), None, None, None, None, None, None, None, None] for filepath in filepaths]
         self._add_files_to_model(new_files)
 
     def addFilesWithMetadata(self, files_with_metadata):
@@ -126,7 +127,10 @@ class FileTableModel(QAbstractTableModel):
             'pinhole': self._files[row][2],
             'power': self._files[row][3],
             'polarization': self._files[row][4],
-            'scans': self._files[row][5]
+            'scans': self._files[row][5],
+            'laser_wavelength': self._files[row][6],
+            'mirror_spacing': self._files[row][7],
+            'scattering_angle': self._files[row][8]
         }
 
     def _remove_file_by_condition(self, condition):

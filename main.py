@@ -1,6 +1,8 @@
 # main.py
 
 import sys
+
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QApplication, QMainWindow
 from src.gui.main_window import Ui_MainWindow
 from src.analysis.project_manager import ProjectManager
@@ -15,6 +17,18 @@ class MainWindow(QMainWindow):
 
         # Create an instance of ProjectManager and pass the UI to it
         self.project_manager = ProjectManager(self.ui)
+
+        # Add the 'Save Project' shortcut (Ctrl+S)
+        self.add_save_shortcut()
+
+    def add_save_shortcut(self):
+        # Create a QAction for save
+        save_action = QAction("Save Project", self)
+        save_action.setShortcut(QKeySequence("Ctrl+S"))  # Assign the Ctrl+S shortcut
+        save_action.triggered.connect(self.project_manager.save_project_clicked)  # Connect to save_project_clicked
+
+        # Add the action to the main window so that the shortcut is active
+        self.addAction(save_action)
 
     def closeEvent(self, event):
         # Call a method in ProjectManager to handle unsaved changes, etc.

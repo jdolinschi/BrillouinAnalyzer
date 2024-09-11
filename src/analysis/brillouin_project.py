@@ -143,6 +143,10 @@ class BrillouinProject:
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
+    def get_file_count(self):
+        """Return the number of files in the project."""
+        return len(self.h5file.keys())
+
     def add_file_to_h5(self, file_path, pressure, crystal):
         """
         Adds the contents of a single .dat file to the temporary HDF5 file.
@@ -168,6 +172,9 @@ class BrillouinProject:
         group.attrs['power'] = np.nan
         group.attrs['polarization'] = np.nan
         group.attrs['scans'] = np.nan
+        group.attrs['laser_wavelength'] = np.nan
+        group.attrs['mirror_spacing'] = np.nan
+        group.attrs['scattering_angle'] = np.nan
 
         # Optionally, add the file content
         with open(file_path, 'rb') as file:
@@ -218,14 +225,6 @@ class BrillouinProject:
     def add_metadata_to_dataset(self, dataset_name, key, value):
         """
         Adds a key-value pair as metadata to a specific dataset within the temporary HDF5 file.
-
-        Parameters:
-            dataset_name (str): The name of the dataset to which the metadata will be added.
-            key (str): The metadata key.
-            value (Any): The metadata value.
-
-        Raises:
-            ValueError: If the temporary HDF5 file is not open or the dataset does not exist.
         """
         if self.h5file is None:
             raise ValueError(

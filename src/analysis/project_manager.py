@@ -43,6 +43,31 @@ class ProjectManager:
         # Connect signals to corresponding slots
         self.setup_connections()
 
+        self.save_status()
+
+    def last_action(self, text):
+        """Update the last action label."""
+        self.ui.label_lastAction.setText(f"| Last action: {text} ")
+
+    def update_file_count(self):
+        """Update the file count label."""
+        if self.project is None:
+            self.ui.label_fileCount.setText("| File count: 0 ")
+        else:
+            file_count = self.project.get_file_count()
+            self.ui.label_fileCount.setText(f"| File count: {file_count} ")
+
+    def save_status(self):
+        """Update project status based on whether there are unsaved changes."""
+        if self.project is None:
+            self.ui.label_projectStatus.setText("| No project loaded")
+        else:
+            unsaved_changes = self.project.check_unsaved_changes()
+            if unsaved_changes:
+                self.ui.label_projectStatus.setText("| Unsaved Changes")
+            else:
+                self.ui.label_projectStatus.setText("| Project Saved")
+
     def setup_connections(self):
         """Setup signal-slot connections."""
         # Connect model signal for metadata updates
@@ -80,10 +105,15 @@ class ProjectManager:
 
         if action == copy_action:
             self.copy_selection()
+            self.last_action('Copied')
         elif action == paste_action:
             self.paste_selection()
+            self.last_action('Pasted')
         elif action == fill_column_action:
             self.fill_column(index)  # Call fill_column method with the selected index
+            self.last_action('Fill column')
+
+        self.save_status()
 
     def fill_column(self, index):
         """
@@ -196,6 +226,8 @@ class ProjectManager:
         if self.project:
             self.project.cleanup_temp_file()
             self.project = None
+            self.last_action('Cleaned up project')
+            self.save_status()
 
     def populate_table_widgets(self):
         """Populate the pressure and crystal tableWidgets with unique values."""
@@ -215,6 +247,7 @@ class ProjectManager:
                 row_position = self.ui.tableWidget_crystals.rowCount()
                 self.ui.tableWidget_crystals.insertRow(row_position)
                 self.ui.tableWidget_crystals.setItem(row_position, 0, QTableWidgetItem(crystal))
+            self.save_status()
 
     def update_metadata(self, row, filename, metadata):
         """
@@ -225,21 +258,28 @@ class ProjectManager:
                 # Ensure the file exists in the HDF5 file before updating metadata
                 if filename in self.project.h5file:
                     for key, value in metadata.items():
-                        if value is None and key in ['chi_angle', 'pinhole', 'power', 'polarization', 'scans']:
+                        if value is None and key in ['chi_angle', 'pinhole', 'power', 'polarization', 'scans',
+                                                     'laser_wavelength', 'mirror_spacing', 'scattering_angle']:
                             value = np.nan  # Use np.nan for missing numeric values
                         self.project.add_metadata_to_dataset(filename, key, value)
+                    self.last_action('Table modified')
                 else:
                     print(f"Warning: Tried to update metadata for non-existent file: {filename}")
             except Exception as e:
                 QMessageBox.critical(None, "Error", f"Failed to update metadata in temp file: {e}")
+        self.save_status()
 
     def pressure_combobox_changed(self):
         """Handle pressure combobox change."""
         self.update_table()
+        self.last_action('Pressure changed')
+        self.save_status()
 
     def crystal_combobox_changed(self):
         """Handle crystal combobox change."""
         self.update_table()
+        self.last_action('Crystal changed')
+        self.save_status()
 
     def update_table(self):
         """Update table based on selected pressure and crystal."""
@@ -265,6 +305,9 @@ class ProjectManager:
                     self.project.get_metadata_from_dataset(filename, 'power'),
                     self.project.get_metadata_from_dataset(filename, 'polarization'),
                     self.project.get_metadata_from_dataset(filename, 'scans'),
+                    self.project.get_metadata_from_dataset(filename, 'laser_wavelength'),
+                    self.project.get_metadata_from_dataset(filename, 'mirror_spacing'),
+                    self.project.get_metadata_from_dataset(filename, 'scattering_angle'),
                 )
                 for filename in matching_files
             ]
@@ -276,6 +319,8 @@ class ProjectManager:
         folder_path, project_name = self.get_project_folder_and_name()
         if folder_path and project_name:
             self.create_new_project(folder_path, project_name)
+            self.last_action('New project created')
+            self.save_status()
 
     def get_project_folder_and_name(self):
         """Helper to retrieve folder and project name from user input."""
@@ -291,12 +336,15 @@ class ProjectManager:
         self.project = BrillouinProject(folder_path, project_name)
         self.project.create_h5file()
         self.ui.lineEdit_currentProject.setText(project_name)
+        self.update_file_count()
 
     def load_project_clicked(self):
         """Handle the load project button click."""
         filepath = self.get_project_file()
         if filepath:
             self.load_project(filepath)
+            self.last_action('Project loaded')
+            self.save_status()
 
     def get_project_file(self):
         """Helper to retrieve project file path from user input."""
@@ -312,6 +360,7 @@ class ProjectManager:
         self.ui.lineEdit_currentProject.setText(project_name)
         self.populate_dropdowns()
         self.populate_table_widgets()  # Populate tables after loading project
+        self.update_file_count()
 
     def populate_dropdowns(self):
         """Populate pressure and crystal comboboxes with unique values from the project."""
@@ -325,17 +374,22 @@ class ProjectManager:
                 self.ui.comboBox_pressure.addItem(str(pressure))
             for crystal in unique_crystals:
                 self.ui.comboBox_crystal.addItem(crystal)
+            self.save_status()
 
     def save_project_clicked(self):
         """Handle the save project button click."""
         if self.project:
             self.save_project()
+            self.last_action('Project saved')
+            self.save_status()
 
     def save_project(self):
         """Save the current project."""
         try:
             self.save_table_data()
             self.project.save_project()
+            self.update_file_count()
+            self.save_status()
         except Exception as e:
             QMessageBox.critical(None, "Error", f"Failed to save project: {e}")
 
@@ -343,6 +397,8 @@ class ProjectManager:
         """Handle the delete project button click."""
         if self.project:
             self.delete_project()
+            self.last_action('Project deleted')
+            self.save_status()
 
     def delete_project(self):
         """Delete the current project after confirmation."""
@@ -356,6 +412,7 @@ class ProjectManager:
                 self.ui.lineEdit_currentProject.clear()
                 self.ui.tableView_files.clearContents()
                 self.project = None
+                self.update_file_count()
             except Exception as e:
                 QMessageBox.critical(None, "Error", f"Failed to delete project: {e}")
 
@@ -363,6 +420,8 @@ class ProjectManager:
         """Handle the rename project text edit finished."""
         if self.project:
             self.rename_project(self.ui.lineEdit_currentProject.text())
+            self.last_action('Project renamed')
+            self.save_status()
 
     def rename_project(self, new_name):
         """Rename the current project."""
@@ -376,6 +435,7 @@ class ProjectManager:
                 os.rename(self.project.h5file_path, new_h5file_path)
                 self.project.h5file_path = new_h5file_path
                 self.project.project_name = new_name
+                self.save_status()
             except Exception as e:
                 QMessageBox.critical(None, "Error", f"Failed to rename project: {e}")
 
@@ -386,6 +446,8 @@ class ProjectManager:
             self.project.add_pressure(float(pressure))  # Add to project file
             self.populate_table_widgets()  # Update tableWidget
             self.populate_dropdowns()
+            self.last_action('Pressure added')
+            self.save_status()
 
     def delete_pressure_clicked(self):
         """Handle the delete pressure button click."""
@@ -399,6 +461,8 @@ class ProjectManager:
                     self.project.remove_pressure(pressure)  # Remove from project file
                 self.populate_table_widgets()  # Update tableWidget
                 self.populate_dropdowns()
+                self.last_action('Pressure deleted')
+                self.save_status()
 
     def new_crystal_clicked(self):
         """Handle the new crystal button click."""
@@ -407,6 +471,8 @@ class ProjectManager:
             self.project.add_crystal(crystal_name)  # Add to project file
             self.populate_table_widgets()  # Update tableWidget
             self.populate_dropdowns()
+            self.last_action('Crystal added')
+            self.save_status()
 
     def delete_crystal_clicked(self):
         """Handle the delete crystal button click."""
@@ -420,6 +486,8 @@ class ProjectManager:
                     self.project.remove_crystal(crystal)  # Remove from project file
                 self.populate_table_widgets()  # Update tableWidget
                 self.populate_dropdowns()
+                self.last_action('Crystal deleted')
+                self.save_status()
 
     def add_files_clicked(self):
         """Handle the add files button click."""
@@ -428,6 +496,9 @@ class ProjectManager:
 
         if pressure and crystal_name:
             self.add_files(float(pressure), crystal_name)
+            self.update_file_count()
+            self.last_action('Files added')
+            self.save_status()
 
     def add_files(self, pressure, crystal_name):
         """Prompt the user to select files and add them to the project."""
@@ -442,6 +513,9 @@ class ProjectManager:
     def remove_files_clicked(self):
         """Handle the remove files button click."""
         self.remove_files()
+        self.update_file_count()
+        self.last_action('Files removed')
+        self.save_status()
 
     def remove_files(self):
         """Remove selected files from the project and table after confirmation."""
@@ -491,7 +565,11 @@ class ProjectManager:
                     'power': self.file_model.data(self.file_model.index(row, 3), Qt.DisplayRole),
                     'polarization': self.file_model.data(self.file_model.index(row, 4), Qt.DisplayRole),
                     'scans': self.file_model.data(self.file_model.index(row, 5), Qt.DisplayRole),
+                    'laser_wavelength': self.file_model.data(self.file_model.index(row, 6), Qt.DisplayRole),
+                    'mirror_spacing': self.file_model.data(self.file_model.index(row, 7), Qt.DisplayRole),
+                    'scattering_angle': self.file_model.data(self.file_model.index(row, 8), Qt.DisplayRole),
                 }
                 for key, value in metadata.items():
                     if value is not None:
                         self.project.add_metadata_to_dataset(filename, key, value)
+

@@ -29,11 +29,13 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1920, 1097)
+        MainWindow.resize(1926, 1177)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.horizontalLayout = QHBoxLayout(self.centralwidget)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.verticalLayout_29 = QVBoxLayout(self.centralwidget)
+        self.verticalLayout_29.setObjectName(u"verticalLayout_29")
+        self.verticalLayout_28 = QVBoxLayout()
+        self.verticalLayout_28.setObjectName(u"verticalLayout_28")
         self.tabWidget = QTabWidget(self.centralwidget)
         self.tabWidget.setObjectName(u"tabWidget")
         self.tab_calib = QWidget()
@@ -574,12 +576,55 @@ class Ui_MainWindow(object):
 
         self.tabWidget.addTab(self.tab_fit, "")
 
-        self.horizontalLayout.addWidget(self.tabWidget)
+        self.verticalLayout_28.addWidget(self.tabWidget)
+
+        self.frame_11 = QFrame(self.centralwidget)
+        self.frame_11.setObjectName(u"frame_11")
+        sizePolicy3.setHeightForWidth(self.frame_11.sizePolicy().hasHeightForWidth())
+        self.frame_11.setSizePolicy(sizePolicy3)
+        self.frame_11.setFrameShape(QFrame.NoFrame)
+        self.frame_11.setFrameShadow(QFrame.Plain)
+        self.horizontalLayout_13 = QHBoxLayout(self.frame_11)
+        self.horizontalLayout_13.setObjectName(u"horizontalLayout_13")
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalSpacer_6 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_6)
+
+        self.label_lastAction = QLabel(self.frame_11)
+        self.label_lastAction.setObjectName(u"label_lastAction")
+
+        self.horizontalLayout.addWidget(self.label_lastAction)
+
+        self.label_processStatus = QLabel(self.frame_11)
+        self.label_processStatus.setObjectName(u"label_processStatus")
+
+        self.horizontalLayout.addWidget(self.label_processStatus)
+
+        self.label_fileCount = QLabel(self.frame_11)
+        self.label_fileCount.setObjectName(u"label_fileCount")
+
+        self.horizontalLayout.addWidget(self.label_fileCount)
+
+        self.label_projectStatus = QLabel(self.frame_11)
+        self.label_projectStatus.setObjectName(u"label_projectStatus")
+
+        self.horizontalLayout.addWidget(self.label_projectStatus)
+
+
+        self.horizontalLayout_13.addLayout(self.horizontalLayout)
+
+
+        self.verticalLayout_28.addWidget(self.frame_11)
+
+
+        self.verticalLayout_29.addLayout(self.verticalLayout_28)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1920, 22))
+        self.menubar.setGeometry(QRect(0, 0, 1926, 22))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         MainWindow.setMenuBar(self.menubar)
@@ -629,6 +674,10 @@ class Ui_MainWindow(object):
         self.groupBox_settings.setTitle(QCoreApplication.translate("MainWindow", u"Settings", None))
         self.tabWidget_sideBar.setTabText(self.tabWidget_sideBar.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Setup", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_fit), QCoreApplication.translate("MainWindow", u"Fit", None))
+        self.label_lastAction.setText("")
+        self.label_processStatus.setText("")
+        self.label_fileCount.setText("")
+        self.label_projectStatus.setText("")
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
     # retranslateUi
 
