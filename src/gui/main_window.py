@@ -29,7 +29,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1926, 1177)
+        MainWindow.resize(1920, 1080)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout_29 = QVBoxLayout(self.centralwidget)
@@ -38,9 +38,6 @@ class Ui_MainWindow(object):
         self.verticalLayout_28.setObjectName(u"verticalLayout_28")
         self.tabWidget = QTabWidget(self.centralwidget)
         self.tabWidget.setObjectName(u"tabWidget")
-        self.tab_calib = QWidget()
-        self.tab_calib.setObjectName(u"tab_calib")
-        self.tabWidget.addTab(self.tab_calib, "")
         self.tab_fit = QWidget()
         self.tab_fit.setObjectName(u"tab_fit")
         self.verticalLayout_3 = QVBoxLayout(self.tab_fit)
@@ -575,6 +572,27 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addWidget(self.splitter_3)
 
         self.tabWidget.addTab(self.tab_fit, "")
+        self.tab_calib = QWidget()
+        self.tab_calib.setObjectName(u"tab_calib")
+        self.verticalLayout_30 = QVBoxLayout(self.tab_calib)
+        self.verticalLayout_30.setObjectName(u"verticalLayout_30")
+        self.splitter_5 = QSplitter(self.tab_calib)
+        self.splitter_5.setObjectName(u"splitter_5")
+        self.splitter_5.setOrientation(Qt.Horizontal)
+        self.frame_12 = QFrame(self.splitter_5)
+        self.frame_12.setObjectName(u"frame_12")
+        self.frame_12.setFrameShape(QFrame.StyledPanel)
+        self.frame_12.setFrameShadow(QFrame.Raised)
+        self.splitter_5.addWidget(self.frame_12)
+        self.frame_13 = QFrame(self.splitter_5)
+        self.frame_13.setObjectName(u"frame_13")
+        self.frame_13.setFrameShape(QFrame.StyledPanel)
+        self.frame_13.setFrameShadow(QFrame.Raised)
+        self.splitter_5.addWidget(self.frame_13)
+
+        self.verticalLayout_30.addWidget(self.splitter_5)
+
+        self.tabWidget.addTab(self.tab_calib, "")
 
         self.verticalLayout_28.addWidget(self.tabWidget)
 
@@ -624,7 +642,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1926, 22))
+        self.menubar.setGeometry(QRect(0, 0, 1920, 22))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         MainWindow.setMenuBar(self.menubar)
@@ -645,7 +663,6 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_calib), QCoreApplication.translate("MainWindow", u"Calibrate", None))
         self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.pushButton_4.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
@@ -674,6 +691,7 @@ class Ui_MainWindow(object):
         self.groupBox_settings.setTitle(QCoreApplication.translate("MainWindow", u"Settings", None))
         self.tabWidget_sideBar.setTabText(self.tabWidget_sideBar.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Setup", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_fit), QCoreApplication.translate("MainWindow", u"Fit", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_calib), QCoreApplication.translate("MainWindow", u"Calibrate", None))
         self.label_lastAction.setText("")
         self.label_processStatus.setText("")
         self.label_fileCount.setText("")

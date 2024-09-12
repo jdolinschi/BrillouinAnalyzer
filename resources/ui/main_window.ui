@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1926</width>
-    <height>1177</height>
+    <width>1920</width>
+    <height>1080</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,11 +22,6 @@
         <property name="currentIndex">
          <number>1</number>
         </property>
-        <widget class="QWidget" name="tab_calib">
-         <attribute name="title">
-          <string>Calibrate</string>
-         </attribute>
-        </widget>
         <widget class="QWidget" name="tab_fit">
          <attribute name="title">
           <string>Fit</string>
@@ -731,6 +726,36 @@
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="tab_calib">
+         <attribute name="title">
+          <string>Calibrate</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_30">
+          <item>
+           <widget class="QSplitter" name="splitter_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <widget class="QFrame" name="frame_12">
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+            </widget>
+            <widget class="QFrame" name="frame_13">
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
       <item>
@@ -805,7 +830,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1926</width>
+     <width>1920</width>
      <height>22</height>
     </rect>
    </property>
