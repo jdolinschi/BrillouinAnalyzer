@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QAbstractI
     QApplication, QTableView
 from .brillouin_project import BrillouinProject
 from .file_table_model import FileTableModel  # Import the custom model
+from ..utils.custom_delegate import CheckboxLineEditDelegate
 import os
 
 
@@ -39,6 +40,10 @@ class ProjectManager:
 
         # Enable copy-paste shortcuts in the tableView_files
         self.ui.tableView_files.keyPressEvent = self.table_keyPressEvent
+
+        # Assign the custom delegate to the top row
+        delegate = CheckboxLineEditDelegate(self.ui.tableView_files)
+        self.ui.tableView_files.setItemDelegateForRow(0, delegate)
 
         # Connect signals to corresponding slots
         self.setup_connections()
@@ -557,7 +562,7 @@ class ProjectManager:
         pressure = self.ui.comboBox_pressure.currentText()
         crystal_name = self.ui.comboBox_crystal.currentText()
         if self.project and pressure and crystal_name:
-            for row in range(self.file_model.rowCount()):
+            for row in range(self.file_model.rowCount() - 1):  # Exclude default values row
                 filename = self.file_model.data(self.file_model.index(row, 0), Qt.DisplayRole)
                 metadata = {
                     'chi_angle': self.file_model.data(self.file_model.index(row, 1), Qt.DisplayRole),
