@@ -35,24 +35,17 @@ class FileTableModel(QAbstractTableModel):
         if row == 0:
             # Default values row
             if col == 0:
-                # Filename column is not editable in the default row
                 return '' if role in (Qt.DisplayRole, Qt.EditRole) else None
             elif role == Qt.DisplayRole or role == Qt.EditRole:
-                # Show default value in the default row
                 default_value = self._default_values[col]['value']
                 return "" if default_value is None else default_value
-            # Remove the CheckStateRole for the top row
-            # elif role == Qt.CheckStateRole and col != 0:
-            #     return Qt.Checked if self._default_values[col]['use_default'] else Qt.Unchecked
         else:
             # Regular file rows
             value = self._files[row - 1][col]  # Adjust for default row
             if role in (Qt.DisplayRole, Qt.EditRole):
-                # Convert np.float64 to Python float for display
                 if isinstance(value, np.float64):
                     value = float(value)
                 return "" if value is None else value
-
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
@@ -98,8 +91,7 @@ class FileTableModel(QAbstractTableModel):
             # Default values row
             if col == 0:
                 return Qt.ItemIsEnabled  # Filename column is not editable
-            # Remove Qt.ItemIsUserCheckable to prevent default checkboxes
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable  # No checkable flag for default row
         else:
             # Regular file rows
             if col == 0:
