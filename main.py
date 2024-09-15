@@ -1,11 +1,10 @@
-# main.py
-
 import sys
 
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QApplication, QMainWindow
 from src.gui.main_window import Ui_MainWindow
 from src.analysis.project_manager import ProjectManager
+from src.analysis.calibration_manager import CalibrationManager
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -17,6 +16,12 @@ class MainWindow(QMainWindow):
 
         # Create an instance of ProjectManager and pass the UI to it
         self.project_manager = ProjectManager(self.ui)
+
+        # Create an instance of CalibrationManager and pass the UI and ProjectManager to it
+        self.calibration_manager = CalibrationManager(self.ui, self.project_manager)
+
+        # Let ProjectManager know about CalibrationManager
+        self.project_manager.set_calibration_manager(self.calibration_manager)
 
         # Add the 'Save Project' shortcut (Ctrl+S)
         self.add_save_shortcut()
