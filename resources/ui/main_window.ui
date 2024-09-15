@@ -20,7 +20,7 @@
       <item>
        <widget class="QTabWidget" name="tabWidget">
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="tab_fit">
          <attribute name="title">
@@ -947,16 +947,36 @@
                     <property name="frameShadow">
                      <enum>QFrame::Plain</enum>
                     </property>
-                    <layout class="QHBoxLayout" name="horizontalLayout_22">
-                     <item>
+                    <layout class="QGridLayout" name="gridLayout">
+                     <item row="0" column="1">
+                      <widget class="QLineEdit" name="lineEdit_calibLaserWavelength"/>
+                     </item>
+                     <item row="1" column="0">
+                      <widget class="QLabel" name="label">
+                       <property name="text">
+                        <string>Mirror spacing (mm):</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="0">
                       <widget class="QLabel" name="label_laserWavelengthText">
                        <property name="text">
                         <string>Laser wavelength (nm):</string>
                        </property>
                       </widget>
                      </item>
-                     <item>
-                      <widget class="QLineEdit" name="lineEdit_calibLaserWavelength"/>
+                     <item row="1" column="1">
+                      <widget class="QLineEdit" name="lineEdit_calibMirrorSpacing"/>
+                     </item>
+                     <item row="2" column="1">
+                      <widget class="QLineEdit" name="lineEdit_calibScatteringAngle"/>
+                     </item>
+                     <item row="2" column="0">
+                      <widget class="QLabel" name="label_4">
+                       <property name="text">
+                        <string>Scattering angle (degrees):</string>
+                       </property>
+                      </widget>
                      </item>
                     </layout>
                    </widget>
@@ -1041,61 +1061,60 @@
                      <property name="frameShadow">
                       <enum>QFrame::Plain</enum>
                      </property>
-                     <layout class="QVBoxLayout" name="verticalLayout_34">
+                     <layout class="QHBoxLayout" name="horizontalLayout_26">
                       <item>
-                       <widget class="QFrame" name="frame_21">
-                        <property name="sizePolicy">
-                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                          <horstretch>0</horstretch>
-                          <verstretch>0</verstretch>
-                         </sizepolicy>
-                        </property>
-                        <property name="frameShape">
-                         <enum>QFrame::NoFrame</enum>
-                        </property>
-                        <property name="frameShadow">
-                         <enum>QFrame::Plain</enum>
-                        </property>
-                        <layout class="QHBoxLayout" name="horizontalLayout_24">
-                         <item>
-                          <widget class="QPushButton" name="pushButton_calibNewFit">
-                           <property name="text">
-                            <string>New fit</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QPushButton" name="pushButton_calibDeleteFit">
-                           <property name="text">
-                            <string>Delete fit</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QPushButton" name="pushButton_calibMisc">
-                           <property name="text">
-                            <string>MISC</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
-                          <spacer name="horizontalSpacer_10">
-                           <property name="orientation">
-                            <enum>Qt::Horizontal</enum>
-                           </property>
-                           <property name="sizeHint" stdset="0">
-                            <size>
-                             <width>611</width>
-                             <height>20</height>
-                            </size>
-                           </property>
-                          </spacer>
-                         </item>
-                        </layout>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QTableView" name="tableView_calibFits"/>
+                       <layout class="QHBoxLayout" name="horizontalLayout_25">
+                        <item>
+                         <layout class="QVBoxLayout" name="verticalLayout_34">
+                          <item>
+                           <layout class="QHBoxLayout" name="horizontalLayout_22">
+                            <item>
+                             <widget class="QPushButton" name="pushButton_calibFitLeftPeak">
+                              <property name="text">
+                               <string>Fit left peak</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QPushButton" name="pushButton_calibDeleteLeftPeak">
+                              <property name="text">
+                               <string>Delete left peak</string>
+                              </property>
+                             </widget>
+                            </item>
+                           </layout>
+                          </item>
+                          <item>
+                           <widget class="QListWidget" name="listWidget_calibLeftPeak"/>
+                          </item>
+                         </layout>
+                        </item>
+                        <item>
+                         <layout class="QVBoxLayout" name="verticalLayout_36">
+                          <item>
+                           <layout class="QHBoxLayout" name="horizontalLayout_24">
+                            <item>
+                             <widget class="QPushButton" name="pushButton_calibFitRightPeak">
+                              <property name="text">
+                               <string>Fit right peak</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QPushButton" name="pushButton_calibDeleteRightPeak">
+                              <property name="text">
+                               <string>Delete right peak</string>
+                              </property>
+                             </widget>
+                            </item>
+                           </layout>
+                          </item>
+                          <item>
+                           <widget class="QListWidget" name="listWidget_calibRightPeak"/>
+                          </item>
+                         </layout>
+                        </item>
+                       </layout>
                       </item>
                      </layout>
                     </widget>

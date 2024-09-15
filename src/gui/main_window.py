@@ -16,12 +16,13 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGroupBox,
-    QHBoxLayout, QHeaderView, QLabel, QLayout,
-    QLineEdit, QMainWindow, QMenu, QMenuBar,
-    QPushButton, QSizePolicy, QSpacerItem, QSplitter,
-    QStatusBar, QTabWidget, QTableView, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGridLayout,
+    QGroupBox, QHBoxLayout, QHeaderView, QLabel,
+    QLayout, QLineEdit, QListWidget, QListWidgetItem,
+    QMainWindow, QMenu, QMenuBar, QPushButton,
+    QSizePolicy, QSpacerItem, QSplitter, QStatusBar,
+    QTabWidget, QTableView, QTableWidget, QTableWidgetItem,
+    QVBoxLayout, QWidget)
 
 from pyqtgraph import PlotWidget
 
@@ -712,17 +713,37 @@ class Ui_MainWindow(object):
         self.frame_17.setSizePolicy(sizePolicy3)
         self.frame_17.setFrameShape(QFrame.NoFrame)
         self.frame_17.setFrameShadow(QFrame.Plain)
-        self.horizontalLayout_22 = QHBoxLayout(self.frame_17)
-        self.horizontalLayout_22.setObjectName(u"horizontalLayout_22")
-        self.label_laserWavelengthText = QLabel(self.frame_17)
-        self.label_laserWavelengthText.setObjectName(u"label_laserWavelengthText")
-
-        self.horizontalLayout_22.addWidget(self.label_laserWavelengthText)
-
+        self.gridLayout = QGridLayout(self.frame_17)
+        self.gridLayout.setObjectName(u"gridLayout")
         self.lineEdit_calibLaserWavelength = QLineEdit(self.frame_17)
         self.lineEdit_calibLaserWavelength.setObjectName(u"lineEdit_calibLaserWavelength")
 
-        self.horizontalLayout_22.addWidget(self.lineEdit_calibLaserWavelength)
+        self.gridLayout.addWidget(self.lineEdit_calibLaserWavelength, 0, 1, 1, 1)
+
+        self.label = QLabel(self.frame_17)
+        self.label.setObjectName(u"label")
+
+        self.gridLayout.addWidget(self.label, 1, 0, 1, 1)
+
+        self.label_laserWavelengthText = QLabel(self.frame_17)
+        self.label_laserWavelengthText.setObjectName(u"label_laserWavelengthText")
+
+        self.gridLayout.addWidget(self.label_laserWavelengthText, 0, 0, 1, 1)
+
+        self.lineEdit_calibMirrorSpacing = QLineEdit(self.frame_17)
+        self.lineEdit_calibMirrorSpacing.setObjectName(u"lineEdit_calibMirrorSpacing")
+
+        self.gridLayout.addWidget(self.lineEdit_calibMirrorSpacing, 1, 1, 1, 1)
+
+        self.lineEdit_calibScatteringAngle = QLineEdit(self.frame_17)
+        self.lineEdit_calibScatteringAngle.setObjectName(u"lineEdit_calibScatteringAngle")
+
+        self.gridLayout.addWidget(self.lineEdit_calibScatteringAngle, 2, 1, 1, 1)
+
+        self.label_4 = QLabel(self.frame_17)
+        self.label_4.setObjectName(u"label_4")
+
+        self.gridLayout.addWidget(self.label_4, 2, 0, 1, 1)
 
 
         self.verticalLayout_35.addWidget(self.frame_17)
@@ -777,42 +798,62 @@ class Ui_MainWindow(object):
         self.frame_20.setObjectName(u"frame_20")
         self.frame_20.setFrameShape(QFrame.NoFrame)
         self.frame_20.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_34 = QVBoxLayout(self.frame_20)
+        self.horizontalLayout_26 = QHBoxLayout(self.frame_20)
+        self.horizontalLayout_26.setObjectName(u"horizontalLayout_26")
+        self.horizontalLayout_25 = QHBoxLayout()
+        self.horizontalLayout_25.setObjectName(u"horizontalLayout_25")
+        self.verticalLayout_34 = QVBoxLayout()
         self.verticalLayout_34.setObjectName(u"verticalLayout_34")
-        self.frame_21 = QFrame(self.frame_20)
-        self.frame_21.setObjectName(u"frame_21")
-        sizePolicy3.setHeightForWidth(self.frame_21.sizePolicy().hasHeightForWidth())
-        self.frame_21.setSizePolicy(sizePolicy3)
-        self.frame_21.setFrameShape(QFrame.NoFrame)
-        self.frame_21.setFrameShadow(QFrame.Plain)
-        self.horizontalLayout_24 = QHBoxLayout(self.frame_21)
+        self.horizontalLayout_22 = QHBoxLayout()
+        self.horizontalLayout_22.setObjectName(u"horizontalLayout_22")
+        self.pushButton_calibFitLeftPeak = QPushButton(self.frame_20)
+        self.pushButton_calibFitLeftPeak.setObjectName(u"pushButton_calibFitLeftPeak")
+
+        self.horizontalLayout_22.addWidget(self.pushButton_calibFitLeftPeak)
+
+        self.pushButton_calibDeleteLeftPeak = QPushButton(self.frame_20)
+        self.pushButton_calibDeleteLeftPeak.setObjectName(u"pushButton_calibDeleteLeftPeak")
+
+        self.horizontalLayout_22.addWidget(self.pushButton_calibDeleteLeftPeak)
+
+
+        self.verticalLayout_34.addLayout(self.horizontalLayout_22)
+
+        self.listWidget_calibLeftPeak = QListWidget(self.frame_20)
+        self.listWidget_calibLeftPeak.setObjectName(u"listWidget_calibLeftPeak")
+
+        self.verticalLayout_34.addWidget(self.listWidget_calibLeftPeak)
+
+
+        self.horizontalLayout_25.addLayout(self.verticalLayout_34)
+
+        self.verticalLayout_36 = QVBoxLayout()
+        self.verticalLayout_36.setObjectName(u"verticalLayout_36")
+        self.horizontalLayout_24 = QHBoxLayout()
         self.horizontalLayout_24.setObjectName(u"horizontalLayout_24")
-        self.pushButton_calibNewFit = QPushButton(self.frame_21)
-        self.pushButton_calibNewFit.setObjectName(u"pushButton_calibNewFit")
+        self.pushButton_calibFitRightPeak = QPushButton(self.frame_20)
+        self.pushButton_calibFitRightPeak.setObjectName(u"pushButton_calibFitRightPeak")
 
-        self.horizontalLayout_24.addWidget(self.pushButton_calibNewFit)
+        self.horizontalLayout_24.addWidget(self.pushButton_calibFitRightPeak)
 
-        self.pushButton_calibDeleteFit = QPushButton(self.frame_21)
-        self.pushButton_calibDeleteFit.setObjectName(u"pushButton_calibDeleteFit")
+        self.pushButton_calibDeleteRightPeak = QPushButton(self.frame_20)
+        self.pushButton_calibDeleteRightPeak.setObjectName(u"pushButton_calibDeleteRightPeak")
 
-        self.horizontalLayout_24.addWidget(self.pushButton_calibDeleteFit)
-
-        self.pushButton_calibMisc = QPushButton(self.frame_21)
-        self.pushButton_calibMisc.setObjectName(u"pushButton_calibMisc")
-
-        self.horizontalLayout_24.addWidget(self.pushButton_calibMisc)
-
-        self.horizontalSpacer_10 = QSpacerItem(611, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_24.addItem(self.horizontalSpacer_10)
+        self.horizontalLayout_24.addWidget(self.pushButton_calibDeleteRightPeak)
 
 
-        self.verticalLayout_34.addWidget(self.frame_21)
+        self.verticalLayout_36.addLayout(self.horizontalLayout_24)
 
-        self.tableView_calibFits = QTableView(self.frame_20)
-        self.tableView_calibFits.setObjectName(u"tableView_calibFits")
+        self.listWidget_calibRightPeak = QListWidget(self.frame_20)
+        self.listWidget_calibRightPeak.setObjectName(u"listWidget_calibRightPeak")
 
-        self.verticalLayout_34.addWidget(self.tableView_calibFits)
+        self.verticalLayout_36.addWidget(self.listWidget_calibRightPeak)
+
+
+        self.horizontalLayout_25.addLayout(self.verticalLayout_36)
+
+
+        self.horizontalLayout_26.addLayout(self.horizontalLayout_25)
 
         self.splitter_6.addWidget(self.frame_20)
 
@@ -891,7 +932,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         self.tabWidget_sideBar.setCurrentIndex(0)
         self.tabWidget_calib.setCurrentIndex(0)
 
@@ -940,13 +981,16 @@ class Ui_MainWindow(object):
         self.pushButton_calibNewCalib.setText(QCoreApplication.translate("MainWindow", u"New", None))
         self.pushButton_calibRenameCalib.setText(QCoreApplication.translate("MainWindow", u"Rename", None))
         self.pushButton_calibRemoveCalib.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"Mirror spacing (mm):", None))
         self.label_laserWavelengthText.setText(QCoreApplication.translate("MainWindow", u"Laser wavelength (nm):", None))
+        self.label_4.setText(QCoreApplication.translate("MainWindow", u"Scattering angle (degrees):", None))
         self.pushButton_calibAddFiles.setText(QCoreApplication.translate("MainWindow", u"Add files", None))
         self.pushButton_calibRemoveFiles.setText(QCoreApplication.translate("MainWindow", u"Remove files", None))
         self.pushButton_calibResetFits.setText(QCoreApplication.translate("MainWindow", u"Reset calibration", None))
-        self.pushButton_calibNewFit.setText(QCoreApplication.translate("MainWindow", u"New fit", None))
-        self.pushButton_calibDeleteFit.setText(QCoreApplication.translate("MainWindow", u"Delete fit", None))
-        self.pushButton_calibMisc.setText(QCoreApplication.translate("MainWindow", u"MISC", None))
+        self.pushButton_calibFitLeftPeak.setText(QCoreApplication.translate("MainWindow", u"Fit left peak", None))
+        self.pushButton_calibDeleteLeftPeak.setText(QCoreApplication.translate("MainWindow", u"Delete left peak", None))
+        self.pushButton_calibFitRightPeak.setText(QCoreApplication.translate("MainWindow", u"Fit right peak", None))
+        self.pushButton_calibDeleteRightPeak.setText(QCoreApplication.translate("MainWindow", u"Delete right peak", None))
         self.tabWidget_calib.setTabText(self.tabWidget_calib.indexOf(self.tab_calibMain), QCoreApplication.translate("MainWindow", u"Main", None))
         self.tabWidget_calib.setTabText(self.tabWidget_calib.indexOf(self.tab_calibSetup), QCoreApplication.translate("MainWindow", u"Setup", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_calib), QCoreApplication.translate("MainWindow", u"Calibrate", None))
