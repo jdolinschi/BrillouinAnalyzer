@@ -5,12 +5,16 @@ from scipy.optimize import curve_fit
 from scipy.special import wofz
 from .brillouin_project import BrillouinProject
 from .calibration_file_table_model import CalibrationFileTableModel
+from .calibration_plot_widget import CalibrationPlotWidget
 
 class CalibrationManager:
     def __init__(self, ui, project_manager):
         self.ui = ui
         self.project_manager = project_manager  # Reference to ProjectManager
         self.project = project_manager.project  # Access the project instance
+
+        # Initialize the CalibrationPlotWidget
+        self.calibration_plot_widget = CalibrationPlotWidget(self.ui.calib_plotWidget, self.ui, self)
 
         # Create an instance of the calibration file model
         self.calib_files_model = CalibrationFileTableModel()
@@ -63,6 +67,42 @@ class CalibrationManager:
                 self.save_status()
             except ValueError as e:
                 QMessageBox.warning(None, "Error", str(e))
+
+    def save_peak_fit(self, peak_type, fitter):
+        # Get the current calibration and file
+        calibration_name = self.ui.comboBox_calibSelect.currentText()
+        filename = self.current_calibration_file
+
+        # Prepare the fit parameters
+        peak_fit = {
+            'center': fitter.get_parameter('center'),
+            'amplitude': fitter.get_parameter('amplitude'),
+            'sigma': fitter.get_parameter('sigma'),
+            'gamma': fitter.get_parameter('gamma'),
+            'fwhm': fitter.get_parameter('fwhm'),
+            'area': fitter.get_parameter('area'),
+            'goodness_of_fit': fitter.goodness_of_fit()
+        }
+
+        # Save to the project
+        if peak_type == 'left':
+            self.project.update_peak_fit(calibration_name, filename, left_peak_fit=peak_fit)
+        elif peak_type == 'right':
+            self.project.update_peak_fit(calibration_name, filename, right_peak_fit=peak_fit)
+
+    def update_left_peak_list(self, fitter):
+        self.ui.listWidget_calibLeftPeak.clear()
+        params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area']
+        for param in params:
+            value = fitter.get_parameter(param)
+            self.ui.listWidget_calibLeftPeak.addItem(f"{param.capitalize()}: {value}")
+
+    def update_right_peak_list(self, fitter):
+        self.ui.listWidget_calibRightPeak.clear()
+        params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area']
+        for param in params:
+            value = fitter.get_parameter(param)
+            self.ui.listWidget_calibRightPeak.addItem(f"{param.capitalize()}: {value}")
 
     def populate_calibration_dropdown(self):
         if self.project:
@@ -198,11 +238,10 @@ class CalibrationManager:
                     self.last_action('Calibration file plotted')
 
     def plot_calibration_data(self, data):
-        self.ui.calib_plotWidget.clear()
-        self.ui.calib_plotWidget.plot(data)
         # Optionally, store the x and y data for fitting
         self.calib_x_data = np.arange(len(data))
         self.calib_y_data = data
+        self.calibration_plot_widget.plot_data(self.calib_x_data, self.calib_y_data)
 
     def calib_fit_left_peak_clicked(self):
         if not hasattr(self, 'current_calibration_data'):

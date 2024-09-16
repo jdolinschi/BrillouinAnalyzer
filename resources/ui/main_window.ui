@@ -1073,6 +1073,9 @@
                               <property name="text">
                                <string>Fit left peak</string>
                               </property>
+                              <property name="checkable">
+                               <bool>true</bool>
+                              </property>
                              </widget>
                             </item>
                             <item>
@@ -1097,6 +1100,9 @@
                              <widget class="QPushButton" name="pushButton_calibFitRightPeak">
                               <property name="text">
                                <string>Fit right peak</string>
+                              </property>
+                              <property name="checkable">
+                               <bool>true</bool>
                               </property>
                              </widget>
                             </item>

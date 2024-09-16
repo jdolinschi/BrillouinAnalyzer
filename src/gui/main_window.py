@@ -808,6 +808,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_22.setObjectName(u"horizontalLayout_22")
         self.pushButton_calibFitLeftPeak = QPushButton(self.frame_20)
         self.pushButton_calibFitLeftPeak.setObjectName(u"pushButton_calibFitLeftPeak")
+        self.pushButton_calibFitLeftPeak.setCheckable(True)
 
         self.horizontalLayout_22.addWidget(self.pushButton_calibFitLeftPeak)
 
@@ -833,6 +834,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_24.setObjectName(u"horizontalLayout_24")
         self.pushButton_calibFitRightPeak = QPushButton(self.frame_20)
         self.pushButton_calibFitRightPeak.setObjectName(u"pushButton_calibFitRightPeak")
+        self.pushButton_calibFitRightPeak.setCheckable(True)
 
         self.horizontalLayout_24.addWidget(self.pushButton_calibFitRightPeak)
 
