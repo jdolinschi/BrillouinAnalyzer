@@ -2,11 +2,12 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.special import wofz  # For Voigt profile
 from scipy.special import erf   # For asymmetric functions
+from scipy.special import voigt_profile
 
 # Define the Voigt profile
-def voigt_profile(x, amplitude, center, sigma, gamma):
-    z = ((x - center) + 1j * gamma) / (sigma * np.sqrt(2))
-    return amplitude * np.real(wofz(z)) / (sigma * np.sqrt(2 * np.pi))
+def voigt_profile_custom(x, amplitude, center, sigma, gamma):
+    # Shift x by center and calculate the Voigt profile using the scipy function
+    return amplitude * voigt_profile(x - center, sigma, gamma)
 
 # Define the Pseudo-Voigt profile
 def pseudo_voigt(x, amplitude, center, sigma, gamma):
@@ -35,13 +36,13 @@ class VoigtFitter:
         self.inverted = inverted  # Flag to indicate if the data is inverted
         self.method = method  # Fitting method: 'voigt', 'pseudo_voigt', 'asymmetric_pseudo_voigt'
 
-    def fit(self, x, y, initial_guess=None, maxfev=1000, increase_fit_time_on_failure=False):
+    def fit(self, x, y, initial_guess=None, maxfev=10000, increase_fit_time_on_failure=False):
         self.x = x
         self.y = y  # Do not invert y data
 
         # Select fitting function based on method
         function_map = {
-            'voigt': voigt_profile,
+            'voigt': voigt_profile_custom,
             'pseudo_voigt': pseudo_voigt,
             'asymmetric_pseudo_voigt': asymmetric_pseudo_voigt,
         }
@@ -99,7 +100,7 @@ class VoigtFitter:
 
         # Select fitting function based on method
         function_map = {
-            'voigt': voigt_profile,
+            'voigt': voigt_profile_custom,
             'pseudo_voigt': pseudo_voigt,
             'asymmetric_pseudo_voigt': asymmetric_pseudo_voigt,
         }
