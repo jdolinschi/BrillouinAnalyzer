@@ -1,11 +1,10 @@
 # src/analysis/calibration_plot_widget.py
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtCore import Qt, QObject, Signal
-from PySide6.QtGui import QCursor
+from PySide6.QtCore import Qt, QObject, QTimer
 from pyqtgraph import ViewBox
+
 from ..utils.voigt_profile import VoigtFitter
-from PySide6.QtWidgets import QGraphicsRectItem
 
 
 class CalibrationPlotWidget(QObject):
@@ -44,6 +43,21 @@ class CalibrationPlotWidget(QObject):
         # Keep track of the initial view range for resetting
         self.initial_view_range = None
 
+    def delete_left_peak(self):
+        if self.left_peak_curve:
+            self.plot_item.removeItem(self.left_peak_curve)
+            self.left_peak_curve = None
+        if self.left_peak_line:
+            self.plot_item.removeItem(self.left_peak_line)
+            self.left_peak_line = None
+
+    def delete_right_peak(self):
+        if self.right_peak_curve:
+            self.plot_item.removeItem(self.right_peak_curve)
+            self.right_peak_curve = None
+        if self.right_peak_line:
+            self.plot_item.removeItem(self.right_peak_line)
+            self.right_peak_line = None
 
     def plot_data(self, x, y):
         self.x_data = x
@@ -52,6 +66,12 @@ class CalibrationPlotWidget(QObject):
         self.data_curve = self.plot_item.plot(x, y, pen='w')  # Plot data in white
         self.initial_view_range = self.plot_item.viewRange()
         self.reset_fits()
+
+        # Set x and y limits
+        min_x, max_x = np.min(x), np.max(x)
+        self.view_box.setLimits(
+            xMin=min_x, xMax=max_x,
+        )
 
     def reset_view(self):
         if self.initial_view_range:
@@ -140,6 +160,13 @@ class CalibrationViewBox(ViewBox):
         self.x_range = calibration_plot_widget.x_range
         self.zoom_start_pos = None
         self.zoom_rect = None
+        self.fit_timer = QTimer()
+        self.fit_timer.timeout.connect(self.perform_fit)
+        self.last_mouse_pos = None
+        self.previous_mouse_pos = None  # To store previous mouse position
+        self.wheel_event_triggered = False
+        # Enable hover events to track mouse without button presses
+        self.setAcceptHoverEvents(True)
 
     def enable_zoom_mode(self):
         self.zoom_mode = True
@@ -152,11 +179,11 @@ class CalibrationViewBox(ViewBox):
         self.calibration_plot_widget.plot_widget.setCursor(Qt.ArrowCursor)
 
     def enable_pan_mode(self):
-        self.setMouseEnabled(True, True)
+        self.setMouseMode(pg.ViewBox.PanMode)
         self.calibration_plot_widget.plot_widget.setCursor(Qt.OpenHandCursor)
 
     def disable_pan_mode(self):
-        self.setMouseEnabled(False, False)
+        self.setMouseMode(pg.ViewBox.RectMode)
         self.calibration_plot_widget.plot_widget.setCursor(Qt.ArrowCursor)
 
     def enable_fitting_mode(self, peak_type):
@@ -164,76 +191,55 @@ class CalibrationViewBox(ViewBox):
         self.current_peak = peak_type
         self.setMouseEnabled(False, False)
         self.calibration_plot_widget.plot_widget.setCursor(Qt.CrossCursor)
+        self.fit_timer.start(100)
+        self.enableAutoRange(False)  # Disable auto-range during fitting
 
     def disable_fitting_mode(self):
         self.fitting = False
         self.current_peak = None
         self.setMouseEnabled(True, True)
         self.calibration_plot_widget.plot_widget.setCursor(Qt.ArrowCursor)
+        self.fit_timer.stop()
+        self.enableAutoRange(True)  # Re-enable auto-range after fitting
 
     def mousePressEvent(self, ev):
         if self.zoom_mode and ev.button() == Qt.LeftButton:
-            self.zoom_start_pos = ev.pos()
-            ev.accept()
-        elif self.fitting and ev.button() == Qt.LeftButton:
-            # Confirm fit
-            self.calibration_plot_widget.confirm_fit(self.current_peak, self.fitter)
+            self.zoom_start_pos = self.mapSceneToView(ev.scenePos())
             ev.accept()
         else:
             super().mousePressEvent(ev)
 
     def mouseMoveEvent(self, ev):
         if self.zoom_mode and self.zoom_start_pos:
-            rect = pg.QtCore.QRectF(self.zoom_start_pos, ev.pos()).normalized()
+            current_pos = self.mapSceneToView(ev.scenePos())
+            pos = [min(self.zoom_start_pos.x(), current_pos.x()), min(self.zoom_start_pos.y(), current_pos.y())]
+            size = [abs(current_pos.x() - self.zoom_start_pos.x()), abs(current_pos.y() - self.zoom_start_pos.y())]
+
             if not self.zoom_rect:
-                self.zoom_rect = QGraphicsRectItem(rect)
-                self.zoom_rect.setPen(pg.mkPen('r', width=1, style=Qt.DashLine))
-                self.scene().addItem(self.zoom_rect)
+                # Using pg.RectROI for better integration
+                self.zoom_rect = pg.RectROI(pos, size, pen=pg.mkPen('r', width=1, style=Qt.DashLine))
+                self.addItem(self.zoom_rect)
             else:
-                self.zoom_rect.setRect(rect)
-            ev.accept()
-        elif self.fitting:
-            mouse_point = self.mapToView(ev.pos())
-            x_center = mouse_point.x()
-            x_range = self.x_range
-            x_min = x_center - x_range / 2
-            x_max = x_center + x_range / 2
-            print('x_max: ', x_max)
-            print('x_min: ', x_min)
-            x_data = self.calibration_plot_widget.x_data
-            y_data = self.calibration_plot_widget.y_data
-            mask = (x_data >= x_min) & (x_data <= x_max)
-            x_fit = x_data[mask]
-            y_fit = y_data[mask]
-            if len(x_fit) > 5:
-                # Perform Voigt fit
-                fitter = VoigtFitter(inverted=True)
-                try:
-                    fitter.fit(x_fit, y_fit)
-                    fit_curve = fitter.get_fit_curve(x_fit)
-                    center = fitter.get_parameter('center')
-                    # if the center is less than the minimum of the x_data or greater than the maximum of the x_data, don't plot it
-                    if np.min(x_data) <= center <= np.max(x_data):
-                        self.calibration_plot_widget.update_fit_plot(x_fit, fit_curve, center, self.current_peak)
-                    else:
-                        # Update only the fit curve without the vertical line
-                        self.calibration_plot_widget.update_fit_plot(x_fit, fit_curve, None, self.current_peak)
-                    print('self.current_peak: ', self.current_peak)
-                    print('center: ', center)
-                    # Store the fitter for confirmation
-                    self.fitter = fitter
-                except Exception:
-                    pass  # Fit failed
+                self.zoom_rect.setPos(pos)
+                self.zoom_rect.setSize(size)
             ev.accept()
         else:
             super().mouseMoveEvent(ev)
 
+    def hoverMoveEvent(self, ev):
+        if self.fitting:
+            self.last_mouse_pos = ev.pos()
+            ev.accept()
+        else:
+            super().hoverMoveEvent(ev)
+
     def mouseReleaseEvent(self, ev):
         if self.zoom_mode and self.zoom_start_pos:
-            self.scene().removeItem(self.zoom_rect)
-            self.zoom_rect = None
-            start = self.mapToView(self.zoom_start_pos)
-            end = self.mapToView(ev.pos())
+            if self.zoom_rect:
+                self.removeItem(self.zoom_rect)
+                self.zoom_rect = None
+            start = self.zoom_start_pos
+            end = self.mapSceneToView(ev.scenePos())
             x0, x1 = sorted([start.x(), end.x()])
             y0, y1 = sorted([start.y(), end.y()])
             self.calibration_plot_widget.plot_item.setXRange(x0, x1, padding=0)
@@ -244,17 +250,16 @@ class CalibrationViewBox(ViewBox):
             super().mouseReleaseEvent(ev)
 
     def wheelEvent(self, ev):
+        delta = ev.delta()
         modifiers = ev.modifiers()
         if self.fitting:
-            # Adjust fitting range
-            delta = ev.delta()
             factor = 1.02 ** (delta / 120)
             self.x_range *= factor
-            if self.x_range < 1:
-                self.x_range = 1
-            elif self.x_range > (self.viewRange()[0][1] - self.viewRange()[0][0]):
-                self.x_range = self.viewRange()[0][1] - self.viewRange()[0][0]
-            print('self.x_range: ', self.x_range)
+            # Clamp x_range within reasonable bounds
+            self.x_range = max(1, min(self.x_range, self.viewRange()[0][1] - self.viewRange()[0][0]))
+            # Set the flag to trigger the fit
+            self.wheel_event_triggered = True
+            self.perform_fit()
             ev.accept()
         elif modifiers == Qt.ControlModifier:
             # Zoom Y axis only
@@ -270,6 +275,40 @@ class CalibrationViewBox(ViewBox):
             ev.accept()
         else:
             super().wheelEvent(ev)
+
+    def perform_fit(self):
+        if self.last_mouse_pos and (self.previous_mouse_pos != self.last_mouse_pos or self.wheel_event_triggered):
+            self.previous_mouse_pos = self.last_mouse_pos
+            self.wheel_event_triggered = False  # Reset the flag after the fit
+            print('self.last_mouse_pos: ', self.last_mouse_pos)
+            mouse_point = self.mapToView(self.last_mouse_pos)
+            print('mouse_point: ', mouse_point)
+            x_center = mouse_point.x()
+            print('x_center: ', x_center)
+            x_range = self.x_range
+            print('self.x_range: ', self.x_range)
+            x_min = x_center - x_range / 2
+            x_max = x_center + x_range / 2
+            x_data = self.calibration_plot_widget.x_data
+            y_data = self.calibration_plot_widget.y_data
+            mask = (x_data >= x_min) & (x_data <= x_max)
+            x_fit = x_data[mask]
+            y_fit = y_data[mask]
+            if len(x_fit) > 5:
+                # Perform Voigt fit
+                fitter = VoigtFitter(inverted=True, method='pseudo_voigt')
+                try:
+                    fitter.fit(x_fit, y_fit)
+                    fit_curve = fitter.get_fit_curve(x_fit)
+                    center = fitter.get_parameter('center')
+                    if np.min(x_data) < center < np.max(x_data):
+                        self.calibration_plot_widget.update_fit_plot(x_fit, fit_curve, center, self.current_peak)
+                    else:
+                        self.calibration_plot_widget.update_fit_plot(x_fit, fit_curve, None, self.current_peak)
+                    # Store the fitter for confirmation
+                    self.fitter = fitter
+                except Exception as e:
+                    print(f"Fitting failed: {e}")  # Optional: Log the error
 
     def _zoom_axis(self, ev, axis):
         zoom_factor_x = 1.07 ** (ev.delta() / 120)  # Increased zoom rate for x-axis

@@ -360,6 +360,7 @@ class CalibrationManager:
                 return
             self.project.update_peak_fit(self.current_calibration_name, self.current_calibration_file, left_peak_fit={})
             self.ui.listWidget_calibLeftPeak.clear()
+            self.calibration_plot_widget.delete_left_peak()
             self.last_action('Left peak fit deleted')
             self.save_status()
 
@@ -371,6 +372,7 @@ class CalibrationManager:
             self.project.update_peak_fit(self.current_calibration_name, self.current_calibration_file,
                                          right_peak_fit={})
             self.ui.listWidget_calibRightPeak.clear()
+            self.calibration_plot_widget.delete_right_peak()
             self.last_action('Right peak fit deleted')
             self.save_status()
 

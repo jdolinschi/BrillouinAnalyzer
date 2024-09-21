@@ -37,8 +37,513 @@ class Ui_MainWindow(object):
         self.verticalLayout_29.setObjectName(u"verticalLayout_29")
         self.verticalLayout_28 = QVBoxLayout()
         self.verticalLayout_28.setObjectName(u"verticalLayout_28")
-        self.tabWidget = QTabWidget(self.centralwidget)
-        self.tabWidget.setObjectName(u"tabWidget")
+        self.tabWidget_project = QTabWidget(self.centralwidget)
+        self.tabWidget_project.setObjectName(u"tabWidget_project")
+        self.Project = QWidget()
+        self.Project.setObjectName(u"Project")
+        self.verticalLayout_37 = QVBoxLayout(self.Project)
+        self.verticalLayout_37.setObjectName(u"verticalLayout_37")
+        self.splitter_7 = QSplitter(self.Project)
+        self.splitter_7.setObjectName(u"splitter_7")
+        self.splitter_7.setOrientation(Qt.Horizontal)
+        self.groupBox = QGroupBox(self.splitter_7)
+        self.groupBox.setObjectName(u"groupBox")
+        self.horizontalLayout_35 = QHBoxLayout(self.groupBox)
+        self.horizontalLayout_35.setObjectName(u"horizontalLayout_35")
+        self.verticalLayout_42 = QVBoxLayout()
+        self.verticalLayout_42.setObjectName(u"verticalLayout_42")
+        self.verticalLayout_41 = QVBoxLayout()
+        self.verticalLayout_41.setObjectName(u"verticalLayout_41")
+        self.horizontalLayout_27 = QHBoxLayout()
+        self.horizontalLayout_27.setObjectName(u"horizontalLayout_27")
+        self.pushButton_newProject = QPushButton(self.groupBox)
+        self.pushButton_newProject.setObjectName(u"pushButton_newProject")
+
+        self.horizontalLayout_27.addWidget(self.pushButton_newProject)
+
+        self.pushButton_loadProject = QPushButton(self.groupBox)
+        self.pushButton_loadProject.setObjectName(u"pushButton_loadProject")
+
+        self.horizontalLayout_27.addWidget(self.pushButton_loadProject)
+
+        self.pushButton_saveProject = QPushButton(self.groupBox)
+        self.pushButton_saveProject.setObjectName(u"pushButton_saveProject")
+
+        self.horizontalLayout_27.addWidget(self.pushButton_saveProject)
+
+        self.pushButton_saveProjectAs = QPushButton(self.groupBox)
+        self.pushButton_saveProjectAs.setObjectName(u"pushButton_saveProjectAs")
+
+        self.horizontalLayout_27.addWidget(self.pushButton_saveProjectAs)
+
+        self.pushButton_deleteProject = QPushButton(self.groupBox)
+        self.pushButton_deleteProject.setObjectName(u"pushButton_deleteProject")
+
+        self.horizontalLayout_27.addWidget(self.pushButton_deleteProject)
+
+
+        self.verticalLayout_41.addLayout(self.horizontalLayout_27)
+
+        self.horizontalLayout_28 = QHBoxLayout()
+        self.horizontalLayout_28.setObjectName(u"horizontalLayout_28")
+        self.label_5 = QLabel(self.groupBox)
+        self.label_5.setObjectName(u"label_5")
+
+        self.horizontalLayout_28.addWidget(self.label_5)
+
+        self.lineEdit_currentProject = QLineEdit(self.groupBox)
+        self.lineEdit_currentProject.setObjectName(u"lineEdit_currentProject")
+
+        self.horizontalLayout_28.addWidget(self.lineEdit_currentProject)
+
+        self.pushButton_renameProject = QPushButton(self.groupBox)
+        self.pushButton_renameProject.setObjectName(u"pushButton_renameProject")
+
+        self.horizontalLayout_28.addWidget(self.pushButton_renameProject)
+
+
+        self.verticalLayout_41.addLayout(self.horizontalLayout_28)
+
+        self.horizontalLayout_29 = QHBoxLayout()
+        self.horizontalLayout_29.setObjectName(u"horizontalLayout_29")
+        self.label_projectPath = QLabel(self.groupBox)
+        self.label_projectPath.setObjectName(u"label_projectPath")
+
+        self.horizontalLayout_29.addWidget(self.label_projectPath)
+
+        self.label_modDate = QLabel(self.groupBox)
+        self.label_modDate.setObjectName(u"label_modDate")
+
+        self.horizontalLayout_29.addWidget(self.label_modDate)
+
+
+        self.verticalLayout_41.addLayout(self.horizontalLayout_29)
+
+
+        self.verticalLayout_42.addLayout(self.verticalLayout_41)
+
+        self.groupBox_3 = QGroupBox(self.groupBox)
+        self.groupBox_3.setObjectName(u"groupBox_3")
+        self.verticalLayout_40 = QVBoxLayout(self.groupBox_3)
+        self.verticalLayout_40.setObjectName(u"verticalLayout_40")
+        self.horizontalLayout_34 = QHBoxLayout()
+        self.horizontalLayout_34.setObjectName(u"horizontalLayout_34")
+        self.verticalLayout_38 = QVBoxLayout()
+        self.verticalLayout_38.setObjectName(u"verticalLayout_38")
+        self.horizontalLayout_30 = QHBoxLayout()
+        self.horizontalLayout_30.setObjectName(u"horizontalLayout_30")
+        self.horizontalSpacer_10 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_30.addItem(self.horizontalSpacer_10)
+
+        self.label_10 = QLabel(self.groupBox_3)
+        self.label_10.setObjectName(u"label_10")
+
+        self.horizontalLayout_30.addWidget(self.label_10)
+
+        self.horizontalSpacer_11 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_30.addItem(self.horizontalSpacer_11)
+
+
+        self.verticalLayout_38.addLayout(self.horizontalLayout_30)
+
+        self.horizontalLayout_31 = QHBoxLayout()
+        self.horizontalLayout_31.setObjectName(u"horizontalLayout_31")
+        self.pushButton_newPressure = QPushButton(self.groupBox_3)
+        self.pushButton_newPressure.setObjectName(u"pushButton_newPressure")
+
+        self.horizontalLayout_31.addWidget(self.pushButton_newPressure)
+
+        self.pushButton_deletePressure = QPushButton(self.groupBox_3)
+        self.pushButton_deletePressure.setObjectName(u"pushButton_deletePressure")
+
+        self.horizontalLayout_31.addWidget(self.pushButton_deletePressure)
+
+        self.pushButton_renamePressure = QPushButton(self.groupBox_3)
+        self.pushButton_renamePressure.setObjectName(u"pushButton_renamePressure")
+
+        self.horizontalLayout_31.addWidget(self.pushButton_renamePressure)
+
+
+        self.verticalLayout_38.addLayout(self.horizontalLayout_31)
+
+        self.tableWidget_pressures = QTableWidget(self.groupBox_3)
+        self.tableWidget_pressures.setObjectName(u"tableWidget_pressures")
+
+        self.verticalLayout_38.addWidget(self.tableWidget_pressures)
+
+
+        self.horizontalLayout_34.addLayout(self.verticalLayout_38)
+
+        self.verticalLayout_39 = QVBoxLayout()
+        self.verticalLayout_39.setObjectName(u"verticalLayout_39")
+        self.horizontalLayout_32 = QHBoxLayout()
+        self.horizontalLayout_32.setObjectName(u"horizontalLayout_32")
+        self.horizontalSpacer_12 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_32.addItem(self.horizontalSpacer_12)
+
+        self.label_11 = QLabel(self.groupBox_3)
+        self.label_11.setObjectName(u"label_11")
+
+        self.horizontalLayout_32.addWidget(self.label_11)
+
+        self.horizontalSpacer_13 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_32.addItem(self.horizontalSpacer_13)
+
+
+        self.verticalLayout_39.addLayout(self.horizontalLayout_32)
+
+        self.horizontalLayout_33 = QHBoxLayout()
+        self.horizontalLayout_33.setObjectName(u"horizontalLayout_33")
+        self.pushButton_newCrystal = QPushButton(self.groupBox_3)
+        self.pushButton_newCrystal.setObjectName(u"pushButton_newCrystal")
+
+        self.horizontalLayout_33.addWidget(self.pushButton_newCrystal)
+
+        self.pushButton_deleteCrystal = QPushButton(self.groupBox_3)
+        self.pushButton_deleteCrystal.setObjectName(u"pushButton_deleteCrystal")
+
+        self.horizontalLayout_33.addWidget(self.pushButton_deleteCrystal)
+
+        self.pushButton_renameCrystal = QPushButton(self.groupBox_3)
+        self.pushButton_renameCrystal.setObjectName(u"pushButton_renameCrystal")
+
+        self.horizontalLayout_33.addWidget(self.pushButton_renameCrystal)
+
+
+        self.verticalLayout_39.addLayout(self.horizontalLayout_33)
+
+        self.tableWidget_crystals = QTableWidget(self.groupBox_3)
+        self.tableWidget_crystals.setObjectName(u"tableWidget_crystals")
+
+        self.verticalLayout_39.addWidget(self.tableWidget_crystals)
+
+
+        self.horizontalLayout_34.addLayout(self.verticalLayout_39)
+
+
+        self.verticalLayout_40.addLayout(self.horizontalLayout_34)
+
+
+        self.verticalLayout_42.addWidget(self.groupBox_3)
+
+
+        self.horizontalLayout_35.addLayout(self.verticalLayout_42)
+
+        self.splitter_7.addWidget(self.groupBox)
+        self.groupBox_2 = QGroupBox(self.splitter_7)
+        self.groupBox_2.setObjectName(u"groupBox_2")
+        self.splitter_7.addWidget(self.groupBox_2)
+
+        self.verticalLayout_37.addWidget(self.splitter_7)
+
+        self.tabWidget_project.addTab(self.Project, "")
+        self.tab_calib = QWidget()
+        self.tab_calib.setObjectName(u"tab_calib")
+        self.verticalLayout_30 = QVBoxLayout(self.tab_calib)
+        self.verticalLayout_30.setObjectName(u"verticalLayout_30")
+        self.splitter_5 = QSplitter(self.tab_calib)
+        self.splitter_5.setObjectName(u"splitter_5")
+        self.splitter_5.setOrientation(Qt.Horizontal)
+        self.frame_12 = QFrame(self.splitter_5)
+        self.frame_12.setObjectName(u"frame_12")
+        self.frame_12.setFrameShape(QFrame.NoFrame)
+        self.frame_12.setFrameShadow(QFrame.Plain)
+        self.verticalLayout_31 = QVBoxLayout(self.frame_12)
+        self.verticalLayout_31.setObjectName(u"verticalLayout_31")
+        self.frame_14 = QFrame(self.frame_12)
+        self.frame_14.setObjectName(u"frame_14")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.frame_14.sizePolicy().hasHeightForWidth())
+        self.frame_14.setSizePolicy(sizePolicy)
+        self.frame_14.setFrameShape(QFrame.NoFrame)
+        self.frame_14.setFrameShadow(QFrame.Plain)
+        self.horizontalLayout_14 = QHBoxLayout(self.frame_14)
+        self.horizontalLayout_14.setObjectName(u"horizontalLayout_14")
+        self.pushButton_calibResetView = QPushButton(self.frame_14)
+        self.pushButton_calibResetView.setObjectName(u"pushButton_calibResetView")
+
+        self.horizontalLayout_14.addWidget(self.pushButton_calibResetView)
+
+        self.pushButton_calibZoom = QPushButton(self.frame_14)
+        self.pushButton_calibZoom.setObjectName(u"pushButton_calibZoom")
+        self.pushButton_calibZoom.setCheckable(True)
+
+        self.horizontalLayout_14.addWidget(self.pushButton_calibZoom)
+
+        self.pushButton_calibPan = QPushButton(self.frame_14)
+        self.pushButton_calibPan.setObjectName(u"pushButton_calibPan")
+        self.pushButton_calibPan.setCheckable(True)
+
+        self.horizontalLayout_14.addWidget(self.pushButton_calibPan)
+
+        self.horizontalSpacer_7 = QSpacerItem(654, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_14.addItem(self.horizontalSpacer_7)
+
+
+        self.verticalLayout_31.addWidget(self.frame_14)
+
+        self.calib_plotWidget = PlotWidget(self.frame_12)
+        self.calib_plotWidget.setObjectName(u"calib_plotWidget")
+
+        self.verticalLayout_31.addWidget(self.calib_plotWidget)
+
+        self.frame_15 = QFrame(self.frame_12)
+        self.frame_15.setObjectName(u"frame_15")
+        sizePolicy.setHeightForWidth(self.frame_15.sizePolicy().hasHeightForWidth())
+        self.frame_15.setSizePolicy(sizePolicy)
+        self.frame_15.setFrameShape(QFrame.NoFrame)
+        self.frame_15.setFrameShadow(QFrame.Plain)
+        self.horizontalLayout_15 = QHBoxLayout(self.frame_15)
+        self.horizontalLayout_15.setObjectName(u"horizontalLayout_15")
+        self.horizontalSpacer_8 = QSpacerItem(622, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_15.addItem(self.horizontalSpacer_8)
+
+        self.label_calibText1 = QLabel(self.frame_15)
+        self.label_calibText1.setObjectName(u"label_calibText1")
+
+        self.horizontalLayout_15.addWidget(self.label_calibText1)
+
+        self.label_calibText2 = QLabel(self.frame_15)
+        self.label_calibText2.setObjectName(u"label_calibText2")
+
+        self.horizontalLayout_15.addWidget(self.label_calibText2)
+
+        self.label_calibText3 = QLabel(self.frame_15)
+        self.label_calibText3.setObjectName(u"label_calibText3")
+
+        self.horizontalLayout_15.addWidget(self.label_calibText3)
+
+        self.label_calibText4 = QLabel(self.frame_15)
+        self.label_calibText4.setObjectName(u"label_calibText4")
+
+        self.horizontalLayout_15.addWidget(self.label_calibText4)
+
+        self.label_calibText5 = QLabel(self.frame_15)
+        self.label_calibText5.setObjectName(u"label_calibText5")
+
+        self.horizontalLayout_15.addWidget(self.label_calibText5)
+
+
+        self.verticalLayout_31.addWidget(self.frame_15)
+
+        self.splitter_5.addWidget(self.frame_12)
+        self.frame_13 = QFrame(self.splitter_5)
+        self.frame_13.setObjectName(u"frame_13")
+        self.frame_13.setFrameShape(QFrame.NoFrame)
+        self.frame_13.setFrameShadow(QFrame.Plain)
+        self.verticalLayout_32 = QVBoxLayout(self.frame_13)
+        self.verticalLayout_32.setObjectName(u"verticalLayout_32")
+        self.tabWidget_calib = QTabWidget(self.frame_13)
+        self.tabWidget_calib.setObjectName(u"tabWidget_calib")
+        self.tab_calibMain = QWidget()
+        self.tab_calibMain.setObjectName(u"tab_calibMain")
+        self.verticalLayout_35 = QVBoxLayout(self.tab_calibMain)
+        self.verticalLayout_35.setObjectName(u"verticalLayout_35")
+        self.frame_16 = QFrame(self.tab_calibMain)
+        self.frame_16.setObjectName(u"frame_16")
+        sizePolicy.setHeightForWidth(self.frame_16.sizePolicy().hasHeightForWidth())
+        self.frame_16.setSizePolicy(sizePolicy)
+        self.frame_16.setFrameShape(QFrame.NoFrame)
+        self.frame_16.setFrameShadow(QFrame.Plain)
+        self.horizontalLayout_16 = QHBoxLayout(self.frame_16)
+        self.horizontalLayout_16.setObjectName(u"horizontalLayout_16")
+        self.pushButton_calibNewCalib = QPushButton(self.frame_16)
+        self.pushButton_calibNewCalib.setObjectName(u"pushButton_calibNewCalib")
+
+        self.horizontalLayout_16.addWidget(self.pushButton_calibNewCalib)
+
+        self.pushButton_calibRenameCalib = QPushButton(self.frame_16)
+        self.pushButton_calibRenameCalib.setObjectName(u"pushButton_calibRenameCalib")
+
+        self.horizontalLayout_16.addWidget(self.pushButton_calibRenameCalib)
+
+        self.pushButton_calibRemoveCalib = QPushButton(self.frame_16)
+        self.pushButton_calibRemoveCalib.setObjectName(u"pushButton_calibRemoveCalib")
+
+        self.horizontalLayout_16.addWidget(self.pushButton_calibRemoveCalib)
+
+
+        self.verticalLayout_35.addWidget(self.frame_16)
+
+        self.comboBox_calibSelect = QComboBox(self.tab_calibMain)
+        self.comboBox_calibSelect.setObjectName(u"comboBox_calibSelect")
+
+        self.verticalLayout_35.addWidget(self.comboBox_calibSelect)
+
+        self.frame_17 = QFrame(self.tab_calibMain)
+        self.frame_17.setObjectName(u"frame_17")
+        sizePolicy.setHeightForWidth(self.frame_17.sizePolicy().hasHeightForWidth())
+        self.frame_17.setSizePolicy(sizePolicy)
+        self.frame_17.setFrameShape(QFrame.NoFrame)
+        self.frame_17.setFrameShadow(QFrame.Plain)
+        self.gridLayout = QGridLayout(self.frame_17)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.lineEdit_calibLaserWavelength = QLineEdit(self.frame_17)
+        self.lineEdit_calibLaserWavelength.setObjectName(u"lineEdit_calibLaserWavelength")
+
+        self.gridLayout.addWidget(self.lineEdit_calibLaserWavelength, 0, 1, 1, 1)
+
+        self.label = QLabel(self.frame_17)
+        self.label.setObjectName(u"label")
+
+        self.gridLayout.addWidget(self.label, 1, 0, 1, 1)
+
+        self.label_laserWavelengthText = QLabel(self.frame_17)
+        self.label_laserWavelengthText.setObjectName(u"label_laserWavelengthText")
+
+        self.gridLayout.addWidget(self.label_laserWavelengthText, 0, 0, 1, 1)
+
+        self.lineEdit_calibMirrorSpacing = QLineEdit(self.frame_17)
+        self.lineEdit_calibMirrorSpacing.setObjectName(u"lineEdit_calibMirrorSpacing")
+
+        self.gridLayout.addWidget(self.lineEdit_calibMirrorSpacing, 1, 1, 1, 1)
+
+        self.lineEdit_calibScatteringAngle = QLineEdit(self.frame_17)
+        self.lineEdit_calibScatteringAngle.setObjectName(u"lineEdit_calibScatteringAngle")
+
+        self.gridLayout.addWidget(self.lineEdit_calibScatteringAngle, 2, 1, 1, 1)
+
+        self.label_4 = QLabel(self.frame_17)
+        self.label_4.setObjectName(u"label_4")
+
+        self.gridLayout.addWidget(self.label_4, 2, 0, 1, 1)
+
+
+        self.verticalLayout_35.addWidget(self.frame_17)
+
+        self.splitter_6 = QSplitter(self.tab_calibMain)
+        self.splitter_6.setObjectName(u"splitter_6")
+        self.splitter_6.setOrientation(Qt.Vertical)
+        self.frame_19 = QFrame(self.splitter_6)
+        self.frame_19.setObjectName(u"frame_19")
+        self.frame_19.setFrameShape(QFrame.NoFrame)
+        self.frame_19.setFrameShadow(QFrame.Plain)
+        self.verticalLayout_33 = QVBoxLayout(self.frame_19)
+        self.verticalLayout_33.setObjectName(u"verticalLayout_33")
+        self.frame_18 = QFrame(self.frame_19)
+        self.frame_18.setObjectName(u"frame_18")
+        sizePolicy.setHeightForWidth(self.frame_18.sizePolicy().hasHeightForWidth())
+        self.frame_18.setSizePolicy(sizePolicy)
+        self.frame_18.setFrameShape(QFrame.NoFrame)
+        self.frame_18.setFrameShadow(QFrame.Plain)
+        self.horizontalLayout_23 = QHBoxLayout(self.frame_18)
+        self.horizontalLayout_23.setObjectName(u"horizontalLayout_23")
+        self.pushButton_calibAddFiles = QPushButton(self.frame_18)
+        self.pushButton_calibAddFiles.setObjectName(u"pushButton_calibAddFiles")
+
+        self.horizontalLayout_23.addWidget(self.pushButton_calibAddFiles)
+
+        self.pushButton_calibRemoveFiles = QPushButton(self.frame_18)
+        self.pushButton_calibRemoveFiles.setObjectName(u"pushButton_calibRemoveFiles")
+
+        self.horizontalLayout_23.addWidget(self.pushButton_calibRemoveFiles)
+
+        self.pushButton_calibResetFits = QPushButton(self.frame_18)
+        self.pushButton_calibResetFits.setObjectName(u"pushButton_calibResetFits")
+        self.pushButton_calibResetFits.setContextMenuPolicy(Qt.DefaultContextMenu)
+
+        self.horizontalLayout_23.addWidget(self.pushButton_calibResetFits)
+
+        self.horizontalSpacer_9 = QSpacerItem(591, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_23.addItem(self.horizontalSpacer_9)
+
+
+        self.verticalLayout_33.addWidget(self.frame_18)
+
+        self.tableView_calibFiles = QTableView(self.frame_19)
+        self.tableView_calibFiles.setObjectName(u"tableView_calibFiles")
+
+        self.verticalLayout_33.addWidget(self.tableView_calibFiles)
+
+        self.splitter_6.addWidget(self.frame_19)
+        self.frame_20 = QFrame(self.splitter_6)
+        self.frame_20.setObjectName(u"frame_20")
+        self.frame_20.setFrameShape(QFrame.NoFrame)
+        self.frame_20.setFrameShadow(QFrame.Plain)
+        self.horizontalLayout_26 = QHBoxLayout(self.frame_20)
+        self.horizontalLayout_26.setObjectName(u"horizontalLayout_26")
+        self.horizontalLayout_25 = QHBoxLayout()
+        self.horizontalLayout_25.setObjectName(u"horizontalLayout_25")
+        self.verticalLayout_34 = QVBoxLayout()
+        self.verticalLayout_34.setObjectName(u"verticalLayout_34")
+        self.horizontalLayout_22 = QHBoxLayout()
+        self.horizontalLayout_22.setObjectName(u"horizontalLayout_22")
+        self.pushButton_calibFitLeftPeak = QPushButton(self.frame_20)
+        self.pushButton_calibFitLeftPeak.setObjectName(u"pushButton_calibFitLeftPeak")
+        self.pushButton_calibFitLeftPeak.setCheckable(True)
+
+        self.horizontalLayout_22.addWidget(self.pushButton_calibFitLeftPeak)
+
+        self.pushButton_calibDeleteLeftPeak = QPushButton(self.frame_20)
+        self.pushButton_calibDeleteLeftPeak.setObjectName(u"pushButton_calibDeleteLeftPeak")
+
+        self.horizontalLayout_22.addWidget(self.pushButton_calibDeleteLeftPeak)
+
+
+        self.verticalLayout_34.addLayout(self.horizontalLayout_22)
+
+        self.listWidget_calibLeftPeak = QListWidget(self.frame_20)
+        self.listWidget_calibLeftPeak.setObjectName(u"listWidget_calibLeftPeak")
+
+        self.verticalLayout_34.addWidget(self.listWidget_calibLeftPeak)
+
+
+        self.horizontalLayout_25.addLayout(self.verticalLayout_34)
+
+        self.verticalLayout_36 = QVBoxLayout()
+        self.verticalLayout_36.setObjectName(u"verticalLayout_36")
+        self.horizontalLayout_24 = QHBoxLayout()
+        self.horizontalLayout_24.setObjectName(u"horizontalLayout_24")
+        self.pushButton_calibFitRightPeak = QPushButton(self.frame_20)
+        self.pushButton_calibFitRightPeak.setObjectName(u"pushButton_calibFitRightPeak")
+        self.pushButton_calibFitRightPeak.setCheckable(True)
+
+        self.horizontalLayout_24.addWidget(self.pushButton_calibFitRightPeak)
+
+        self.pushButton_calibDeleteRightPeak = QPushButton(self.frame_20)
+        self.pushButton_calibDeleteRightPeak.setObjectName(u"pushButton_calibDeleteRightPeak")
+
+        self.horizontalLayout_24.addWidget(self.pushButton_calibDeleteRightPeak)
+
+
+        self.verticalLayout_36.addLayout(self.horizontalLayout_24)
+
+        self.listWidget_calibRightPeak = QListWidget(self.frame_20)
+        self.listWidget_calibRightPeak.setObjectName(u"listWidget_calibRightPeak")
+
+        self.verticalLayout_36.addWidget(self.listWidget_calibRightPeak)
+
+
+        self.horizontalLayout_25.addLayout(self.verticalLayout_36)
+
+
+        self.horizontalLayout_26.addLayout(self.horizontalLayout_25)
+
+        self.splitter_6.addWidget(self.frame_20)
+
+        self.verticalLayout_35.addWidget(self.splitter_6)
+
+        self.tabWidget_calib.addTab(self.tab_calibMain, "")
+        self.tab_calibSetup = QWidget()
+        self.tab_calibSetup.setObjectName(u"tab_calibSetup")
+        self.tabWidget_calib.addTab(self.tab_calibSetup, "")
+
+        self.verticalLayout_32.addWidget(self.tabWidget_calib)
+
+        self.splitter_5.addWidget(self.frame_13)
+
+        self.verticalLayout_30.addWidget(self.splitter_5)
+
+        self.tabWidget_project.addTab(self.tab_calib, "")
         self.tab_fit = QWidget()
         self.tab_fit.setObjectName(u"tab_fit")
         self.verticalLayout_3 = QVBoxLayout(self.tab_fit)
@@ -60,11 +565,11 @@ class Ui_MainWindow(object):
         self.frame_topPlotToolbar = QFrame(self.frame)
         self.frame_topPlotToolbar.setObjectName(u"frame_topPlotToolbar")
         self.frame_topPlotToolbar.setEnabled(True)
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.frame_topPlotToolbar.sizePolicy().hasHeightForWidth())
-        self.frame_topPlotToolbar.setSizePolicy(sizePolicy)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.frame_topPlotToolbar.sizePolicy().hasHeightForWidth())
+        self.frame_topPlotToolbar.setSizePolicy(sizePolicy1)
         self.frame_topPlotToolbar.setFrameShape(QFrame.NoFrame)
         self.frame_topPlotToolbar.setFrameShadow(QFrame.Plain)
         self.verticalLayout_8 = QVBoxLayout(self.frame_topPlotToolbar)
@@ -188,8 +693,8 @@ class Ui_MainWindow(object):
         self.splitter_3.addWidget(self.splitter)
         self.frame_4 = QFrame(self.splitter_3)
         self.frame_4.setObjectName(u"frame_4")
-        sizePolicy.setHeightForWidth(self.frame_4.sizePolicy().hasHeightForWidth())
-        self.frame_4.setSizePolicy(sizePolicy)
+        sizePolicy1.setHeightForWidth(self.frame_4.sizePolicy().hasHeightForWidth())
+        self.frame_4.setSizePolicy(sizePolicy1)
         self.frame_4.setFrameShape(QFrame.NoFrame)
         self.frame_4.setFrameShadow(QFrame.Plain)
         self.verticalLayout = QVBoxLayout(self.frame_4)
@@ -225,11 +730,11 @@ class Ui_MainWindow(object):
         self.horizontalLayout_5.setSizeConstraint(QLayout.SetMaximumSize)
         self.label_2 = QLabel(self.frame_filesBrowserToolbar)
         self.label_2.setObjectName(u"label_2")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
-        self.label_2.setSizePolicy(sizePolicy1)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
+        self.label_2.setSizePolicy(sizePolicy2)
 
         self.horizontalLayout_5.addWidget(self.label_2)
 
@@ -240,8 +745,8 @@ class Ui_MainWindow(object):
 
         self.label_3 = QLabel(self.frame_filesBrowserToolbar)
         self.label_3.setObjectName(u"label_3")
-        sizePolicy1.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
-        self.label_3.setSizePolicy(sizePolicy1)
+        sizePolicy2.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
+        self.label_3.setSizePolicy(sizePolicy2)
 
         self.horizontalLayout_5.addWidget(self.label_3)
 
@@ -339,231 +844,6 @@ class Ui_MainWindow(object):
         self.tab_2.setObjectName(u"tab_2")
         self.horizontalLayout_21 = QHBoxLayout(self.tab_2)
         self.horizontalLayout_21.setObjectName(u"horizontalLayout_21")
-        self.verticalLayout_22 = QVBoxLayout()
-        self.verticalLayout_22.setObjectName(u"verticalLayout_22")
-        self.groupBox_project = QGroupBox(self.tab_2)
-        self.groupBox_project.setObjectName(u"groupBox_project")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.groupBox_project.sizePolicy().hasHeightForWidth())
-        self.groupBox_project.setSizePolicy(sizePolicy2)
-        self.groupBox_project.setFlat(True)
-        self.groupBox_project.setCheckable(False)
-        self.verticalLayout_27 = QVBoxLayout(self.groupBox_project)
-        self.verticalLayout_27.setObjectName(u"verticalLayout_27")
-        self.verticalLayout_26 = QVBoxLayout()
-        self.verticalLayout_26.setObjectName(u"verticalLayout_26")
-        self.frame_8 = QFrame(self.groupBox_project)
-        self.frame_8.setObjectName(u"frame_8")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.frame_8.sizePolicy().hasHeightForWidth())
-        self.frame_8.setSizePolicy(sizePolicy3)
-        self.frame_8.setFrameShape(QFrame.NoFrame)
-        self.frame_8.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_18 = QVBoxLayout(self.frame_8)
-        self.verticalLayout_18.setObjectName(u"verticalLayout_18")
-        self.horizontalLayout_10 = QHBoxLayout()
-        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
-        self.pushButton_newProject = QPushButton(self.frame_8)
-        self.pushButton_newProject.setObjectName(u"pushButton_newProject")
-
-        self.horizontalLayout_10.addWidget(self.pushButton_newProject)
-
-        self.pushButton_loadProject = QPushButton(self.frame_8)
-        self.pushButton_loadProject.setObjectName(u"pushButton_loadProject")
-
-        self.horizontalLayout_10.addWidget(self.pushButton_loadProject)
-
-        self.pushButton_saveProject = QPushButton(self.frame_8)
-        self.pushButton_saveProject.setObjectName(u"pushButton_saveProject")
-
-        self.horizontalLayout_10.addWidget(self.pushButton_saveProject)
-
-        self.pushButton_saveProjectAs = QPushButton(self.frame_8)
-        self.pushButton_saveProjectAs.setObjectName(u"pushButton_saveProjectAs")
-
-        self.horizontalLayout_10.addWidget(self.pushButton_saveProjectAs)
-
-        self.pushButton_deleteProject = QPushButton(self.frame_8)
-        self.pushButton_deleteProject.setObjectName(u"pushButton_deleteProject")
-
-        self.horizontalLayout_10.addWidget(self.pushButton_deleteProject)
-
-
-        self.verticalLayout_18.addLayout(self.horizontalLayout_10)
-
-
-        self.verticalLayout_26.addWidget(self.frame_8)
-
-        self.frame_9 = QFrame(self.groupBox_project)
-        self.frame_9.setObjectName(u"frame_9")
-        sizePolicy3.setHeightForWidth(self.frame_9.sizePolicy().hasHeightForWidth())
-        self.frame_9.setSizePolicy(sizePolicy3)
-        self.frame_9.setFrameShape(QFrame.NoFrame)
-        self.frame_9.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_24 = QVBoxLayout(self.frame_9)
-        self.verticalLayout_24.setObjectName(u"verticalLayout_24")
-        self.horizontalLayout_11 = QHBoxLayout()
-        self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
-        self.pushButton_renameProject = QPushButton(self.frame_9)
-        self.pushButton_renameProject.setObjectName(u"pushButton_renameProject")
-
-        self.horizontalLayout_11.addWidget(self.pushButton_renameProject)
-
-        self.lineEdit_currentProject = QLineEdit(self.frame_9)
-        self.lineEdit_currentProject.setObjectName(u"lineEdit_currentProject")
-
-        self.horizontalLayout_11.addWidget(self.lineEdit_currentProject)
-
-
-        self.verticalLayout_24.addLayout(self.horizontalLayout_11)
-
-
-        self.verticalLayout_26.addWidget(self.frame_9)
-
-        self.frame_10 = QFrame(self.groupBox_project)
-        self.frame_10.setObjectName(u"frame_10")
-        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        sizePolicy4.setHorizontalStretch(0)
-        sizePolicy4.setVerticalStretch(0)
-        sizePolicy4.setHeightForWidth(self.frame_10.sizePolicy().hasHeightForWidth())
-        self.frame_10.setSizePolicy(sizePolicy4)
-        self.frame_10.setFrameShape(QFrame.NoFrame)
-        self.frame_10.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_25 = QVBoxLayout(self.frame_10)
-        self.verticalLayout_25.setObjectName(u"verticalLayout_25")
-        self.horizontalLayout_12 = QHBoxLayout()
-        self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
-        self.label_projectPath = QLabel(self.frame_10)
-        self.label_projectPath.setObjectName(u"label_projectPath")
-        sizePolicy3.setHeightForWidth(self.label_projectPath.sizePolicy().hasHeightForWidth())
-        self.label_projectPath.setSizePolicy(sizePolicy3)
-        font = QFont()
-        font.setPointSize(12)
-        self.label_projectPath.setFont(font)
-
-        self.horizontalLayout_12.addWidget(self.label_projectPath)
-
-        self.label_modDate = QLabel(self.frame_10)
-        self.label_modDate.setObjectName(u"label_modDate")
-        sizePolicy3.setHeightForWidth(self.label_modDate.sizePolicy().hasHeightForWidth())
-        self.label_modDate.setSizePolicy(sizePolicy3)
-        self.label_modDate.setFont(font)
-
-        self.horizontalLayout_12.addWidget(self.label_modDate)
-
-
-        self.verticalLayout_25.addLayout(self.horizontalLayout_12)
-
-
-        self.verticalLayout_26.addWidget(self.frame_10)
-
-
-        self.verticalLayout_27.addLayout(self.verticalLayout_26)
-
-
-        self.verticalLayout_22.addWidget(self.groupBox_project)
-
-        self.groupBox_conditions = QGroupBox(self.tab_2)
-        self.groupBox_conditions.setObjectName(u"groupBox_conditions")
-        self.groupBox_conditions.setFlat(True)
-        self.horizontalLayout_20 = QHBoxLayout(self.groupBox_conditions)
-        self.horizontalLayout_20.setObjectName(u"horizontalLayout_20")
-        self.splitter_4 = QSplitter(self.groupBox_conditions)
-        self.splitter_4.setObjectName(u"splitter_4")
-        self.splitter_4.setOrientation(Qt.Horizontal)
-        self.frame_5 = QFrame(self.splitter_4)
-        self.frame_5.setObjectName(u"frame_5")
-        self.frame_5.setFrameShape(QFrame.NoFrame)
-        self.frame_5.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_21 = QVBoxLayout(self.frame_5)
-        self.verticalLayout_21.setObjectName(u"verticalLayout_21")
-        self.verticalLayout_19 = QVBoxLayout()
-        self.verticalLayout_19.setObjectName(u"verticalLayout_19")
-        self.label_6 = QLabel(self.frame_5)
-        self.label_6.setObjectName(u"label_6")
-
-        self.verticalLayout_19.addWidget(self.label_6)
-
-        self.horizontalLayout_17 = QHBoxLayout()
-        self.horizontalLayout_17.setObjectName(u"horizontalLayout_17")
-        self.pushButton_newPressure = QPushButton(self.frame_5)
-        self.pushButton_newPressure.setObjectName(u"pushButton_newPressure")
-
-        self.horizontalLayout_17.addWidget(self.pushButton_newPressure)
-
-        self.pushButton_deletePressure = QPushButton(self.frame_5)
-        self.pushButton_deletePressure.setObjectName(u"pushButton_deletePressure")
-
-        self.horizontalLayout_17.addWidget(self.pushButton_deletePressure)
-
-
-        self.verticalLayout_19.addLayout(self.horizontalLayout_17)
-
-        self.tableWidget_pressures = QTableWidget(self.frame_5)
-        self.tableWidget_pressures.setObjectName(u"tableWidget_pressures")
-
-        self.verticalLayout_19.addWidget(self.tableWidget_pressures)
-
-
-        self.verticalLayout_21.addLayout(self.verticalLayout_19)
-
-        self.splitter_4.addWidget(self.frame_5)
-        self.frame_6 = QFrame(self.splitter_4)
-        self.frame_6.setObjectName(u"frame_6")
-        self.frame_6.setFrameShape(QFrame.NoFrame)
-        self.frame_6.setFrameShadow(QFrame.Plain)
-        self.horizontalLayout_19 = QHBoxLayout(self.frame_6)
-        self.horizontalLayout_19.setObjectName(u"horizontalLayout_19")
-        self.verticalLayout_20 = QVBoxLayout()
-        self.verticalLayout_20.setObjectName(u"verticalLayout_20")
-        self.label_7 = QLabel(self.frame_6)
-        self.label_7.setObjectName(u"label_7")
-
-        self.verticalLayout_20.addWidget(self.label_7)
-
-        self.horizontalLayout_18 = QHBoxLayout()
-        self.horizontalLayout_18.setObjectName(u"horizontalLayout_18")
-        self.pushButton_newCrystal = QPushButton(self.frame_6)
-        self.pushButton_newCrystal.setObjectName(u"pushButton_newCrystal")
-
-        self.horizontalLayout_18.addWidget(self.pushButton_newCrystal)
-
-        self.pushButton_deleteCrystal = QPushButton(self.frame_6)
-        self.pushButton_deleteCrystal.setObjectName(u"pushButton_deleteCrystal")
-
-        self.horizontalLayout_18.addWidget(self.pushButton_deleteCrystal)
-
-
-        self.verticalLayout_20.addLayout(self.horizontalLayout_18)
-
-        self.tableWidget_crystals = QTableWidget(self.frame_6)
-        self.tableWidget_crystals.setObjectName(u"tableWidget_crystals")
-
-        self.verticalLayout_20.addWidget(self.tableWidget_crystals)
-
-
-        self.horizontalLayout_19.addLayout(self.verticalLayout_20)
-
-        self.splitter_4.addWidget(self.frame_6)
-
-        self.horizontalLayout_20.addWidget(self.splitter_4)
-
-
-        self.verticalLayout_22.addWidget(self.groupBox_conditions)
-
-        self.groupBox_settings = QGroupBox(self.tab_2)
-        self.groupBox_settings.setObjectName(u"groupBox_settings")
-
-        self.verticalLayout_22.addWidget(self.groupBox_settings)
-
-        self.verticalLayout_22.setStretch(1, 1)
-
-        self.horizontalLayout_21.addLayout(self.verticalLayout_22)
-
         self.tabWidget_sideBar.addTab(self.tab_2, "")
 
         self.verticalLayout.addWidget(self.tabWidget_sideBar)
@@ -572,314 +852,14 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addWidget(self.splitter_3)
 
-        self.tabWidget.addTab(self.tab_fit, "")
-        self.tab_calib = QWidget()
-        self.tab_calib.setObjectName(u"tab_calib")
-        self.verticalLayout_30 = QVBoxLayout(self.tab_calib)
-        self.verticalLayout_30.setObjectName(u"verticalLayout_30")
-        self.splitter_5 = QSplitter(self.tab_calib)
-        self.splitter_5.setObjectName(u"splitter_5")
-        self.splitter_5.setOrientation(Qt.Horizontal)
-        self.frame_12 = QFrame(self.splitter_5)
-        self.frame_12.setObjectName(u"frame_12")
-        self.frame_12.setFrameShape(QFrame.NoFrame)
-        self.frame_12.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_31 = QVBoxLayout(self.frame_12)
-        self.verticalLayout_31.setObjectName(u"verticalLayout_31")
-        self.frame_14 = QFrame(self.frame_12)
-        self.frame_14.setObjectName(u"frame_14")
-        sizePolicy3.setHeightForWidth(self.frame_14.sizePolicy().hasHeightForWidth())
-        self.frame_14.setSizePolicy(sizePolicy3)
-        self.frame_14.setFrameShape(QFrame.NoFrame)
-        self.frame_14.setFrameShadow(QFrame.Plain)
-        self.horizontalLayout_14 = QHBoxLayout(self.frame_14)
-        self.horizontalLayout_14.setObjectName(u"horizontalLayout_14")
-        self.pushButton_calibResetView = QPushButton(self.frame_14)
-        self.pushButton_calibResetView.setObjectName(u"pushButton_calibResetView")
+        self.tabWidget_project.addTab(self.tab_fit, "")
 
-        self.horizontalLayout_14.addWidget(self.pushButton_calibResetView)
-
-        self.pushButton_calibZoom = QPushButton(self.frame_14)
-        self.pushButton_calibZoom.setObjectName(u"pushButton_calibZoom")
-        self.pushButton_calibZoom.setCheckable(True)
-
-        self.horizontalLayout_14.addWidget(self.pushButton_calibZoom)
-
-        self.pushButton_calibPan = QPushButton(self.frame_14)
-        self.pushButton_calibPan.setObjectName(u"pushButton_calibPan")
-        self.pushButton_calibPan.setCheckable(True)
-
-        self.horizontalLayout_14.addWidget(self.pushButton_calibPan)
-
-        self.horizontalSpacer_7 = QSpacerItem(654, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_14.addItem(self.horizontalSpacer_7)
-
-
-        self.verticalLayout_31.addWidget(self.frame_14)
-
-        self.calib_plotWidget = PlotWidget(self.frame_12)
-        self.calib_plotWidget.setObjectName(u"calib_plotWidget")
-
-        self.verticalLayout_31.addWidget(self.calib_plotWidget)
-
-        self.frame_15 = QFrame(self.frame_12)
-        self.frame_15.setObjectName(u"frame_15")
-        sizePolicy3.setHeightForWidth(self.frame_15.sizePolicy().hasHeightForWidth())
-        self.frame_15.setSizePolicy(sizePolicy3)
-        self.frame_15.setFrameShape(QFrame.NoFrame)
-        self.frame_15.setFrameShadow(QFrame.Plain)
-        self.horizontalLayout_15 = QHBoxLayout(self.frame_15)
-        self.horizontalLayout_15.setObjectName(u"horizontalLayout_15")
-        self.horizontalSpacer_8 = QSpacerItem(622, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_15.addItem(self.horizontalSpacer_8)
-
-        self.label_calibText1 = QLabel(self.frame_15)
-        self.label_calibText1.setObjectName(u"label_calibText1")
-
-        self.horizontalLayout_15.addWidget(self.label_calibText1)
-
-        self.label_calibText2 = QLabel(self.frame_15)
-        self.label_calibText2.setObjectName(u"label_calibText2")
-
-        self.horizontalLayout_15.addWidget(self.label_calibText2)
-
-        self.label_calibText3 = QLabel(self.frame_15)
-        self.label_calibText3.setObjectName(u"label_calibText3")
-
-        self.horizontalLayout_15.addWidget(self.label_calibText3)
-
-        self.label_calibText4 = QLabel(self.frame_15)
-        self.label_calibText4.setObjectName(u"label_calibText4")
-
-        self.horizontalLayout_15.addWidget(self.label_calibText4)
-
-        self.label_calibText5 = QLabel(self.frame_15)
-        self.label_calibText5.setObjectName(u"label_calibText5")
-
-        self.horizontalLayout_15.addWidget(self.label_calibText5)
-
-
-        self.verticalLayout_31.addWidget(self.frame_15)
-
-        self.splitter_5.addWidget(self.frame_12)
-        self.frame_13 = QFrame(self.splitter_5)
-        self.frame_13.setObjectName(u"frame_13")
-        self.frame_13.setFrameShape(QFrame.NoFrame)
-        self.frame_13.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_32 = QVBoxLayout(self.frame_13)
-        self.verticalLayout_32.setObjectName(u"verticalLayout_32")
-        self.tabWidget_calib = QTabWidget(self.frame_13)
-        self.tabWidget_calib.setObjectName(u"tabWidget_calib")
-        self.tab_calibMain = QWidget()
-        self.tab_calibMain.setObjectName(u"tab_calibMain")
-        self.verticalLayout_35 = QVBoxLayout(self.tab_calibMain)
-        self.verticalLayout_35.setObjectName(u"verticalLayout_35")
-        self.frame_16 = QFrame(self.tab_calibMain)
-        self.frame_16.setObjectName(u"frame_16")
-        sizePolicy3.setHeightForWidth(self.frame_16.sizePolicy().hasHeightForWidth())
-        self.frame_16.setSizePolicy(sizePolicy3)
-        self.frame_16.setFrameShape(QFrame.NoFrame)
-        self.frame_16.setFrameShadow(QFrame.Plain)
-        self.horizontalLayout_16 = QHBoxLayout(self.frame_16)
-        self.horizontalLayout_16.setObjectName(u"horizontalLayout_16")
-        self.pushButton_calibNewCalib = QPushButton(self.frame_16)
-        self.pushButton_calibNewCalib.setObjectName(u"pushButton_calibNewCalib")
-
-        self.horizontalLayout_16.addWidget(self.pushButton_calibNewCalib)
-
-        self.pushButton_calibRenameCalib = QPushButton(self.frame_16)
-        self.pushButton_calibRenameCalib.setObjectName(u"pushButton_calibRenameCalib")
-
-        self.horizontalLayout_16.addWidget(self.pushButton_calibRenameCalib)
-
-        self.pushButton_calibRemoveCalib = QPushButton(self.frame_16)
-        self.pushButton_calibRemoveCalib.setObjectName(u"pushButton_calibRemoveCalib")
-
-        self.horizontalLayout_16.addWidget(self.pushButton_calibRemoveCalib)
-
-
-        self.verticalLayout_35.addWidget(self.frame_16)
-
-        self.comboBox_calibSelect = QComboBox(self.tab_calibMain)
-        self.comboBox_calibSelect.setObjectName(u"comboBox_calibSelect")
-
-        self.verticalLayout_35.addWidget(self.comboBox_calibSelect)
-
-        self.frame_17 = QFrame(self.tab_calibMain)
-        self.frame_17.setObjectName(u"frame_17")
-        sizePolicy3.setHeightForWidth(self.frame_17.sizePolicy().hasHeightForWidth())
-        self.frame_17.setSizePolicy(sizePolicy3)
-        self.frame_17.setFrameShape(QFrame.NoFrame)
-        self.frame_17.setFrameShadow(QFrame.Plain)
-        self.gridLayout = QGridLayout(self.frame_17)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.lineEdit_calibLaserWavelength = QLineEdit(self.frame_17)
-        self.lineEdit_calibLaserWavelength.setObjectName(u"lineEdit_calibLaserWavelength")
-
-        self.gridLayout.addWidget(self.lineEdit_calibLaserWavelength, 0, 1, 1, 1)
-
-        self.label = QLabel(self.frame_17)
-        self.label.setObjectName(u"label")
-
-        self.gridLayout.addWidget(self.label, 1, 0, 1, 1)
-
-        self.label_laserWavelengthText = QLabel(self.frame_17)
-        self.label_laserWavelengthText.setObjectName(u"label_laserWavelengthText")
-
-        self.gridLayout.addWidget(self.label_laserWavelengthText, 0, 0, 1, 1)
-
-        self.lineEdit_calibMirrorSpacing = QLineEdit(self.frame_17)
-        self.lineEdit_calibMirrorSpacing.setObjectName(u"lineEdit_calibMirrorSpacing")
-
-        self.gridLayout.addWidget(self.lineEdit_calibMirrorSpacing, 1, 1, 1, 1)
-
-        self.lineEdit_calibScatteringAngle = QLineEdit(self.frame_17)
-        self.lineEdit_calibScatteringAngle.setObjectName(u"lineEdit_calibScatteringAngle")
-
-        self.gridLayout.addWidget(self.lineEdit_calibScatteringAngle, 2, 1, 1, 1)
-
-        self.label_4 = QLabel(self.frame_17)
-        self.label_4.setObjectName(u"label_4")
-
-        self.gridLayout.addWidget(self.label_4, 2, 0, 1, 1)
-
-
-        self.verticalLayout_35.addWidget(self.frame_17)
-
-        self.splitter_6 = QSplitter(self.tab_calibMain)
-        self.splitter_6.setObjectName(u"splitter_6")
-        self.splitter_6.setOrientation(Qt.Vertical)
-        self.frame_19 = QFrame(self.splitter_6)
-        self.frame_19.setObjectName(u"frame_19")
-        self.frame_19.setFrameShape(QFrame.NoFrame)
-        self.frame_19.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_33 = QVBoxLayout(self.frame_19)
-        self.verticalLayout_33.setObjectName(u"verticalLayout_33")
-        self.frame_18 = QFrame(self.frame_19)
-        self.frame_18.setObjectName(u"frame_18")
-        sizePolicy3.setHeightForWidth(self.frame_18.sizePolicy().hasHeightForWidth())
-        self.frame_18.setSizePolicy(sizePolicy3)
-        self.frame_18.setFrameShape(QFrame.NoFrame)
-        self.frame_18.setFrameShadow(QFrame.Plain)
-        self.horizontalLayout_23 = QHBoxLayout(self.frame_18)
-        self.horizontalLayout_23.setObjectName(u"horizontalLayout_23")
-        self.pushButton_calibAddFiles = QPushButton(self.frame_18)
-        self.pushButton_calibAddFiles.setObjectName(u"pushButton_calibAddFiles")
-
-        self.horizontalLayout_23.addWidget(self.pushButton_calibAddFiles)
-
-        self.pushButton_calibRemoveFiles = QPushButton(self.frame_18)
-        self.pushButton_calibRemoveFiles.setObjectName(u"pushButton_calibRemoveFiles")
-
-        self.horizontalLayout_23.addWidget(self.pushButton_calibRemoveFiles)
-
-        self.pushButton_calibResetFits = QPushButton(self.frame_18)
-        self.pushButton_calibResetFits.setObjectName(u"pushButton_calibResetFits")
-        self.pushButton_calibResetFits.setContextMenuPolicy(Qt.DefaultContextMenu)
-
-        self.horizontalLayout_23.addWidget(self.pushButton_calibResetFits)
-
-        self.horizontalSpacer_9 = QSpacerItem(591, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_23.addItem(self.horizontalSpacer_9)
-
-
-        self.verticalLayout_33.addWidget(self.frame_18)
-
-        self.tableView_calibFiles = QTableView(self.frame_19)
-        self.tableView_calibFiles.setObjectName(u"tableView_calibFiles")
-
-        self.verticalLayout_33.addWidget(self.tableView_calibFiles)
-
-        self.splitter_6.addWidget(self.frame_19)
-        self.frame_20 = QFrame(self.splitter_6)
-        self.frame_20.setObjectName(u"frame_20")
-        self.frame_20.setFrameShape(QFrame.NoFrame)
-        self.frame_20.setFrameShadow(QFrame.Plain)
-        self.horizontalLayout_26 = QHBoxLayout(self.frame_20)
-        self.horizontalLayout_26.setObjectName(u"horizontalLayout_26")
-        self.horizontalLayout_25 = QHBoxLayout()
-        self.horizontalLayout_25.setObjectName(u"horizontalLayout_25")
-        self.verticalLayout_34 = QVBoxLayout()
-        self.verticalLayout_34.setObjectName(u"verticalLayout_34")
-        self.horizontalLayout_22 = QHBoxLayout()
-        self.horizontalLayout_22.setObjectName(u"horizontalLayout_22")
-        self.pushButton_calibFitLeftPeak = QPushButton(self.frame_20)
-        self.pushButton_calibFitLeftPeak.setObjectName(u"pushButton_calibFitLeftPeak")
-        self.pushButton_calibFitLeftPeak.setCheckable(True)
-
-        self.horizontalLayout_22.addWidget(self.pushButton_calibFitLeftPeak)
-
-        self.pushButton_calibDeleteLeftPeak = QPushButton(self.frame_20)
-        self.pushButton_calibDeleteLeftPeak.setObjectName(u"pushButton_calibDeleteLeftPeak")
-
-        self.horizontalLayout_22.addWidget(self.pushButton_calibDeleteLeftPeak)
-
-
-        self.verticalLayout_34.addLayout(self.horizontalLayout_22)
-
-        self.listWidget_calibLeftPeak = QListWidget(self.frame_20)
-        self.listWidget_calibLeftPeak.setObjectName(u"listWidget_calibLeftPeak")
-
-        self.verticalLayout_34.addWidget(self.listWidget_calibLeftPeak)
-
-
-        self.horizontalLayout_25.addLayout(self.verticalLayout_34)
-
-        self.verticalLayout_36 = QVBoxLayout()
-        self.verticalLayout_36.setObjectName(u"verticalLayout_36")
-        self.horizontalLayout_24 = QHBoxLayout()
-        self.horizontalLayout_24.setObjectName(u"horizontalLayout_24")
-        self.pushButton_calibFitRightPeak = QPushButton(self.frame_20)
-        self.pushButton_calibFitRightPeak.setObjectName(u"pushButton_calibFitRightPeak")
-        self.pushButton_calibFitRightPeak.setCheckable(True)
-
-        self.horizontalLayout_24.addWidget(self.pushButton_calibFitRightPeak)
-
-        self.pushButton_calibDeleteRightPeak = QPushButton(self.frame_20)
-        self.pushButton_calibDeleteRightPeak.setObjectName(u"pushButton_calibDeleteRightPeak")
-
-        self.horizontalLayout_24.addWidget(self.pushButton_calibDeleteRightPeak)
-
-
-        self.verticalLayout_36.addLayout(self.horizontalLayout_24)
-
-        self.listWidget_calibRightPeak = QListWidget(self.frame_20)
-        self.listWidget_calibRightPeak.setObjectName(u"listWidget_calibRightPeak")
-
-        self.verticalLayout_36.addWidget(self.listWidget_calibRightPeak)
-
-
-        self.horizontalLayout_25.addLayout(self.verticalLayout_36)
-
-
-        self.horizontalLayout_26.addLayout(self.horizontalLayout_25)
-
-        self.splitter_6.addWidget(self.frame_20)
-
-        self.verticalLayout_35.addWidget(self.splitter_6)
-
-        self.tabWidget_calib.addTab(self.tab_calibMain, "")
-        self.tab_calibSetup = QWidget()
-        self.tab_calibSetup.setObjectName(u"tab_calibSetup")
-        self.tabWidget_calib.addTab(self.tab_calibSetup, "")
-
-        self.verticalLayout_32.addWidget(self.tabWidget_calib)
-
-        self.splitter_5.addWidget(self.frame_13)
-
-        self.verticalLayout_30.addWidget(self.splitter_5)
-
-        self.tabWidget.addTab(self.tab_calib, "")
-
-        self.verticalLayout_28.addWidget(self.tabWidget)
+        self.verticalLayout_28.addWidget(self.tabWidget_project)
 
         self.frame_11 = QFrame(self.centralwidget)
         self.frame_11.setObjectName(u"frame_11")
-        sizePolicy3.setHeightForWidth(self.frame_11.sizePolicy().hasHeightForWidth())
-        self.frame_11.setSizePolicy(sizePolicy3)
+        sizePolicy.setHeightForWidth(self.frame_11.sizePolicy().hasHeightForWidth())
+        self.frame_11.setSizePolicy(sizePolicy)
         self.frame_11.setFrameShape(QFrame.NoFrame)
         self.frame_11.setFrameShadow(QFrame.Plain)
         self.horizontalLayout_13 = QHBoxLayout(self.frame_11)
@@ -934,9 +914,9 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(1)
-        self.tabWidget_sideBar.setCurrentIndex(0)
+        self.tabWidget_project.setCurrentIndex(0)
         self.tabWidget_calib.setCurrentIndex(0)
+        self.tabWidget_sideBar.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -944,34 +924,27 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
-        self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.pushButton_4.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.label_2.setText(QCoreApplication.translate("MainWindow", u"Pressure (GPa): ", None))
-        self.label_3.setText(QCoreApplication.translate("MainWindow", u"Crystal: ", None))
-        self.pushButton_addFiles.setText(QCoreApplication.translate("MainWindow", u"Add files", None))
-        self.pushButton_removeFiles.setText(QCoreApplication.translate("MainWindow", u"Remove files", None))
-        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.tabWidget_sideBar.setTabText(self.tabWidget_sideBar.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Main", None))
-        self.groupBox_project.setTitle(QCoreApplication.translate("MainWindow", u"Project", None))
+        self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Project management", None))
         self.pushButton_newProject.setText(QCoreApplication.translate("MainWindow", u"New", None))
         self.pushButton_loadProject.setText(QCoreApplication.translate("MainWindow", u"Load", None))
         self.pushButton_saveProject.setText(QCoreApplication.translate("MainWindow", u"Save", None))
         self.pushButton_saveProjectAs.setText(QCoreApplication.translate("MainWindow", u"Save as...", None))
         self.pushButton_deleteProject.setText(QCoreApplication.translate("MainWindow", u"Delete", None))
+        self.label_5.setText(QCoreApplication.translate("MainWindow", u"Loaded project:", None))
         self.pushButton_renameProject.setText(QCoreApplication.translate("MainWindow", u"Rename", None))
-        self.label_projectPath.setText("")
-        self.label_modDate.setText("")
-        self.groupBox_conditions.setTitle(QCoreApplication.translate("MainWindow", u"Conditions", None))
-        self.label_6.setText(QCoreApplication.translate("MainWindow", u"Pressures (GPa)", None))
+        self.label_projectPath.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
+        self.label_modDate.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
+        self.groupBox_3.setTitle(QCoreApplication.translate("MainWindow", u"Sample conditions", None))
+        self.label_10.setText(QCoreApplication.translate("MainWindow", u"Pressures (GPa)", None))
         self.pushButton_newPressure.setText(QCoreApplication.translate("MainWindow", u"New", None))
         self.pushButton_deletePressure.setText(QCoreApplication.translate("MainWindow", u"Delete", None))
-        self.label_7.setText(QCoreApplication.translate("MainWindow", u"Crystals", None))
+        self.pushButton_renamePressure.setText(QCoreApplication.translate("MainWindow", u"Rename", None))
+        self.label_11.setText(QCoreApplication.translate("MainWindow", u"Crystals", None))
         self.pushButton_newCrystal.setText(QCoreApplication.translate("MainWindow", u"New", None))
         self.pushButton_deleteCrystal.setText(QCoreApplication.translate("MainWindow", u"Delete", None))
-        self.groupBox_settings.setTitle(QCoreApplication.translate("MainWindow", u"Settings", None))
-        self.tabWidget_sideBar.setTabText(self.tabWidget_sideBar.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Setup", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_fit), QCoreApplication.translate("MainWindow", u"Fit", None))
+        self.pushButton_renameCrystal.setText(QCoreApplication.translate("MainWindow", u"Rename", None))
+        self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"Settings", None))
+        self.tabWidget_project.setTabText(self.tabWidget_project.indexOf(self.Project), QCoreApplication.translate("MainWindow", u"Project", None))
         self.pushButton_calibResetView.setText(QCoreApplication.translate("MainWindow", u"Reset zom", None))
         self.pushButton_calibZoom.setText(QCoreApplication.translate("MainWindow", u"Zoom", None))
         self.pushButton_calibPan.setText(QCoreApplication.translate("MainWindow", u"Pan", None))
@@ -995,7 +968,18 @@ class Ui_MainWindow(object):
         self.pushButton_calibDeleteRightPeak.setText(QCoreApplication.translate("MainWindow", u"Delete right peak", None))
         self.tabWidget_calib.setTabText(self.tabWidget_calib.indexOf(self.tab_calibMain), QCoreApplication.translate("MainWindow", u"Main", None))
         self.tabWidget_calib.setTabText(self.tabWidget_calib.indexOf(self.tab_calibSetup), QCoreApplication.translate("MainWindow", u"Setup", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_calib), QCoreApplication.translate("MainWindow", u"Calibrate", None))
+        self.tabWidget_project.setTabText(self.tabWidget_project.indexOf(self.tab_calib), QCoreApplication.translate("MainWindow", u"Calibrate", None))
+        self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        self.pushButton_4.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        self.label_2.setText(QCoreApplication.translate("MainWindow", u"Pressure (GPa): ", None))
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"Crystal: ", None))
+        self.pushButton_addFiles.setText(QCoreApplication.translate("MainWindow", u"Add files", None))
+        self.pushButton_removeFiles.setText(QCoreApplication.translate("MainWindow", u"Remove files", None))
+        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        self.tabWidget_sideBar.setTabText(self.tabWidget_sideBar.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Main", None))
+        self.tabWidget_sideBar.setTabText(self.tabWidget_sideBar.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Setup", None))
+        self.tabWidget_project.setTabText(self.tabWidget_project.indexOf(self.tab_fit), QCoreApplication.translate("MainWindow", u"Fit", None))
         self.label_lastAction.setText("")
         self.label_processStatus.setText("")
         self.label_fileCount.setText("")
