@@ -1,4 +1,4 @@
-# src/analysis/calibration_plot_widget.py
+# calibration_plot_widget.py
 import numpy as np
 import pyqtgraph as pg
 from PySide6.QtCore import Qt, QObject, QTimer
@@ -39,6 +39,8 @@ class CalibrationPlotWidget(QObject):
         self.ui.pushButton_calibPan.clicked.connect(self.pan_button_clicked)
         self.ui.pushButton_calibFitLeftPeak.clicked.connect(self.fit_left_peak_clicked)
         self.ui.pushButton_calibFitRightPeak.clicked.connect(self.fit_right_peak_clicked)
+        self.ui.pushButton_calibDeleteLeftPeak.clicked.connect(self.delete_left_peak)
+        self.ui.pushButton_calibDeleteRightPeak.clicked.connect(self.delete_right_peak)
 
         # Keep track of the initial view range for resetting
         self.initial_view_range = None
@@ -50,6 +52,8 @@ class CalibrationPlotWidget(QObject):
         if self.left_peak_line:
             self.plot_item.removeItem(self.left_peak_line)
             self.left_peak_line = None
+        # Clear left peak data in CalibrationManager
+        self.calibration_manager.delete_left_peak_fit()
 
     def delete_right_peak(self):
         if self.right_peak_curve:
@@ -58,6 +62,8 @@ class CalibrationPlotWidget(QObject):
         if self.right_peak_line:
             self.plot_item.removeItem(self.right_peak_line)
             self.right_peak_line = None
+        # Clear right peak data in CalibrationManager
+        self.calibration_manager.delete_right_peak_fit()
 
     def plot_data(self, x, y):
         self.x_data = x
@@ -146,9 +152,9 @@ class CalibrationPlotWidget(QObject):
             self.calibration_manager.update_left_peak_list(fitter)
         elif peak_type == 'right':
             self.calibration_manager.update_right_peak_list(fitter)
-        # Keep the fit curve and center line
         # Disable fitting mode
         self.view_box.disable_fitting_mode()
+
 
 class CalibrationViewBox(ViewBox):
     def __init__(self, calibration_plot_widget):
@@ -163,7 +169,7 @@ class CalibrationViewBox(ViewBox):
         self.fit_timer = QTimer()
         self.fit_timer.timeout.connect(self.perform_fit)
         self.last_mouse_pos = None
-        self.previous_mouse_pos = None  # To store previous mouse position
+        self.previous_mouse_pos = None
         self.wheel_event_triggered = False
         # Enable hover events to track mouse without button presses
         self.setAcceptHoverEvents(True)
@@ -201,6 +207,9 @@ class CalibrationViewBox(ViewBox):
         self.calibration_plot_widget.plot_widget.setCursor(Qt.ArrowCursor)
         self.fit_timer.stop()
         self.enableAutoRange(True)  # Re-enable auto-range after fitting
+        # Confirm the fit when fitting mode is disabled
+        if hasattr(self, 'fitter'):
+            self.calibration_plot_widget.confirm_fit(self.current_peak, self.fitter)
 
     def mousePressEvent(self, ev):
         if self.zoom_mode and ev.button() == Qt.LeftButton:
@@ -280,13 +289,9 @@ class CalibrationViewBox(ViewBox):
         if self.last_mouse_pos and (self.previous_mouse_pos != self.last_mouse_pos or self.wheel_event_triggered):
             self.previous_mouse_pos = self.last_mouse_pos
             self.wheel_event_triggered = False  # Reset the flag after the fit
-            print('self.last_mouse_pos: ', self.last_mouse_pos)
             mouse_point = self.mapToView(self.last_mouse_pos)
-            print('mouse_point: ', mouse_point)
             x_center = mouse_point.x()
-            print('x_center: ', x_center)
             x_range = self.x_range
-            print('self.x_range: ', self.x_range)
             x_min = x_center - x_range / 2
             x_max = x_center + x_range / 2
             x_data = self.calibration_plot_widget.x_data
@@ -303,10 +308,10 @@ class CalibrationViewBox(ViewBox):
                     center = fitter.get_parameter('center')
                     if np.min(x_data) < center < np.max(x_data):
                         self.calibration_plot_widget.update_fit_plot(x_fit, fit_curve, center, self.current_peak)
+                        # Store the fitter for confirmation
+                        self.fitter = fitter
                     else:
                         self.calibration_plot_widget.update_fit_plot(x_fit, fit_curve, None, self.current_peak)
-                    # Store the fitter for confirmation
-                    self.fitter = fitter
                 except Exception as e:
                     print(f"Fitting failed: {e}")  # Optional: Log the error
 
@@ -321,4 +326,3 @@ class CalibrationViewBox(ViewBox):
             self.scaleBy((1, 1 / zoom_factor_y), center=mouse_point)
         elif axis == 'xy':
             self.scaleBy((1 / zoom_factor_xy, 1 / zoom_factor_xy), center=mouse_point)
-

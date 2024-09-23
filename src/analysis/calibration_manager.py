@@ -1,9 +1,7 @@
+# calibration_manager.py
 import numpy as np
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QAbstractItemView
-from scipy.optimize import curve_fit
-from scipy.special import wofz
-from .brillouin_project import BrillouinProject
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
 from .calibration_file_table_model import CalibrationFileTableModel
 from .calibration_plot_widget import CalibrationPlotWidget
 
@@ -35,10 +33,8 @@ class CalibrationManager:
         self.ui.pushButton_calibAddFiles.clicked.connect(self.calib_add_files_clicked)
         self.ui.pushButton_calibRemoveFiles.clicked.connect(self.calib_remove_files_clicked)
         self.ui.tableView_calibFiles.doubleClicked.connect(self.calib_file_double_clicked)
-        self.ui.pushButton_calibFitLeftPeak.clicked.connect(self.calib_fit_left_peak_clicked)
-        self.ui.pushButton_calibFitRightPeak.clicked.connect(self.calib_fit_right_peak_clicked)
-        self.ui.pushButton_calibDeleteLeftPeak.clicked.connect(self.calib_delete_left_peak_clicked)
-        self.ui.pushButton_calibDeleteRightPeak.clicked.connect(self.calib_delete_right_peak_clicked)
+        self.ui.pushButton_calibDeleteLeftPeak.clicked.connect(self.calibration_plot_widget.delete_left_peak)
+        self.ui.pushButton_calibDeleteRightPeak.clicked.connect(self.calibration_plot_widget.delete_right_peak)
 
     def update_project(self):
         """Update the project instance when it changes in ProjectManager."""
@@ -89,6 +85,26 @@ class CalibrationManager:
             self.project.update_peak_fit(calibration_name, filename, left_peak_fit=peak_fit)
         elif peak_type == 'right':
             self.project.update_peak_fit(calibration_name, filename, right_peak_fit=peak_fit)
+        self.last_action(f'{peak_type.capitalize()} peak fitted')
+        self.save_status()
+
+    def delete_left_peak_fit(self):
+        if self.project and hasattr(self, 'current_calibration_name') and hasattr(self, 'current_calibration_file'):
+            self.project.update_peak_fit(self.current_calibration_name, self.current_calibration_file, left_peak_fit={})
+            self.ui.listWidget_calibLeftPeak.clear()
+            self.last_action('Left peak fit deleted')
+            self.save_status()
+        else:
+            QMessageBox.warning(None, "No File Selected", "Please select a calibration file first.")
+
+    def delete_right_peak_fit(self):
+        if self.project and hasattr(self, 'current_calibration_name') and hasattr(self, 'current_calibration_file'):
+            self.project.update_peak_fit(self.current_calibration_name, self.current_calibration_file, right_peak_fit={})
+            self.ui.listWidget_calibRightPeak.clear()
+            self.last_action('Right peak fit deleted')
+            self.save_status()
+        else:
+            QMessageBox.warning(None, "No File Selected", "Please select a calibration file first.")
 
     def update_left_peak_list(self, fitter):
         self.ui.listWidget_calibLeftPeak.clear()
@@ -238,143 +254,10 @@ class CalibrationManager:
                     self.last_action('Calibration file plotted')
 
     def plot_calibration_data(self, data):
-        # Optionally, store the x and y data for fitting
+        # Store the x and y data for fitting
         self.calib_x_data = np.arange(len(data))
         self.calib_y_data = data
         self.calibration_plot_widget.plot_data(self.calib_x_data, self.calib_y_data)
-
-    def calib_fit_left_peak_clicked(self):
-        if not hasattr(self, 'current_calibration_data'):
-            QMessageBox.warning(None, "No Data", "Please select a calibration file and plot it first.")
-            return
-
-        data = self.current_calibration_data
-        x = np.arange(len(data))
-        y = data
-
-        # Assume left peak is in the first half
-        x_left = x[:len(x) // 2]
-        y_left = y[:len(y) // 2]
-
-        # Implement peak fitting on x_left, y_left
-        def voigt(x, amplitude, center, sigma, gamma):
-            sigma = max(sigma, 1e-10)
-            return amplitude * np.real(wofz(((x - center) + 1j * gamma) / (sigma * np.sqrt(2)))) / (
-                        sigma * np.sqrt(2 * np.pi))
-
-        initial_params = [max(y_left), x_left[np.argmax(y_left)], 1.0, 1.0]
-        bounds = ([0, x_left[0], 0, 0], [np.inf, x_left[-1], np.inf, np.inf])
-
-        try:
-            popt, pcov = curve_fit(voigt, x_left, y_left, p0=initial_params, bounds=bounds)
-            amplitude, center, sigma, gamma = popt
-            fwhm = 0.5346 * 2 * gamma + np.sqrt(0.2166 * (2 * gamma) ** 2 + (2.355 * sigma) ** 2)
-            area = amplitude * fwhm
-
-            # Display fit parameters
-            self.ui.listWidget_calibLeftPeak.clear()
-            self.ui.listWidget_calibLeftPeak.addItem(f"Center: {center}")
-            self.ui.listWidget_calibLeftPeak.addItem(f"Amplitude: {amplitude}")
-            self.ui.listWidget_calibLeftPeak.addItem(f"Sigma: {sigma}")
-            self.ui.listWidget_calibLeftPeak.addItem(f"Gamma: {gamma}")
-            self.ui.listWidget_calibLeftPeak.addItem(f"FWHM: {fwhm}")
-            self.ui.listWidget_calibLeftPeak.addItem(f"Area: {area}")
-
-            # Save the fit parameters to the project
-            left_peak_fit = {
-                'center': center,
-                'amplitude': amplitude,
-                'sigma': sigma,
-                'gamma': gamma,
-                'fwhm': fwhm,
-                'area': area,
-                'goodness_of_fit': np.nan  # Optionally compute this
-            }
-            self.project.update_peak_fit(self.current_calibration_name, self.current_calibration_file,
-                                         left_peak_fit=left_peak_fit)
-            self.last_action('Left peak fitted')
-            self.save_status()
-
-        except Exception as e:
-            QMessageBox.critical(None, "Fitting Error", f"Error fitting left peak: {e}")
-
-    def calib_fit_right_peak_clicked(self):
-        if not hasattr(self, 'current_calibration_data'):
-            QMessageBox.warning(None, "No Data", "Please select a calibration file and plot it first.")
-            return
-
-        data = self.current_calibration_data
-        x = np.arange(len(data))
-        y = data
-
-        # Assume right peak is in the second half
-        x_right = x[len(x) // 2:]
-        y_right = y[len(y) // 2:]
-
-        # Implement peak fitting on x_right, y_right
-        def voigt(x, amplitude, center, sigma, gamma):
-            sigma = max(sigma, 1e-10)
-            return amplitude * np.real(wofz(((x - center) + 1j * gamma) / (sigma * np.sqrt(2)))) / (
-                        sigma * np.sqrt(2 * np.pi))
-
-        initial_params = [max(y_right), x_right[np.argmax(y_right)], 1.0, 1.0]
-        bounds = ([0, x_right[0], 0, 0], [np.inf, x_right[-1], np.inf, np.inf])
-
-        try:
-            popt, pcov = curve_fit(voigt, x_right, y_right, p0=initial_params, bounds=bounds)
-            amplitude, center, sigma, gamma = popt
-            fwhm = 0.5346 * 2 * gamma + np.sqrt(0.2166 * (2 * gamma) ** 2 + (2.355 * sigma) ** 2)
-            area = amplitude * fwhm
-
-            # Display fit parameters
-            self.ui.listWidget_calibRightPeak.clear()
-            self.ui.listWidget_calibRightPeak.addItem(f"Center: {center}")
-            self.ui.listWidget_calibRightPeak.addItem(f"Amplitude: {amplitude}")
-            self.ui.listWidget_calibRightPeak.addItem(f"Sigma: {sigma}")
-            self.ui.listWidget_calibRightPeak.addItem(f"Gamma: {gamma}")
-            self.ui.listWidget_calibRightPeak.addItem(f"FWHM: {fwhm}")
-            self.ui.listWidget_calibRightPeak.addItem(f"Area: {area}")
-
-            # Save the fit parameters to the project
-            right_peak_fit = {
-                'center': center,
-                'amplitude': amplitude,
-                'sigma': sigma,
-                'gamma': gamma,
-                'fwhm': fwhm,
-                'area': area,
-                'goodness_of_fit': np.nan  # Optionally compute this
-            }
-            self.project.update_peak_fit(self.current_calibration_name, self.current_calibration_file,
-                                         right_peak_fit=right_peak_fit)
-            self.last_action('Right peak fitted')
-            self.save_status()
-
-        except Exception as e:
-            QMessageBox.critical(None, "Fitting Error", f"Error fitting right peak: {e}")
-
-    def calib_delete_left_peak_clicked(self):
-        if self.project:
-            if not hasattr(self, 'current_calibration_name') or not hasattr(self, 'current_calibration_file'):
-                QMessageBox.warning(None, "No File Selected", "Please select a calibration file first.")
-                return
-            self.project.update_peak_fit(self.current_calibration_name, self.current_calibration_file, left_peak_fit={})
-            self.ui.listWidget_calibLeftPeak.clear()
-            self.calibration_plot_widget.delete_left_peak()
-            self.last_action('Left peak fit deleted')
-            self.save_status()
-
-    def calib_delete_right_peak_clicked(self):
-        if self.project:
-            if not hasattr(self, 'current_calibration_name') or not hasattr(self, 'current_calibration_file'):
-                QMessageBox.warning(None, "No File Selected", "Please select a calibration file first.")
-                return
-            self.project.update_peak_fit(self.current_calibration_name, self.current_calibration_file,
-                                         right_peak_fit={})
-            self.ui.listWidget_calibRightPeak.clear()
-            self.calibration_plot_widget.delete_right_peak()
-            self.last_action('Right peak fit deleted')
-            self.save_status()
 
     def calib_rename_calibration_clicked(self):
         if self.project:
