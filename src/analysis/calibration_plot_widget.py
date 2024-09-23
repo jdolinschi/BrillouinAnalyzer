@@ -146,14 +146,19 @@ class CalibrationPlotWidget(QObject):
 
     def confirm_fit(self, peak_type, fitter):
         # Save the fit parameters via CalibrationManager
-        self.calibration_manager.save_peak_fit(peak_type, fitter)
-        # Update the list widget
-        if peak_type == 'left':
-            self.calibration_manager.update_left_peak_list(fitter)
-        elif peak_type == 'right':
-            self.calibration_manager.update_right_peak_list(fitter)
-        # Disable fitting mode
-        self.view_box.disable_fitting_mode()
+        if fitter is not None:
+            self.calibration_manager.save_peak_fit(peak_type, fitter)
+            # Update the list widget
+            if peak_type == 'left':
+                self.calibration_manager.update_left_peak_list(fitter)
+            elif peak_type == 'right':
+                self.calibration_manager.update_right_peak_list(fitter)
+        else:
+            # If fitter is None, clear the parameters
+            if peak_type == 'left':
+                self.calibration_manager.clear_left_peak_list()
+            elif peak_type == 'right':
+                self.calibration_manager.clear_right_peak_list()
 
 
 class CalibrationViewBox(ViewBox):
@@ -162,6 +167,7 @@ class CalibrationViewBox(ViewBox):
         self.calibration_plot_widget = calibration_plot_widget
         self.zoom_mode = False
         self.fitting = False
+        self.fit_locked = False  # Indicates if the fit has been locked in by left-click
         self.current_peak = None
         self.x_range = calibration_plot_widget.x_range
         self.zoom_start_pos = None
@@ -199,22 +205,54 @@ class CalibrationViewBox(ViewBox):
         self.calibration_plot_widget.plot_widget.setCursor(Qt.CrossCursor)
         self.fit_timer.start(100)
         self.enableAutoRange(False)  # Disable auto-range during fitting
+        self.fit_locked = False  # Reset fit_locked when entering fitting mode
 
     def disable_fitting_mode(self):
+        # Only save the fit if it's locked in
+        if self.fit_locked and hasattr(self, 'fitter'):
+            self.calibration_plot_widget.confirm_fit(self.current_peak, self.fitter)
+        else:
+            # Clear any previous fit
+            if self.current_peak == 'left':
+                self.calibration_plot_widget.delete_left_peak()
+            elif self.current_peak == 'right':
+                self.calibration_plot_widget.delete_right_peak()
+            # Clear parameters
+            self.calibration_plot_widget.confirm_fit(self.current_peak, None)
+
         self.fitting = False
+        self.fit_locked = False
         self.current_peak = None
         self.setMouseEnabled(True, True)
         self.calibration_plot_widget.plot_widget.setCursor(Qt.ArrowCursor)
         self.fit_timer.stop()
         self.enableAutoRange(True)  # Re-enable auto-range after fitting
-        # Confirm the fit when fitting mode is disabled
-        if hasattr(self, 'fitter'):
-            self.calibration_plot_widget.confirm_fit(self.current_peak, self.fitter)
 
     def mousePressEvent(self, ev):
         if self.zoom_mode and ev.button() == Qt.LeftButton:
             self.zoom_start_pos = self.mapSceneToView(ev.scenePos())
             ev.accept()
+        elif self.fitting:
+            if ev.button() == Qt.LeftButton:
+                if not self.fit_locked:
+                    # Lock in the fit
+                    self.fit_locked = True
+                    self.calibration_plot_widget.confirm_fit(self.current_peak, self.fitter)
+                ev.accept()
+            elif ev.button() == Qt.RightButton:
+                if self.fit_locked:
+                    # Reset the fit
+                    self.fit_locked = False
+                    # Remove previous fit plot and center line
+                    if self.current_peak == 'left':
+                        self.calibration_plot_widget.delete_left_peak()
+                    elif self.current_peak == 'right':
+                        self.calibration_plot_widget.delete_right_peak()
+                    # Clear parameters
+                    self.calibration_plot_widget.confirm_fit(self.current_peak, None)
+                    # Continue fitting with mouse movement
+                    self.last_mouse_pos = None
+                ev.accept()
         else:
             super().mousePressEvent(ev)
 
@@ -236,7 +274,7 @@ class CalibrationViewBox(ViewBox):
             super().mouseMoveEvent(ev)
 
     def hoverMoveEvent(self, ev):
-        if self.fitting:
+        if self.fitting and not self.fit_locked:
             self.last_mouse_pos = ev.pos()
             ev.accept()
         else:
@@ -261,7 +299,7 @@ class CalibrationViewBox(ViewBox):
     def wheelEvent(self, ev):
         delta = ev.delta()
         modifiers = ev.modifiers()
-        if self.fitting:
+        if self.fitting and not self.fit_locked:
             factor = 1.02 ** (delta / 120)
             self.x_range *= factor
             # Clamp x_range within reasonable bounds
@@ -286,6 +324,9 @@ class CalibrationViewBox(ViewBox):
             super().wheelEvent(ev)
 
     def perform_fit(self):
+        if self.fit_locked:
+            return  # Do not update fit if it's locked
+
         if self.last_mouse_pos and (self.previous_mouse_pos != self.last_mouse_pos or self.wheel_event_triggered):
             self.previous_mouse_pos = self.last_mouse_pos
             self.wheel_event_triggered = False  # Reset the flag after the fit
