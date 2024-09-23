@@ -6,6 +6,10 @@ from .calibration_file_table_model import CalibrationFileTableModel
 from .calibration_plot_widget import CalibrationPlotWidget
 
 class CalibrationManager:
+    """
+        class CalibrationManager:
+    def __init__(self, ui, project_manager):
+        """
     def __init__(self, ui, project_manager):
         self.ui = ui
         self.project_manager = project_manager  # Reference to ProjectManager
@@ -22,6 +26,11 @@ class CalibrationManager:
         self.setup_connections()
 
     def setup_connections(self):
+        """
+        Sets up the connections for the calibration tab's UI elements to their corresponding handler functions.
+
+        :return: None
+        """
         # Calibration tab connections
         self.ui.pushButton_calibNewCalib.clicked.connect(self.calib_new_calibration_clicked)
         self.ui.pushButton_calibRenameCalib.clicked.connect(self.calib_rename_calibration_clicked)
@@ -37,12 +46,22 @@ class CalibrationManager:
         self.ui.pushButton_calibDeleteRightPeak.clicked.connect(self.calibration_plot_widget.delete_right_peak)
 
     def update_project(self):
-        """Update the project instance when it changes in ProjectManager."""
+        """
+        Updates the current project from the project manager's project.
+        If a valid project is retrieved, it populates the calibration dropdown.
+
+        :return: None
+        """
         self.project = self.project_manager.project
         if self.project:
             self.populate_calibration_dropdown()
 
     def calib_new_calibration_clicked(self):
+        """
+        Initiates a prompt to create a new calibration. If a project is active, it requests a calibration name from the user, adds it to the project, updates the calibration dropdown, and resets the input fields. In case of an error, it displays a warning message.
+
+        :return: None
+        """
         if self.project is None:
             QMessageBox.warning(None, "No Project", "Please create or load a project first.")
             return
