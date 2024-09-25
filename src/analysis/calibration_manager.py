@@ -267,14 +267,14 @@ class CalibrationManager:
 
                     # Load saved fits
                     left_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'left')
-                    if left_peak_fit:
+                    if left_peak_fit and not any(np.isnan(val) for val in left_peak_fit.values()):
                         self.calibration_plot_widget.load_saved_fit('left', left_peak_fit)
                         self.update_left_peak_list_from_saved_fit(left_peak_fit)
                     else:
                         self.ui.listWidget_calibLeftPeak.clear()
 
                     right_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'right')
-                    if right_peak_fit:
+                    if right_peak_fit and not any(np.isnan(val) for val in right_peak_fit.values()):
                         self.calibration_plot_widget.load_saved_fit('right', right_peak_fit)
                         self.update_right_peak_list_from_saved_fit(right_peak_fit)
                     else:

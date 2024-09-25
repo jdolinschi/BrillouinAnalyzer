@@ -181,6 +181,7 @@ class CalibrationPlotWidget(QObject):
 class CalibrationViewBox(ViewBox):
     def __init__(self, calibration_plot_widget):
         super().__init__(enableMenu=False)
+        self.saved_view_range = None
         self.calibration_plot_widget = calibration_plot_widget
         self.zoom_mode = False
         self.fitting = False
@@ -201,11 +202,13 @@ class CalibrationViewBox(ViewBox):
         self.zoom_mode = True
         self.setMouseEnabled(False, False)
         self.calibration_plot_widget.plot_widget.setCursor(Qt.CrossCursor)
+        self.enableAutoRange(False)
 
     def disable_zoom_mode(self):
         self.zoom_mode = False
         self.setMouseEnabled(True, True)
         self.calibration_plot_widget.plot_widget.setCursor(Qt.ArrowCursor)
+        self.enableAutoRange(True)
 
     def enable_pan_mode(self):
         self.setMouseMode(pg.ViewBox.PanMode)
@@ -216,13 +219,16 @@ class CalibrationViewBox(ViewBox):
         self.calibration_plot_widget.plot_widget.setCursor(Qt.ArrowCursor)
 
     def enable_fitting_mode(self, peak_type):
+        self.saved_view_range = self.viewRange()
         self.fitting = True
+        self.enableAutoRange(False)  # Disable auto-range during fitting
         self.current_peak = peak_type
         self.setMouseEnabled(False, False)
+        # Save the current view range before starting fitting
         self.calibration_plot_widget.plot_widget.setCursor(Qt.CrossCursor)
+        self.setRange(xRange=self.saved_view_range[0], yRange=self.saved_view_range[1], padding=0)
         self.fit_timer.start(100)
-        self.enableAutoRange(False)  # Disable auto-range during fitting
-        self.fit_locked = False  # Reset fit_locked when entering fitting mode
+        self.fit_locked = False
 
     def disable_fitting_mode(self):
         # Only save the fit if it's locked in
@@ -246,13 +252,21 @@ class CalibrationViewBox(ViewBox):
         self.enableAutoRange(True)  # Re-enable auto-range after fitting
 
     def mousePressEvent(self, ev):
+        print('self.fitting: ', self.fitting)
         if self.zoom_mode and ev.button() == Qt.LeftButton:
             self.zoom_start_pos = self.mapSceneToView(ev.scenePos())
+            self.saved_view_range = self.viewRange()  # Save the current view range
+            x_range, y_range = self.saved_view_range
+            # Freeze the current range, preventing it from changing while zooming
+            self.setLimits(xMin=x_range[0], xMax=x_range[1], yMin=y_range[0], yMax=y_range[1])
             ev.accept()
         elif self.fitting:
+            print('inside self.fitting')
             if ev.button() == Qt.LeftButton:
+                print('inside ev.button')
                 if not self.fit_locked:
                     # Lock in the fit
+                    print('inside self.fit_locked')
                     self.fit_locked = True
                     self.calibration_plot_widget.confirm_fit(self.current_peak, self.fitter)
                 ev.accept()
@@ -309,6 +323,8 @@ class CalibrationViewBox(ViewBox):
             self.calibration_plot_widget.plot_item.setXRange(x0, x1, padding=0)
             self.calibration_plot_widget.plot_item.setYRange(y0, y1, padding=0)
             self.zoom_start_pos = None
+            # Re-enable view limits
+            self.setLimits(xMin=None, xMax=None, yMin=None, yMax=None)  # Remove limits after zooming
             ev.accept()
         else:
             super().mouseReleaseEvent(ev)

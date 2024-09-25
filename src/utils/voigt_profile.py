@@ -38,7 +38,7 @@ class VoigtFitter:
         self.inverted = inverted  # Flag to indicate if the data is inverted
         self.method = method  # Fitting method: 'voigt', 'pseudo_voigt', 'asymmetric_pseudo_voigt'
 
-    def fit(self, x, y, initial_guess=None, maxfev=10000, increase_fit_time_on_failure=False):
+    def fit(self, x, y, initial_guess=None, maxfev=1000, increase_fit_time_on_failure=False):
         self.x = x
         self.y = y  # Do not invert y data
 

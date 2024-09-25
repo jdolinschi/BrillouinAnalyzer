@@ -373,10 +373,31 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_35.addWidget(self.frame_16)
 
-        self.comboBox_calibSelect = QComboBox(self.tab_calibMain)
+        self.frame_5 = QFrame(self.tab_calibMain)
+        self.frame_5.setObjectName(u"frame_5")
+        self.frame_5.setFrameShape(QFrame.NoFrame)
+        self.frame_5.setFrameShadow(QFrame.Plain)
+        self.verticalLayout_18 = QVBoxLayout(self.frame_5)
+        self.verticalLayout_18.setObjectName(u"verticalLayout_18")
+        self.horizontalLayout_10 = QHBoxLayout()
+        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
+        self.comboBox_calibSelect = QComboBox(self.frame_5)
         self.comboBox_calibSelect.setObjectName(u"comboBox_calibSelect")
 
-        self.verticalLayout_35.addWidget(self.comboBox_calibSelect)
+        self.horizontalLayout_10.addWidget(self.comboBox_calibSelect)
+
+        self.pushButton_calibSaveCalib = QPushButton(self.frame_5)
+        self.pushButton_calibSaveCalib.setObjectName(u"pushButton_calibSaveCalib")
+
+        self.horizontalLayout_10.addWidget(self.pushButton_calibSaveCalib)
+
+        self.horizontalLayout_10.setStretch(0, 4)
+        self.horizontalLayout_10.setStretch(1, 1)
+
+        self.verticalLayout_18.addLayout(self.horizontalLayout_10)
+
+
+        self.verticalLayout_35.addWidget(self.frame_5)
 
         self.frame_17 = QFrame(self.tab_calibMain)
         self.frame_17.setObjectName(u"frame_17")
@@ -451,10 +472,6 @@ class Ui_MainWindow(object):
         self.pushButton_calibResetFits.setContextMenuPolicy(Qt.DefaultContextMenu)
 
         self.horizontalLayout_23.addWidget(self.pushButton_calibResetFits)
-
-        self.horizontalSpacer_9 = QSpacerItem(591, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_23.addItem(self.horizontalSpacer_9)
 
 
         self.verticalLayout_33.addWidget(self.frame_18)
@@ -771,10 +788,6 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_9.addWidget(self.pushButton_removeFiles)
 
-        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_9.addItem(self.horizontalSpacer_2)
-
 
         self.verticalLayout_10.addLayout(self.horizontalLayout_9)
 
@@ -956,6 +969,7 @@ class Ui_MainWindow(object):
         self.pushButton_calibNewCalib.setText(QCoreApplication.translate("MainWindow", u"New", None))
         self.pushButton_calibRenameCalib.setText(QCoreApplication.translate("MainWindow", u"Rename", None))
         self.pushButton_calibRemoveCalib.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
+        self.pushButton_calibSaveCalib.setText(QCoreApplication.translate("MainWindow", u"Save", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Mirror spacing (mm):", None))
         self.label_laserWavelengthText.setText(QCoreApplication.translate("MainWindow", u"Laser wavelength (nm):", None))
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"Scattering angle (degrees):", None))

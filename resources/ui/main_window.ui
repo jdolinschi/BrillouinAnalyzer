@@ -490,7 +490,30 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QComboBox" name="comboBox_calibSelect"/>
+                   <widget class="QFrame" name="frame_5">
+                    <property name="frameShape">
+                     <enum>QFrame::NoFrame</enum>
+                    </property>
+                    <property name="frameShadow">
+                     <enum>QFrame::Plain</enum>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_18">
+                     <item>
+                      <layout class="QHBoxLayout" name="horizontalLayout_10" stretch="4,1">
+                       <item>
+                        <widget class="QComboBox" name="comboBox_calibSelect"/>
+                       </item>
+                       <item>
+                        <widget class="QPushButton" name="pushButton_calibSaveCalib">
+                         <property name="text">
+                          <string>Save</string>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
+                     </item>
+                    </layout>
+                   </widget>
                   </item>
                   <item>
                    <widget class="QFrame" name="frame_17">
@@ -591,19 +614,6 @@
                             <string>Reset calibration</string>
                            </property>
                           </widget>
-                         </item>
-                         <item>
-                          <spacer name="horizontalSpacer_9">
-                           <property name="orientation">
-                            <enum>Qt::Horizontal</enum>
-                           </property>
-                           <property name="sizeHint" stdset="0">
-                            <size>
-                             <width>591</width>
-                             <height>20</height>
-                            </size>
-                           </property>
-                          </spacer>
                          </item>
                         </layout>
                        </widget>
@@ -1004,19 +1014,6 @@
                                   <string>Remove files</string>
                                  </property>
                                 </widget>
-                               </item>
-                               <item>
-                                <spacer name="horizontalSpacer_2">
-                                 <property name="orientation">
-                                  <enum>Qt::Horizontal</enum>
-                                 </property>
-                                 <property name="sizeHint" stdset="0">
-                                  <size>
-                                   <width>40</width>
-                                   <height>20</height>
-                                  </size>
-                                 </property>
-                                </spacer>
                                </item>
                               </layout>
                              </item>
