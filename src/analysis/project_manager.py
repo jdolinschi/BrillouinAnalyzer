@@ -577,19 +577,22 @@ class ProjectManager:
         pressure = self.ui.comboBox_pressure.currentText()
         crystal_name = self.ui.comboBox_crystal.currentText()
         if self.project and pressure and crystal_name:
-            for row in range(self.file_model.rowCount() - 1):  # Exclude default values row
-                filename = self.file_model.data(self.file_model.index(row, 0), Qt.DisplayRole)
-                metadata = {
-                    'chi_angle': self.file_model.data(self.file_model.index(row, 1), Qt.DisplayRole),
-                    'pinhole': self.file_model.data(self.file_model.index(row, 2), Qt.DisplayRole),
-                    'power': self.file_model.data(self.file_model.index(row, 3), Qt.DisplayRole),
-                    'polarization': self.file_model.data(self.file_model.index(row, 4), Qt.DisplayRole),
-                    'scans': self.file_model.data(self.file_model.index(row, 5), Qt.DisplayRole),
-                    'laser_wavelength': self.file_model.data(self.file_model.index(row, 6), Qt.DisplayRole),
-                    'mirror_spacing': self.file_model.data(self.file_model.index(row, 7), Qt.DisplayRole),
-                    'scattering_angle': self.file_model.data(self.file_model.index(row, 8), Qt.DisplayRole),
-                }
-                for key, value in metadata.items():
-                    if value is not None:
-                        self.project.add_metadata_to_dataset(filename, key, value)
+            row_count = self.file_model.rowCount() - 1  # Exclude default values row
+            if row_count > 0:  # Ensure there are rows to process
+                for row in range(1, row_count+1):
+                    filename = self.file_model.data(self.file_model.index(row, 0), Qt.DisplayRole)
+                    metadata = {
+                        'chi_angle': self.file_model.data(self.file_model.index(row, 1), Qt.DisplayRole),
+                        'pinhole': self.file_model.data(self.file_model.index(row, 2), Qt.DisplayRole),
+                        'power': self.file_model.data(self.file_model.index(row, 3), Qt.DisplayRole),
+                        'polarization': self.file_model.data(self.file_model.index(row, 4), Qt.DisplayRole),
+                        'scans': self.file_model.data(self.file_model.index(row, 5), Qt.DisplayRole),
+                        'laser_wavelength': self.file_model.data(self.file_model.index(row, 6), Qt.DisplayRole),
+                        'mirror_spacing': self.file_model.data(self.file_model.index(row, 7), Qt.DisplayRole),
+                        'scattering_angle': self.file_model.data(self.file_model.index(row, 8), Qt.DisplayRole),
+                    }
+                    for key, value in metadata.items():
+                        if value is not None:
+                            self.project.add_metadata_to_dataset(filename, key, value)
+
 

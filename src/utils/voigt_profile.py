@@ -31,6 +31,8 @@ class VoigtFitter:
     def __init__(self, inverted=False, method='voigt'):
         self.x = None
         self.y = None
+        self.x_min = None
+        self.x_max = None
         self.fit_params = None
         self.fit_cov = None
         self.inverted = inverted  # Flag to indicate if the data is inverted

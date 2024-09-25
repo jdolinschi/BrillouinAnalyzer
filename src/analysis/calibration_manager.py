@@ -1,6 +1,6 @@
 # calibration_manager.py
 import numpy as np
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QItemSelectionModel
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
 from .calibration_file_table_model import CalibrationFileTableModel
 from .calibration_plot_widget import CalibrationPlotWidget
@@ -64,12 +64,14 @@ class CalibrationManager:
             except ValueError as e:
                 QMessageBox.warning(None, "Error", str(e))
 
+    # calibration_manager.py
+
     def save_peak_fit(self, peak_type, fitter):
         # Get the current calibration and file
         calibration_name = self.ui.comboBox_calibSelect.currentText()
         filename = self.current_calibration_file
 
-        # Prepare the fit parameters
+        # Prepare the fit parameters, including x_min and x_max
         peak_fit = {
             'center': fitter.get_parameter('center'),
             'amplitude': fitter.get_parameter('amplitude'),
@@ -77,7 +79,11 @@ class CalibrationManager:
             'gamma': fitter.get_parameter('gamma'),
             'fwhm': fitter.get_parameter('fwhm'),
             'area': fitter.get_parameter('area'),
-            'goodness_of_fit': fitter.goodness_of_fit()
+            'goodness_of_fit': fitter.goodness_of_fit(),
+            'x_min': fitter.x_min,
+            'x_max': fitter.x_max,
+            'x_fit': fitter.x_fit.tolist(),
+            'y_fit': fitter.y_fit.tolist()
         }
 
         # Save to the project
@@ -258,6 +264,35 @@ class CalibrationManager:
                     self.current_calibration_data = data
                     self.plot_calibration_data(data)
                     self.last_action('Calibration file plotted')
+
+                    # Load saved fits
+                    left_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'left')
+                    if left_peak_fit:
+                        self.calibration_plot_widget.load_saved_fit('left', left_peak_fit)
+                        self.update_left_peak_list_from_saved_fit(left_peak_fit)
+                    else:
+                        self.ui.listWidget_calibLeftPeak.clear()
+
+                    right_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'right')
+                    if right_peak_fit:
+                        self.calibration_plot_widget.load_saved_fit('right', right_peak_fit)
+                        self.update_right_peak_list_from_saved_fit(right_peak_fit)
+                    else:
+                        self.ui.listWidget_calibRightPeak.clear()
+
+    def update_left_peak_list_from_saved_fit(self, peak_fit):
+        self.ui.listWidget_calibLeftPeak.clear()
+        params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area']
+        for param in params:
+            value = peak_fit.get(param)
+            self.ui.listWidget_calibLeftPeak.addItem(f"{param.capitalize()}: {value}")
+
+    def update_right_peak_list_from_saved_fit(self, peak_fit):
+        self.ui.listWidget_calibRightPeak.clear()
+        params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area']
+        for param in params:
+            value = peak_fit.get(param)
+            self.ui.listWidget_calibRightPeak.addItem(f"{param.capitalize()}: {value}")
 
     def plot_calibration_data(self, data):
         # Store the x and y data for fitting

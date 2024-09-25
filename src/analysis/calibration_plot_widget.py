@@ -69,9 +69,9 @@ class CalibrationPlotWidget(QObject):
         self.x_data = x
         self.y_data = y
         self.plot_item.clear()
+        self.reset_fits()  # Ensure fits are reset
         self.data_curve = self.plot_item.plot(x, y, pen='w')  # Plot data in white
         self.initial_view_range = self.plot_item.viewRange()
-        self.reset_fits()
 
         # Set x and y limits
         min_x, max_x = np.min(x), np.max(x)
@@ -143,6 +143,9 @@ class CalibrationPlotWidget(QObject):
         if self.right_peak_line:
             self.plot_item.removeItem(self.right_peak_line)
             self.right_peak_line = None
+        # Clear fitting parameter lists
+        self.ui.listWidget_calibLeftPeak.clear()
+        self.ui.listWidget_calibRightPeak.clear()
 
     def confirm_fit(self, peak_type, fitter):
         # Save the fit parameters via CalibrationManager
@@ -160,6 +163,20 @@ class CalibrationPlotWidget(QObject):
             elif peak_type == 'right':
                 self.calibration_manager.clear_right_peak_list()
 
+    def load_saved_fit(self, peak_type, peak_fit):
+        x_min = peak_fit['x_min']
+        x_max = peak_fit['x_max']
+        x_fit = peak_fit['x_fit']
+        y_fit = peak_fit['y_fit']
+
+        # Reconstruct the fit curve
+        amplitude = peak_fit['amplitude']
+        center = peak_fit['center']
+        sigma = peak_fit['sigma']
+        gamma = peak_fit['gamma']
+
+        # Update the plot
+        self.update_fit_plot(x_fit, y_fit, center, peak_type)
 
 class CalibrationViewBox(ViewBox):
     def __init__(self, calibration_plot_widget):
@@ -345,6 +362,10 @@ class CalibrationViewBox(ViewBox):
                 fitter = VoigtFitter(inverted=True, method='pseudo_voigt')
                 try:
                     fitter.fit(x_fit, y_fit)
+                    fitter.x_min = x_min
+                    fitter.x_max = x_max
+                    fitter.x_fit = x_fit
+                    fitter.y_fit = fitter.get_fit_curve(x_fit)
                     fit_curve = fitter.get_fit_curve(x_fit)
                     center = fitter.get_parameter('center')
                     if np.min(x_data) < center < np.max(x_data):

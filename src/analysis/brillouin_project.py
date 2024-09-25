@@ -148,6 +148,10 @@ class BrillouinProject:
             group.attrs[f'{peak}_fwhm'] = np.nan
             group.attrs[f'{peak}_area'] = np.nan
             group.attrs[f'{peak}_goodness_of_fit'] = np.nan
+            group.attrs[f'{peak}_x_min'] = np.nan
+            group.attrs[f'{peak}_x_max'] = np.nan
+            group.attrs[f'{peak}_x_fit'] = np.nan
+            group.attrs[f'{peak}_y_fit'] = np.nan
 
         # Initialize empty calibration ratios
         group.attrs['channels'] = np.nan
@@ -204,13 +208,66 @@ class BrillouinProject:
 
         if left_peak_fit is not None:
             for key, value in left_peak_fit.items():
-                group.attrs[f'left_peak_{key}'] = value
+                    if key in ['x_fit', 'y_fit']:
+                        # Save x_fit and y_fit as datasets
+                        if f'left_peak_{key}' in group:
+                            del group[f'left_peak_{key}']  # Delete existing dataset if it exists
+                        group.create_dataset(f'left_peak_{key}', data=np.array(value))  # Save as numpy array
+                    else:
+                        group.attrs[f'left_peak_{key}'] = value  # Scalar attributes
 
         if right_peak_fit is not None:
             for key, value in right_peak_fit.items():
-                group.attrs[f'right_peak_{key}'] = value
+                if key in ['x_fit', 'y_fit']:
+                    # Save x_fit and y_fit as datasets
+                    if f'right_peak_{key}' in group:
+                        del group[f'right_peak_{key}']  # Delete existing dataset if it exists
+                    group.create_dataset(f'right_peak_{key}', data=np.array(value))  # Save as numpy array
+                else:
+                    group.attrs[f'right_peak_{key}'] = value  # Scalar attributes
 
         self.h5file.flush()
+
+    def get_peak_fit(self, calibration_name, file_name, peak_type):
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
+
+        calibration_group = self.h5file['calibrations'][calibration_name]
+
+        if file_name not in calibration_group:
+            raise ValueError(f"File '{file_name}' does not exist in the calibration.")
+
+        group = calibration_group[file_name]
+
+        # Initialize an empty dictionary to store peak fit parameters
+        peak_fit = {}
+
+        # Retrieve attributes (center, amplitude, sigma, gamma, fwhm, area, goodness_of_fit, etc.)
+        params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area', 'goodness_of_fit', 'x_min', 'x_max']
+        for param in params:
+            attr_name = f'{peak_type}_peak_{param}'
+            if attr_name in group.attrs:
+                peak_fit[param] = group.attrs[attr_name]
+            else:
+                peak_fit[param] = np.nan  # Default to NaN if the attribute does not exist
+
+        # Retrieve x_fit and y_fit datasets if they exist
+        x_fit_name = f'{peak_type}_peak_x_fit'
+        y_fit_name = f'{peak_type}_peak_y_fit'
+
+        if x_fit_name in group:
+            peak_fit['x_fit'] = group[x_fit_name][()]  # Load as a numpy array
+        else:
+            peak_fit['x_fit'] = np.array([])  # Default to empty array if dataset does not exist
+
+        if y_fit_name in group:
+            peak_fit['y_fit'] = group[y_fit_name][()]  # Load as a numpy array
+        else:
+            peak_fit['y_fit'] = np.array([])  # Default to empty array if dataset does not exist
+
+        return peak_fit
 
     def list_calibrations(self):
         if self.h5file is None or 'calibrations' not in self.h5file:
@@ -390,6 +447,7 @@ class BrillouinProject:
                 "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
 
         if dataset_name not in self.h5file:
+            print('Error in add_metadata_to_dataset')
             raise ValueError(f"Dataset {dataset_name} does not exist in the HDF5 file.")
 
         group = self.h5file[dataset_name]
@@ -414,6 +472,7 @@ class BrillouinProject:
                 "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
 
         if dataset_name not in self.h5file:
+            print('Error in add_array_to_dataset')
             raise ValueError(f"Dataset {dataset_name} does not exist in the HDF5 file.")
 
         group = self.h5file[dataset_name]
@@ -430,6 +489,7 @@ class BrillouinProject:
                 "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
 
         if dataset_name not in self.h5file:
+            print('Error in get_metadata_from_dataset')
             raise ValueError(f"Dataset {dataset_name} does not exist in the HDF5 file.")
 
         group = self.h5file[dataset_name]
@@ -508,6 +568,7 @@ class BrillouinProject:
                 "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
 
         if dataset_name not in self.h5file:
+            print('Error in remove_dataset')
             raise ValueError(f"Dataset {dataset_name} does not exist in the HDF5 file.")
 
         del self.h5file[dataset_name]
