@@ -36,7 +36,6 @@ class CalibrationPlotWidget(QObject):
         # Connect UI buttons
         self.ui.pushButton_calibResetView.clicked.connect(self.reset_view)
         self.ui.pushButton_calibZoom.clicked.connect(self.zoom_button_clicked)
-        self.ui.pushButton_calibPan.clicked.connect(self.pan_button_clicked)
         self.ui.pushButton_calibFitLeftPeak.clicked.connect(self.fit_left_peak_clicked)
         self.ui.pushButton_calibFitRightPeak.clicked.connect(self.fit_right_peak_clicked)
         self.ui.pushButton_calibDeleteLeftPeak.clicked.connect(self.delete_left_peak)
@@ -75,11 +74,9 @@ class CalibrationPlotWidget(QObject):
 
         # Reset interaction modes
         self.ui.pushButton_calibZoom.setChecked(False)
-        self.ui.pushButton_calibPan.setChecked(False)
         self.ui.pushButton_calibFitLeftPeak.setChecked(False)
         self.ui.pushButton_calibFitRightPeak.setChecked(False)
         self.view_box.disable_zoom_mode()
-        self.view_box.disable_pan_mode()
         self.view_box.disable_fitting_mode()
 
         # Plot the new data
@@ -108,17 +105,9 @@ class CalibrationPlotWidget(QObject):
 
     def zoom_button_clicked(self):
         if self.ui.pushButton_calibZoom.isChecked():
-            self.ui.pushButton_calibPan.setChecked(False)
             self.view_box.enable_zoom_mode()
         else:
             self.view_box.disable_zoom_mode()
-
-    def pan_button_clicked(self):
-        if self.ui.pushButton_calibPan.isChecked():
-            self.ui.pushButton_calibZoom.setChecked(False)
-            self.view_box.enable_pan_mode()
-        else:
-            self.view_box.disable_pan_mode()
 
     def fit_left_peak_clicked(self):
         if self.ui.pushButton_calibZoom.isChecked():
@@ -241,14 +230,6 @@ class CalibrationViewBox(ViewBox):
         self.zoom_mode = False
         self.setMouseMode(pg.ViewBox.PanMode)
         self.setMouseEnabled(True, True)
-        self.calibration_plot_widget.plot_widget.setCursor(Qt.ArrowCursor)
-
-    def enable_pan_mode(self):
-        self.setMouseMode(pg.ViewBox.PanMode)
-        self.calibration_plot_widget.plot_widget.setCursor(Qt.OpenHandCursor)
-
-    def disable_pan_mode(self):
-        self.setMouseMode(pg.ViewBox.PanMode)
         self.calibration_plot_widget.plot_widget.setCursor(Qt.ArrowCursor)
 
     def enable_fitting_mode(self, peak_type):
