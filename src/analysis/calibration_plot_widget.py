@@ -98,6 +98,10 @@ class CalibrationPlotWidget(QObject):
             self.view_box.disable_pan_mode()
 
     def fit_left_peak_clicked(self):
+        if self.ui.pushButton_calibZoom.isChecked():
+            self.ui.pushButton_calibZoom.setChecked(False)
+            self.view_box.disable_zoom_mode()
+
         if self.ui.pushButton_calibFitLeftPeak.isChecked():
             self.ui.pushButton_calibFitRightPeak.setChecked(False)
             self.view_box.enable_fitting_mode('left')
@@ -105,6 +109,10 @@ class CalibrationPlotWidget(QObject):
             self.view_box.disable_fitting_mode()
 
     def fit_right_peak_clicked(self):
+        if self.ui.pushButton_calibZoom.isChecked():
+            self.ui.pushButton_calibZoom.setChecked(False)
+            self.view_box.disable_zoom_mode()
+
         if self.ui.pushButton_calibFitRightPeak.isChecked():
             self.ui.pushButton_calibFitLeftPeak.setChecked(False)
             self.view_box.enable_fitting_mode('right')
@@ -252,7 +260,6 @@ class CalibrationViewBox(ViewBox):
         self.enableAutoRange(True)  # Re-enable auto-range after fitting
 
     def mousePressEvent(self, ev):
-        print('self.fitting: ', self.fitting)
         if self.zoom_mode and ev.button() == Qt.LeftButton:
             self.zoom_start_pos = self.mapSceneToView(ev.scenePos())
             self.saved_view_range = self.viewRange()  # Save the current view range
@@ -261,12 +268,9 @@ class CalibrationViewBox(ViewBox):
             self.setLimits(xMin=x_range[0], xMax=x_range[1], yMin=y_range[0], yMax=y_range[1])
             ev.accept()
         elif self.fitting:
-            print('inside self.fitting')
             if ev.button() == Qt.LeftButton:
-                print('inside ev.button')
                 if not self.fit_locked:
                     # Lock in the fit
-                    print('inside self.fit_locked')
                     self.fit_locked = True
                     self.calibration_plot_widget.confirm_fit(self.current_peak, self.fitter)
                 ev.accept()
