@@ -272,7 +272,7 @@ class ProjectManager:
         if self.project:
             try:
                 # Ensure the file exists in the HDF5 file before updating metadata
-                if filename in self.project.h5file:
+                if filename in self.project.h5file['data']:
                     for key, value in metadata.items():
                         if value is None and key in ['chi_angle', 'pinhole', 'power', 'polarization', 'scans',
                                                      'laser_wavelength', 'mirror_spacing', 'scattering_angle']:
