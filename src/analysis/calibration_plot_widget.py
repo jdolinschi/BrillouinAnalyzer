@@ -379,7 +379,7 @@ class CalibrationViewBox(ViewBox):
             y_fit = y_data[mask]
             if len(x_fit) > 5:
                 # Perform Voigt fit
-                fitter = VoigtFitter(inverted=True, method='pseudo_voigt')
+                fitter = VoigtFitter(inverted=True, method='pseudo_voigt', fit_baseline=True)
                 try:
                     fitter.fit(x_fit, y_fit, increase_fit_time_on_failure=True)
                     fitter.x_min = x_min

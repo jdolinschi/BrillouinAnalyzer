@@ -2,18 +2,29 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.special import voigt_profile  # For Voigt profile
 
-# Define the Voigt profile
+# Define the Voigt profile without baseline
 def voigt_profile_custom(x, amplitude, center, sigma, gamma):
     return amplitude * voigt_profile(x - center, sigma, gamma)
 
-# Define the Pseudo-Voigt profile
+# Define the Voigt profile with baseline
+def voigt_profile_custom_with_baseline(x, amplitude, center, sigma, gamma, baseline):
+    return amplitude * voigt_profile(x - center, sigma, gamma) + baseline
+
+# Define the Pseudo-Voigt profile without baseline
 def pseudo_voigt(x, amplitude, center, sigma, gamma):
     eta = gamma / (gamma + sigma)
     gauss = np.exp(-((x - center) ** 2) / (2 * sigma ** 2))
     lorentz = gamma ** 2 / ((x - center) ** 2 + gamma ** 2)
     return amplitude * (eta * lorentz + (1 - eta) * gauss)
 
-# Define the Asymmetric Pseudo-Voigt function
+# Define the Pseudo-Voigt profile with baseline
+def pseudo_voigt_with_baseline(x, amplitude, center, sigma, gamma, baseline):
+    eta = gamma / (gamma + sigma)
+    gauss = np.exp(-((x - center) ** 2) / (2 * sigma ** 2))
+    lorentz = gamma ** 2 / ((x - center) ** 2 + gamma ** 2)
+    return amplitude * (eta * lorentz + (1 - eta) * gauss) + baseline
+
+# Define the Asymmetric Pseudo-Voigt function without baseline
 def asymmetric_pseudo_voigt(x, amplitude, center, sigma, gamma, asymmetry):
     delta = x - center
     sigma_mod = sigma * (1 + asymmetry * np.sign(delta))
@@ -23,28 +34,42 @@ def asymmetric_pseudo_voigt(x, amplitude, center, sigma, gamma, asymmetry):
     lorentz = gamma_mod ** 2 / (delta ** 2 + gamma_mod ** 2)
     return amplitude * (eta * lorentz + (1 - eta) * gauss)
 
+# Define the Asymmetric Pseudo-Voigt function with baseline
+def asymmetric_pseudo_voigt_with_baseline(x, amplitude, center, sigma, gamma, asymmetry, baseline):
+    delta = x - center
+    sigma_mod = sigma * (1 + asymmetry * np.sign(delta))
+    gamma_mod = gamma * (1 + asymmetry * np.sign(delta))
+    eta = gamma_mod / (gamma_mod + sigma_mod)
+    gauss = np.exp(-delta ** 2 / (2 * sigma_mod ** 2))
+    lorentz = gamma_mod ** 2 / (delta ** 2 + gamma_mod ** 2)
+    return amplitude * (eta * lorentz + (1 - eta) * gauss) + baseline
+
 class VoigtFitter:
-    def __init__(self, inverted=False, method='voigt'):
+    def __init__(self, inverted=False, method='voigt', fit_baseline=False):
         self.x = None
         self.y = None
         self.fit_params = None
         self.fit_cov = None
         self.inverted = inverted
         self.method = method
+        self.fit_baseline = fit_baseline  # New attribute to control baseline fitting
 
     def fit(self, x, y, initial_guess=None, maxfev=1000, increase_fit_time_on_failure=False):
         self.x = x
         self.y = y
 
-        # Select fitting function based on method
+        # Map fitting functions based on method and baseline fitting
         function_map = {
-            'voigt': voigt_profile_custom,
-            'pseudo_voigt': pseudo_voigt,
-            'asymmetric_pseudo_voigt': asymmetric_pseudo_voigt,
+            'voigt': (voigt_profile_custom, voigt_profile_custom_with_baseline),
+            'pseudo_voigt': (pseudo_voigt, pseudo_voigt_with_baseline),
+            'asymmetric_pseudo_voigt': (asymmetric_pseudo_voigt, asymmetric_pseudo_voigt_with_baseline),
         }
-        fitting_function = function_map.get(self.method)
-        if not fitting_function:
+        fitting_functions = function_map.get(self.method)
+        if not fitting_functions:
             raise ValueError(f"Fitting method '{self.method}' not recognized.")
+
+        # Select the appropriate fitting function
+        fitting_function = fitting_functions[1] if self.fit_baseline else fitting_functions[0]
 
         # Provide an initial guess if not given
         if initial_guess is None:
@@ -56,9 +81,15 @@ class VoigtFitter:
             gamma_guess = sigma_guess
             if self.method == 'asymmetric_pseudo_voigt':
                 asymmetry_guess = 0.0
-                initial_guess = [amplitude_guess, center_guess, sigma_guess, gamma_guess, asymmetry_guess]
+                if self.fit_baseline:
+                    initial_guess = [amplitude_guess, center_guess, sigma_guess, gamma_guess, asymmetry_guess, baseline]
+                else:
+                    initial_guess = [amplitude_guess, center_guess, sigma_guess, gamma_guess, asymmetry_guess]
             else:
-                initial_guess = [amplitude_guess, center_guess, sigma_guess, gamma_guess]
+                if self.fit_baseline:
+                    initial_guess = [amplitude_guess, center_guess, sigma_guess, gamma_guess, baseline]
+                else:
+                    initial_guess = [amplitude_guess, center_guess, sigma_guess, gamma_guess]
 
         # Perform the curve fitting
         try:
@@ -88,14 +119,18 @@ class VoigtFitter:
         if self.fit_params is None:
             raise ValueError("No fit performed yet.")
 
+        # Map fitting functions based on method and baseline fitting
         function_map = {
-            'voigt': voigt_profile_custom,
-            'pseudo_voigt': pseudo_voigt,
-            'asymmetric_pseudo_voigt': asymmetric_pseudo_voigt,
+            'voigt': (voigt_profile_custom, voigt_profile_custom_with_baseline),
+            'pseudo_voigt': (pseudo_voigt, pseudo_voigt_with_baseline),
+            'asymmetric_pseudo_voigt': (asymmetric_pseudo_voigt, asymmetric_pseudo_voigt_with_baseline),
         }
-        fitting_function = function_map.get(self.method)
-        if not fitting_function:
+        fitting_functions = function_map.get(self.method)
+        if not fitting_functions:
             raise ValueError(f"Fitting method '{self.method}' not recognized.")
+
+        # Select the appropriate fitting function
+        fitting_function = fitting_functions[1] if self.fit_baseline else fitting_functions[0]
 
         return fitting_function(x, *self.fit_params)
 
@@ -106,6 +141,8 @@ class VoigtFitter:
         param_names = ['amplitude', 'center', 'sigma', 'gamma']
         if self.method == 'asymmetric_pseudo_voigt':
             param_names.append('asymmetry')
+        if self.fit_baseline:
+            param_names.append('baseline')
 
         param_map = dict(zip(param_names, self.fit_params))
 
