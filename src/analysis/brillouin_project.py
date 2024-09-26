@@ -20,16 +20,22 @@ class BrillouinProject:
     Methods:
         create_h5file(): Creates a new HDF5 file in the specified folder.
         load_h5file(): Loads an existing HDF5 file for reading and writing.
-        add_file_to_h5(file_path): Adds the contents of a .dat file to the HDF5 file.
-        add_metadata_to_dataset(dataset_name, key, value): Adds metadata to a specific dataset.
-        add_array_to_dataset(dataset_name, array_name, array_data): Adds a new array to a specific dataset.
-        get_metadata_from_dataset(dataset_name, key): Retrieves metadata from a specific dataset.
-        find_datasets_by_metadata(key, value): Finds datasets matching a specific metadata key-value pair.
-        find_datasets_by_metadata_dict(metadata_dict): Finds datasets matching multiple metadata key-value pairs.
-        remove_dataset(dataset_name): Removes a dataset and all its subgroups from the HDF5 file.
-        load_all_files(file_paths): Adds multiple .DAT files to the HDF5 file.
-        save_project(): Saves the HDF5 file and updates the modification date.
-        check_unsaved_changes(detailed=False): Checks if there are unsaved changes in the HDF5 file.
+        add_calibration(): Adds a new calibration to the project.
+        remove_calibration(): Removes an existing calibration from the project.
+        update_calibration_attributes(): Updates attributes of a calibration.
+        add_file_to_calibration(): Adds a file to a calibration.
+        remove_file_from_calibration(): Removes a file from a calibration.
+        update_calibration_file_data(): Updates file-level data within a calibration.
+        update_peak_fit(): Updates peak fit data for a file within a calibration.
+        get_peak_fit(): Retrieves peak fit data for a file within a calibration.
+        get_calibration_attributes(): Retrieves attributes of a calibration.
+        get_calibration_file_data(): Retrieves data from a file within a calibration.
+        list_calibrations(): Lists all calibrations in the project.
+        list_files_in_calibration(): Lists all files in a calibration.
+        save_project(): Saves the temporary HDF5 file to the main project file.
+        check_unsaved_changes(): Checks if there are unsaved changes.
+        cleanup_temp_file(): Cleans up the temporary HDF5 file.
+        Other methods for managing pressures, crystals, and datasets.
     """
 
     def __init__(self, folder, project_name):
@@ -75,6 +81,20 @@ class BrillouinProject:
         self._update_modification_date()
         self.h5file.attrs['project_name'] = self.project_name
 
+    def load_all_files_with_metadata(self, file_paths, pressure, crystal):
+        for file_path in file_paths:
+            self.add_file_to_h5(file_path, pressure, crystal)
+
+    def load_all_files(self, file_paths):
+        """
+        Adds all provided .DAT file paths to the temporary HDF5 file.
+
+        Parameters:
+            file_paths (list of str): A list of file paths to .DAT files to be added.
+        """
+        for file_path in file_paths:
+            self.add_file_to_h5(file_path)
+
     def load_h5file(self):
         """
         Loads an existing HDF5 file for reading and writing by copying it to a temporary file.
@@ -88,355 +108,6 @@ class BrillouinProject:
         # Copy the original file to the temporary file
         shutil.copyfile(self.h5file_path, self.temp_h5file_path)
         self.h5file = h5py.File(self.temp_h5file_path, 'a')
-
-    def add_calibration(self, calibration_name, mirror_spacing=np.nan, laser_wavelength=np.nan, scattering_angle=np.nan):
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-
-        if 'calibrations' not in self.h5file:
-            self.h5file.create_group('calibrations')
-
-        if calibration_name in self.h5file['calibrations']:
-            raise ValueError(f"Calibration '{calibration_name}' already exists.")
-
-        calibration_group = self.h5file['calibrations'].create_group(calibration_name)
-        calibration_group.attrs['mirror_spacing'] = mirror_spacing
-        calibration_group.attrs['laser_wavelength'] = laser_wavelength
-        calibration_group.attrs['scattering_angle'] = scattering_angle
-
-        self.h5file.flush()
-
-    def remove_calibration(self, calibration_name):
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
-            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
-
-        del self.h5file['calibrations'][calibration_name]
-        self.h5file.flush()
-
-    def add_file_to_calibration(self, calibration_name, file_path):
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
-            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
-
-        calibration_group = self.h5file['calibrations'][calibration_name]
-        dataset_name = os.path.basename(file_path)
-
-        if dataset_name in calibration_group:
-            print(f"File {dataset_name} already exists in the calibration. Skipping.")
-            return
-
-        with open(file_path, 'rb') as file:
-            raw_data = file.read()
-
-        group = calibration_group.create_group(dataset_name)
-        group.create_dataset('raw_content', data=raw_data)
-
-        with open(file_path, 'r') as file:
-            lines = file.readlines()
-            numeric_data = [int(line.strip()) for line in lines[12:] if line.strip().isdigit()]
-        group.create_dataset('original_data', data=numeric_data)
-
-        # Initialize empty attributes for the peak fits
-        for peak in ['left_peak', 'right_peak']:
-            group.attrs[f'{peak}_center'] = np.nan
-            group.attrs[f'{peak}_amplitude'] = np.nan
-            group.attrs[f'{peak}_sigma'] = np.nan
-            group.attrs[f'{peak}_gamma'] = np.nan
-            group.attrs[f'{peak}_fwhm'] = np.nan
-            group.attrs[f'{peak}_area'] = np.nan
-            group.attrs[f'{peak}_goodness_of_fit'] = np.nan
-            group.attrs[f'{peak}_x_min'] = np.nan
-            group.attrs[f'{peak}_x_max'] = np.nan
-            group.attrs[f'{peak}_x_fit'] = np.nan
-            group.attrs[f'{peak}_y_fit'] = np.nan
-
-        # Initialize empty calibration ratios
-        group.attrs['channels'] = np.nan
-        group.attrs['nm_per_channel'] = np.nan
-        group.attrs['ghz_per_channel'] = np.nan
-
-        self.h5file.flush()
-
-    def remove_file_from_calibration(self, calibration_name, file_name):
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
-            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
-
-        calibration_group = self.h5file['calibrations'][calibration_name]
-
-        if file_name in calibration_group:
-            del calibration_group[file_name]
-            self.h5file.flush()
-        else:
-            raise ValueError(f"File '{file_name}' does not exist in the calibration.")
-
-
-    def update_calibration_attributes(self, calibration_name, mirror_spacing=None, laser_wavelength=None, scattering_angle=None):
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
-            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
-
-        calibration_group = self.h5file['calibrations'][calibration_name]
-
-        if mirror_spacing is not None:
-            calibration_group.attrs['mirror_spacing'] = mirror_spacing
-        if laser_wavelength is not None:
-            calibration_group.attrs['laser_wavelength'] = laser_wavelength
-        if scattering_angle is not None:
-            calibration_group.attrs['scattering_angle'] = scattering_angle
-
-        self.h5file.flush()
-
-
-    def update_peak_fit(self, calibration_name, file_name, left_peak_fit=None, right_peak_fit=None):
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
-            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
-
-        calibration_group = self.h5file['calibrations'][calibration_name]
-
-        if file_name not in calibration_group:
-            raise ValueError(f"File '{file_name}' does not exist in the calibration.")
-
-        group = calibration_group[file_name]
-
-        if left_peak_fit is not None:
-            for key, value in left_peak_fit.items():
-                    if key in ['x_fit', 'y_fit']:
-                        # Save x_fit and y_fit as datasets
-                        if f'left_peak_{key}' in group:
-                            del group[f'left_peak_{key}']  # Delete existing dataset if it exists
-                        group.create_dataset(f'left_peak_{key}', data=np.array(value))  # Save as numpy array
-                    else:
-                        group.attrs[f'left_peak_{key}'] = value  # Scalar attributes
-
-        if right_peak_fit is not None:
-            for key, value in right_peak_fit.items():
-                if key in ['x_fit', 'y_fit']:
-                    # Save x_fit and y_fit as datasets
-                    if f'right_peak_{key}' in group:
-                        del group[f'right_peak_{key}']  # Delete existing dataset if it exists
-                    group.create_dataset(f'right_peak_{key}', data=np.array(value))  # Save as numpy array
-                else:
-                    group.attrs[f'right_peak_{key}'] = value  # Scalar attributes
-
-        self.h5file.flush()
-
-    def get_peak_fit(self, calibration_name, file_name, peak_type):
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
-            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
-
-        calibration_group = self.h5file['calibrations'][calibration_name]
-
-        if file_name not in calibration_group:
-            raise ValueError(f"File '{file_name}' does not exist in the calibration.")
-
-        group = calibration_group[file_name]
-
-        # Initialize an empty dictionary to store peak fit parameters
-        peak_fit = {}
-
-        # Retrieve attributes (center, amplitude, sigma, gamma, fwhm, area, goodness_of_fit, etc.)
-        params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area', 'goodness_of_fit', 'x_min', 'x_max']
-        for param in params:
-            attr_name = f'{peak_type}_peak_{param}'
-            if attr_name in group.attrs:
-                peak_fit[param] = group.attrs[attr_name]
-            else:
-                peak_fit[param] = np.nan  # Default to NaN if the attribute does not exist
-
-        # Retrieve x_fit and y_fit datasets if they exist
-        x_fit_name = f'{peak_type}_peak_x_fit'
-        y_fit_name = f'{peak_type}_peak_y_fit'
-
-        if x_fit_name in group:
-            peak_fit['x_fit'] = group[x_fit_name][()]  # Load as a numpy array
-        else:
-            peak_fit['x_fit'] = np.array([])  # Default to empty array if dataset does not exist
-
-        if y_fit_name in group:
-            peak_fit['y_fit'] = group[y_fit_name][()]  # Load as a numpy array
-        else:
-            peak_fit['y_fit'] = np.array([])  # Default to empty array if dataset does not exist
-
-        return peak_fit
-
-    def list_calibrations(self):
-        if self.h5file is None or 'calibrations' not in self.h5file:
-            return []
-        return list(self.h5file['calibrations'].keys())
-
-    def list_files_in_calibration(self, calibration_name):
-        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
-            return []
-        return list(self.h5file['calibrations'][calibration_name].keys())
-
-    def add_pressure(self, pressure):
-        """Add a new pressure to the project."""
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-
-        if 'pressures' not in self.h5file.attrs:
-            self.h5file.attrs['pressures'] = []
-
-        pressures = list(self.h5file.attrs['pressures'])
-        if pressure not in pressures:
-            pressures.append(pressure)
-            self.h5file.attrs['pressures'] = pressures
-
-        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
-
-    def remove_pressure(self, pressure):
-        """Remove an existing pressure from the project."""
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-
-        pressures = list(self.h5file.attrs['pressures'])
-        if pressure in pressures:
-            pressures.remove(pressure)
-            self.h5file.attrs['pressures'] = pressures
-
-        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
-
-    def get_calibration_file_data(self, calibration_name, file_name):
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
-            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
-        calibration_group = self.h5file['calibrations'][calibration_name]
-        if file_name not in calibration_group:
-            raise ValueError(f"File '{file_name}' does not exist in the calibration.")
-        group = calibration_group[file_name]
-        data = group['original_data'][()]
-        return data
-
-    def get_calibration_attributes(self, calibration_name):
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
-            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
-
-        calibration_group = self.h5file['calibrations'][calibration_name]
-        attributes = {
-            'mirror_spacing': calibration_group.attrs.get('mirror_spacing', np.nan),
-            'laser_wavelength': calibration_group.attrs.get('laser_wavelength', np.nan),
-            'scattering_angle': calibration_group.attrs.get('scattering_angle', np.nan)
-        }
-        return attributes
-
-    def add_crystal(self, crystal):
-        """Add a new crystal to the project."""
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-
-        if 'crystals' not in self.h5file.attrs:
-            self.h5file.attrs['crystals'] = []
-
-        crystals = list(self.h5file.attrs['crystals'])
-        if crystal not in crystals:
-            crystals.append(crystal)
-            self.h5file.attrs['crystals'] = crystals
-
-        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
-
-    def remove_crystal(self, crystal):
-        """Remove an existing crystal from the project."""
-        if self.h5file is None:
-            raise ValueError("Temporary HDF5 file not created or opened.")
-
-        crystals = list(self.h5file.attrs['crystals'])
-        if crystal in crystals:
-            crystals.remove(crystal)
-            self.h5file.attrs['crystals'] = crystals
-
-        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
-
-    def get_file_count(self):
-        """Return the number of files in the project."""
-        return len(self.h5file.keys())
-
-    def add_file_to_h5(self, file_path, pressure, crystal):
-        """
-        Adds the contents of a single .dat file to the temporary HDF5 file.
-        """
-        if self.h5file is None:
-            raise ValueError(
-                "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
-
-        dataset_name = os.path.basename(file_path)
-
-        if dataset_name in self.h5file:
-            print(f"Dataset {dataset_name} already exists in the HDF5 file. Skipping.")
-            return
-
-        # Create the dataset first to ensure it exists
-        group = self.h5file.create_group(dataset_name)
-
-        # Use np.nan for numeric fields instead of None
-        group.attrs['pressure'] = pressure
-        group.attrs['crystal'] = crystal
-        group.attrs['chi_angle'] = np.nan
-        group.attrs['pinhole'] = np.nan
-        group.attrs['power'] = np.nan
-        group.attrs['polarization'] = np.nan
-        group.attrs['scans'] = np.nan
-        group.attrs['laser_wavelength'] = np.nan
-        group.attrs['mirror_spacing'] = np.nan
-        group.attrs['scattering_angle'] = np.nan
-
-        # Optionally, add the file content
-        with open(file_path, 'rb') as file:
-            raw_data = file.read()
-        group.create_dataset('raw_content', data=raw_data)
-
-        with open(file_path, 'r') as file:
-            lines = file.readlines()
-            numeric_data = [int(line.strip()) for line in lines[12:] if line.strip().isdigit()]
-        group.create_dataset('original_data', data=numeric_data)
-
-        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
-
-    def cleanup_temp_file(self):
-        """
-        Closes the temporary HDF5 file if it is open and then deletes it.
-        """
-        try:
-            # Close the file if it is open
-            if self.h5file is not None and self.h5file.id:
-                self.h5file.close()
-                self.h5file = None
-                print(f"Temporary file {self.temp_h5file_path} has been closed.")
-
-            # Delete the temporary file
-            if os.path.exists(self.temp_h5file_path):
-                os.remove(self.temp_h5file_path)
-                print(f"Temporary file {self.temp_h5file_path} has been deleted.")
-            else:
-                print(f"Temporary file {self.temp_h5file_path} does not exist.")
-        except Exception as e:
-            print(f"Error deleting temporary file: {e}")
-
-    def get_unique_pressures_and_crystals(self):
-        """Return the unique pressures and crystals."""
-        pressures = self.h5file.attrs.get('pressures', [])
-        crystals = self.h5file.attrs.get('crystals', [])
-        return sorted(pressures), sorted(crystals)
-
-    def find_files_by_pressure_and_crystal(self, pressure, crystal):
-        matching_files = []
-        for dataset_name in self.h5file.keys():
-            group = self.h5file[dataset_name]
-            if group.attrs['pressure'] == pressure and group.attrs['crystal'] == crystal:
-                matching_files.append(dataset_name)
-        return matching_files
 
     def add_metadata_to_dataset(self, dataset_name, key, value):
         """
@@ -480,6 +151,348 @@ class BrillouinProject:
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
+    def add_pressure(self, pressure):
+        """Add a new pressure to the project."""
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        if 'pressures' not in self.h5file.attrs:
+            self.h5file.attrs['pressures'] = []
+
+        pressures = list(self.h5file.attrs['pressures'])
+        if pressure not in pressures:
+            pressures.append(pressure)
+            self.h5file.attrs['pressures'] = pressures
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def add_crystal(self, crystal):
+        """Add a new crystal to the project."""
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        if 'crystals' not in self.h5file.attrs:
+            self.h5file.attrs['crystals'] = []
+
+        crystals = list(self.h5file.attrs['crystals'])
+        if crystal not in crystals:
+            crystals.append(crystal)
+            self.h5file.attrs['crystals'] = crystals
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def remove_crystal(self, crystal):
+        """Remove an existing crystal from the project."""
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        crystals = list(self.h5file.attrs['crystals'])
+        if crystal in crystals:
+            crystals.remove(crystal)
+            self.h5file.attrs['crystals'] = crystals
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def remove_dataset(self, dataset_name):
+        """
+        Removes a dataset (group) from the temporary HDF5 file.
+
+        Parameters:
+            dataset_name (str): The name of the dataset to remove.
+
+        Raises:
+            ValueError: If the temporary HDF5 file is not open or the dataset does not exist.
+        """
+        if self.h5file is None:
+            raise ValueError(
+                "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
+
+        if dataset_name not in self.h5file:
+            print('Error in remove_dataset')
+            raise ValueError(f"Dataset {dataset_name} does not exist in the HDF5 file.")
+
+        del self.h5file[dataset_name]
+        print(f"Dataset {dataset_name} has been removed from the HDF5 file.")
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def add_calibration(self, calibration_name, mirror_spacing=np.nan, laser_wavelength=np.nan, scattering_angle=np.nan):
+        """
+        Adds a new calibration to the project.
+
+        Parameters:
+            calibration_name (str): The name of the calibration.
+            mirror_spacing (float): The mirror spacing in mm.
+            laser_wavelength (float): The laser wavelength in nm.
+            scattering_angle (float): The scattering angle in degrees.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        if 'calibrations' not in self.h5file:
+            self.h5file.create_group('calibrations')
+
+        if calibration_name in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' already exists.")
+
+        calibration_group = self.h5file['calibrations'].create_group(calibration_name)
+        calibration_group.attrs['mirror_spacing'] = mirror_spacing
+        calibration_group.attrs['laser_wavelength'] = laser_wavelength
+        calibration_group.attrs['scattering_angle'] = scattering_angle
+
+        self.h5file.flush()
+
+    def remove_pressure(self, pressure):
+        """Remove an existing pressure from the project."""
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        pressures = list(self.h5file.attrs['pressures'])
+        if pressure in pressures:
+            pressures.remove(pressure)
+            self.h5file.attrs['pressures'] = pressures
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def remove_calibration(self, calibration_name):
+        """
+        Removes an existing calibration from the project.
+
+        Parameters:
+            calibration_name (str): The name of the calibration to remove.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
+
+        del self.h5file['calibrations'][calibration_name]
+        self.h5file.flush()
+
+    def add_file_to_h5(self, file_path, pressure, crystal):
+        """
+        Adds the contents of a single .dat file to the temporary HDF5 file.
+        """
+        if self.h5file is None:
+            raise ValueError(
+                "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
+
+        dataset_name = os.path.basename(file_path)
+
+        if dataset_name in self.h5file:
+            print(f"Dataset {dataset_name} already exists in the HDF5 file. Skipping.")
+            return
+
+        # Create the dataset first to ensure it exists
+        group = self.h5file.create_group(dataset_name)
+
+        # Use np.nan for numeric fields instead of None
+        group.attrs['pressure'] = pressure
+        group.attrs['crystal'] = crystal
+        group.attrs['chi_angle'] = np.nan
+        group.attrs['pinhole'] = np.nan
+        group.attrs['power'] = np.nan
+        group.attrs['polarization'] = np.nan
+        group.attrs['scans'] = np.nan
+        group.attrs['laser_wavelength'] = np.nan
+        group.attrs['mirror_spacing'] = np.nan
+        group.attrs['scattering_angle'] = np.nan
+
+        # Optionally, add the file content
+        with open(file_path, 'rb') as file:
+            raw_data = file.read()
+        group.create_dataset('raw_content', data=raw_data)
+
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+            numeric_data = [int(line.strip()) for line in lines[12:] if line.strip().isdigit()]
+        group.create_dataset('original_data', data=numeric_data)
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def add_file_to_calibration(self, calibration_name, file_path):
+        """
+        Adds a file to a calibration.
+
+        Parameters:
+            calibration_name (str): The name of the calibration.
+            file_path (str): The path to the file to add.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
+
+        calibration_group = self.h5file['calibrations'][calibration_name]
+        dataset_name = os.path.basename(file_path)
+
+        if dataset_name in calibration_group:
+            print(f"File {dataset_name} already exists in the calibration. Skipping.")
+            return
+
+        with open(file_path, 'rb') as file:
+            raw_data = file.read()
+
+        group = calibration_group.create_group(dataset_name)
+        group.create_dataset('raw_content', data=raw_data)
+
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+            numeric_data = [int(line.strip()) for line in lines[12:] if line.strip().isdigit()]
+        group.create_dataset('original_data', data=numeric_data)
+
+        # Initialize empty attributes for the peak fits
+        for peak in ['left_peak', 'right_peak']:
+            group.attrs[f'{peak}_center'] = np.nan
+            group.attrs[f'{peak}_amplitude'] = np.nan
+            group.attrs[f'{peak}_sigma'] = np.nan
+            group.attrs[f'{peak}_gamma'] = np.nan
+            group.attrs[f'{peak}_fwhm'] = np.nan
+            group.attrs[f'{peak}_area'] = np.nan
+            group.attrs[f'{peak}_goodness_of_fit'] = np.nan
+            group.attrs[f'{peak}_x_min'] = np.nan
+            group.attrs[f'{peak}_x_max'] = np.nan
+            # Initialize empty datasets for x_fit and y_fit
+            group.create_dataset(f'{peak}_x_fit', data=np.array([]), maxshape=(None,))
+            group.create_dataset(f'{peak}_y_fit', data=np.array([]), maxshape=(None,))
+
+        # Initialize empty calibration ratios
+        group.attrs['channels'] = np.nan
+        group.attrs['nm_per_channel'] = np.nan
+        group.attrs['ghz_per_channel'] = np.nan
+
+        self.h5file.flush()
+
+    def remove_file_from_calibration(self, calibration_name, file_name):
+        """
+        Removes a file from a calibration.
+
+        Parameters:
+            calibration_name (str): The name of the calibration.
+            file_name (str): The name of the file to remove.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
+
+        calibration_group = self.h5file['calibrations'][calibration_name]
+
+        if file_name in calibration_group:
+            del calibration_group[file_name]
+            self.h5file.flush()
+        else:
+            raise ValueError(f"File '{file_name}' does not exist in the calibration.")
+
+    def update_calibration_attributes(self, calibration_name, mirror_spacing=None, laser_wavelength=None, scattering_angle=None):
+        """
+        Updates attributes of a calibration.
+
+        Parameters:
+            calibration_name (str): The name of the calibration.
+            mirror_spacing (float): The mirror spacing in mm.
+            laser_wavelength (float): The laser wavelength in nm.
+            scattering_angle (float): The scattering angle in degrees.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
+
+        calibration_group = self.h5file['calibrations'][calibration_name]
+
+        if mirror_spacing is not None:
+            calibration_group.attrs['mirror_spacing'] = mirror_spacing
+        if laser_wavelength is not None:
+            calibration_group.attrs['laser_wavelength'] = laser_wavelength
+        if scattering_angle is not None:
+            calibration_group.attrs['scattering_angle'] = scattering_angle
+
+        self.h5file.flush()
+
+    # New method added to integrate the required functionality
+    def update_calibration_file_data(self, calibration_name, file_name, channels=np.nan, nm_per_channel=np.nan, ghz_per_channel=np.nan, left_peak_fit=None, right_peak_fit=None):
+        """
+        Updates file-level data within a calibration, including calibration ratios and peak fits.
+
+        Parameters:
+            calibration_name (str): The name of the calibration.
+            file_name (str): The name of the file within the calibration.
+            channels (float): The channels value for the file.
+            nm_per_channel (float): The nm per channel value.
+            ghz_per_channel (float): The GHz per channel value.
+            left_peak_fit (dict): The left peak fit parameters.
+            right_peak_fit (dict): The right peak fit parameters.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
+        calibration_group = self.h5file['calibrations'][calibration_name]
+        if file_name not in calibration_group:
+            raise ValueError(f"File '{file_name}' does not exist in calibration '{calibration_name}'.")
+
+        group = calibration_group[file_name]
+
+        # Update attributes
+        group.attrs['channels'] = channels
+        group.attrs['nm_per_channel'] = nm_per_channel
+        group.attrs['ghz_per_channel'] = ghz_per_channel
+
+        # Update peak fits
+        if left_peak_fit is not None:
+            self.update_peak_fit(calibration_name, file_name, left_peak_fit=left_peak_fit)
+        if right_peak_fit is not None:
+            self.update_peak_fit(calibration_name, file_name, right_peak_fit=right_peak_fit)
+
+        self.h5file.flush()
+
+    def update_peak_fit(self, calibration_name, file_name, left_peak_fit=None, right_peak_fit=None):
+        """
+        Updates peak fit data for a file within a calibration.
+
+        Parameters:
+            calibration_name (str): The name of the calibration.
+            file_name (str): The name of the file within the calibration.
+            left_peak_fit (dict): The left peak fit parameters.
+            right_peak_fit (dict): The right peak fit parameters.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
+
+        calibration_group = self.h5file['calibrations'][calibration_name]
+
+        if file_name not in calibration_group:
+            raise ValueError(f"File '{file_name}' does not exist in the calibration.")
+
+        group = calibration_group[file_name]
+
+        if left_peak_fit is not None:
+            for key, value in left_peak_fit.items():
+                if key in ['x_fit', 'y_fit']:
+                    # Save x_fit and y_fit as datasets
+                    dataset_name = f'left_peak_{key}'
+                    if dataset_name in group:
+                        del group[dataset_name]  # Delete existing dataset if it exists
+                    group.create_dataset(dataset_name, data=np.array(value))  # Save as numpy array
+                else:
+                    group.attrs[f'left_peak_{key}'] = value  # Scalar attributes
+
+        if right_peak_fit is not None:
+            for key, value in right_peak_fit.items():
+                if key in ['x_fit', 'y_fit']:
+                    # Save x_fit and y_fit as datasets
+                    dataset_name = f'right_peak_{key}'
+                    if dataset_name in group:
+                        del group[dataset_name]  # Delete existing dataset if it exists
+                    group.create_dataset(dataset_name, data=np.array(value))  # Save as numpy array
+                else:
+                    group.attrs[f'right_peak_{key}'] = value  # Scalar attributes
+
+        self.h5file.flush()
+
     def get_metadata_from_dataset(self, dataset_name, key):
         """
         Retrieves the value of a specific metadata key from a given dataset in the temporary HDF5 file.
@@ -501,31 +514,157 @@ class BrillouinProject:
             return None
         return value
 
-    def find_datasets_by_metadata(self, key, value):
+    def get_file_count(self):
+        """Return the number of files in the project."""
+        return len(self.h5file.keys())
+
+    def get_unique_pressures_and_crystals(self):
+        """Return the unique pressures and crystals."""
+        pressures = self.h5file.attrs.get('pressures', [])
+        crystals = self.h5file.attrs.get('crystals', [])
+        return sorted(pressures), sorted(crystals)
+
+    def get_peak_fit(self, calibration_name, file_name, peak_type):
         """
-        Finds and returns the names of all datasets in the temporary HDF5 file that have a specific key-value pair in their metadata.
+        Retrieves peak fit data for a file within a calibration.
 
         Parameters:
-            key (str): The metadata key to search for.
-            value (Any): The metadata value to match.
+            calibration_name (str): The name of the calibration.
+            file_name (str): The name of the file within the calibration.
+            peak_type (str): 'left' or 'right' indicating which peak fit to retrieve.
 
         Returns:
-            List[str]: A list of dataset names that match the key-value pair.
-
-        Raises:
-            ValueError: If the temporary HDF5 file is not open.
+            dict: A dictionary containing the peak fit parameters.
         """
         if self.h5file is None:
-            raise ValueError(
-                "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
 
-        matching_datasets = []
-        for dataset_name in self.h5file.keys():
-            group = self.h5file[dataset_name]
-            if key in group.attrs and group.attrs[key] == value:
-                matching_datasets.append(dataset_name)
+        calibration_group = self.h5file['calibrations'][calibration_name]
 
-        return matching_datasets
+        if file_name not in calibration_group:
+            raise ValueError(f"File '{file_name}' does not exist in the calibration.")
+
+        group = calibration_group[file_name]
+
+        # Initialize an empty dictionary to store peak fit parameters
+        peak_fit = {}
+
+        # Retrieve attributes (center, amplitude, sigma, gamma, fwhm, area, goodness_of_fit, etc.)
+        params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area', 'goodness_of_fit', 'x_min', 'x_max']
+        for param in params:
+            attr_name = f'{peak_type}_peak_{param}'
+            if attr_name in group.attrs:
+                peak_fit[param] = group.attrs[attr_name]
+            else:
+                peak_fit[param] = np.nan  # Default to NaN if the attribute does not exist
+
+        # Retrieve x_fit and y_fit datasets if they exist
+        x_fit_name = f'{peak_type}_peak_x_fit'
+        y_fit_name = f'{peak_type}_peak_y_fit'
+
+        if x_fit_name in group:
+            peak_fit['x_fit'] = group[x_fit_name][()]  # Load as a numpy array
+        else:
+            peak_fit['x_fit'] = np.array([])  # Default to empty array if dataset does not exist
+
+        if y_fit_name in group:
+            peak_fit['y_fit'] = group[y_fit_name][()]  # Load as a numpy array
+        else:
+            peak_fit['y_fit'] = np.array([])  # Default to empty array if dataset does not exist
+
+        return peak_fit
+
+    def get_calibration_attributes(self, calibration_name):
+        """
+        Retrieves attributes of a calibration.
+
+        Parameters:
+            calibration_name (str): The name of the calibration.
+
+        Returns:
+            dict: A dictionary containing the calibration attributes.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
+
+        calibration_group = self.h5file['calibrations'][calibration_name]
+        attributes = {
+            'mirror_spacing': calibration_group.attrs.get('mirror_spacing', np.nan),
+            'laser_wavelength': calibration_group.attrs.get('laser_wavelength', np.nan),
+            'scattering_angle': calibration_group.attrs.get('scattering_angle', np.nan)
+        }
+        return attributes
+
+    def get_calibration_file_data(self, calibration_name, file_name):
+        """
+        Retrieves the original data from a file within a calibration.
+
+        Parameters:
+            calibration_name (str): The name of the calibration.
+            file_name (str): The name of the file within the calibration.
+
+        Returns:
+            numpy.ndarray: The original data from the file.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
+        calibration_group = self.h5file['calibrations'][calibration_name]
+        if file_name not in calibration_group:
+            raise ValueError(f"File '{file_name}' does not exist in the calibration.")
+        group = calibration_group[file_name]
+        data = group['original_data'][()]
+        return data
+
+    def list_calibrations(self):
+        """
+        Lists all calibrations in the project.
+
+        Returns:
+            list: A list of calibration names.
+        """
+        if self.h5file is None or 'calibrations' not in self.h5file:
+            return []
+        return list(self.h5file['calibrations'].keys())
+
+    def list_files_in_calibration(self, calibration_name):
+        """
+        Lists all files within a calibration.
+
+        Parameters:
+            calibration_name (str): The name of the calibration.
+
+        Returns:
+            list: A list of file names within the calibration.
+        """
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            return []
+        return list(self.h5file['calibrations'][calibration_name].keys())
+
+    def cleanup_temp_file(self):
+        """
+        Closes the temporary HDF5 file if it is open and then deletes it.
+        """
+        try:
+            # Close the file if it is open
+            if self.h5file is not None and self.h5file.id:
+                self.h5file.close()
+                self.h5file = None
+                print(f"Temporary file {self.temp_h5file_path} has been closed.")
+
+            # Delete the temporary file
+            if os.path.exists(self.temp_h5file_path):
+                os.remove(self.temp_h5file_path)
+                print(f"Temporary file {self.temp_h5file_path} has been deleted.")
+            else:
+                print(f"Temporary file {self.temp_h5file_path} does not exist.")
+        except Exception as e:
+            print(f"Error deleting temporary file: {e}")
 
     def find_datasets_by_metadata_dict(self, metadata_dict):
         """
@@ -553,42 +692,39 @@ class BrillouinProject:
 
         return matching_datasets
 
-    def remove_dataset(self, dataset_name):
+    def find_datasets_by_metadata(self, key, value):
         """
-        Removes a dataset (group) from the temporary HDF5 file.
+        Finds and returns the names of all datasets in the temporary HDF5 file that have a specific key-value pair in their metadata.
 
         Parameters:
-            dataset_name (str): The name of the dataset to remove.
+            key (str): The metadata key to search for.
+            value (Any): The metadata value to match.
+
+        Returns:
+            List[str]: A list of dataset names that match the key-value pair.
 
         Raises:
-            ValueError: If the temporary HDF5 file is not open or the dataset does not exist.
+            ValueError: If the temporary HDF5 file is not open.
         """
         if self.h5file is None:
             raise ValueError(
                 "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
 
-        if dataset_name not in self.h5file:
-            print('Error in remove_dataset')
-            raise ValueError(f"Dataset {dataset_name} does not exist in the HDF5 file.")
+        matching_datasets = []
+        for dataset_name in self.h5file.keys():
+            group = self.h5file[dataset_name]
+            if key in group.attrs and group.attrs[key] == value:
+                matching_datasets.append(dataset_name)
 
-        del self.h5file[dataset_name]
-        print(f"Dataset {dataset_name} has been removed from the HDF5 file.")
+        return matching_datasets
 
-        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
-
-    def load_all_files(self, file_paths):
-        """
-        Adds all provided .DAT file paths to the temporary HDF5 file.
-
-        Parameters:
-            file_paths (list of str): A list of file paths to .DAT files to be added.
-        """
-        for file_path in file_paths:
-            self.add_file_to_h5(file_path)
-
-    def load_all_files_with_metadata(self, file_paths, pressure, crystal):
-        for file_path in file_paths:
-            self.add_file_to_h5(file_path, pressure, crystal)
+    def find_files_by_pressure_and_crystal(self, pressure, crystal):
+        matching_files = []
+        for dataset_name in self.h5file.keys():
+            group = self.h5file[dataset_name]
+            if group.attrs['pressure'] == pressure and group.attrs['crystal'] == crystal:
+                matching_files.append(dataset_name)
+        return matching_files
 
     def save_project(self):
         """

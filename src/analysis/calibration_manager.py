@@ -35,6 +35,75 @@ class CalibrationManager:
         self.ui.tableView_calibFiles.doubleClicked.connect(self.calib_file_double_clicked)
         self.ui.pushButton_calibDeleteLeftPeak.clicked.connect(self.calibration_plot_widget.delete_left_peak)
         self.ui.pushButton_calibDeleteRightPeak.clicked.connect(self.calibration_plot_widget.delete_right_peak)
+        self.ui.pushButton_calibSaveCalib.clicked.connect(self.save_current_calibration)
+
+    # calibration_manager.py
+
+    def save_current_calibration(self):
+        if not self.project:
+            QMessageBox.warning(None, "No Project", "Please create or load a project first.")
+            return
+
+        calibration_name = self.ui.comboBox_calibSelect.currentText()
+        if not calibration_name:
+            QMessageBox.warning(None, "No Calibration Selected", "Please select a calibration.")
+            return
+
+        # Get calibration parameters
+        laser_wavelength_text = self.ui.lineEdit_calibLaserWavelength.text()
+        mirror_spacing_text = self.ui.lineEdit_calibMirrorSpacing.text()
+        scattering_angle_text = self.ui.lineEdit_calibScatteringAngle.text()
+
+        # Convert to floats, or np.nan if empty
+        laser_wavelength = float(laser_wavelength_text) if laser_wavelength_text else np.nan
+        mirror_spacing = float(mirror_spacing_text) if mirror_spacing_text else np.nan
+        scattering_angle = float(scattering_angle_text) if scattering_angle_text else np.nan
+
+        # Update calibration attributes
+        self.project.update_calibration_attributes(
+            calibration_name,
+            laser_wavelength=laser_wavelength,
+            mirror_spacing=mirror_spacing,
+            scattering_angle=scattering_angle
+        )
+
+        # Iterate over files in the calibration
+        for row in range(self.calib_files_model.rowCount()):
+            filename_index = self.calib_files_model.index(row, 0)
+            channels_index = self.calib_files_model.index(row, 1)
+            nm_per_channel_index = self.calib_files_model.index(row, 2)
+            ghz_per_channel_index = self.calib_files_model.index(row, 3)
+
+            filename = self.calib_files_model.data(filename_index, Qt.DisplayRole)
+
+            channels_text = self.calib_files_model.data(channels_index, Qt.DisplayRole)
+            nm_per_channel_text = self.calib_files_model.data(nm_per_channel_index, Qt.DisplayRole)
+            ghz_per_channel_text = self.calib_files_model.data(ghz_per_channel_index, Qt.DisplayRole)
+
+            # Convert to float, or np.nan if empty
+            channels = float(channels_text) if channels_text else np.nan
+            nm_per_channel = float(nm_per_channel_text) if nm_per_channel_text else np.nan
+            ghz_per_channel = float(ghz_per_channel_text) if ghz_per_channel_text else np.nan
+
+            # Retrieve peak fits if they have been fitted
+            left_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'left')
+            right_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'right')
+
+            # Update calibration file data
+            self.project.update_calibration_file_data(
+                calibration_name,
+                filename,
+                channels=channels,
+                nm_per_channel=nm_per_channel,
+                ghz_per_channel=ghz_per_channel,
+                left_peak_fit=left_peak_fit,
+                right_peak_fit=right_peak_fit
+            )
+
+        # Indicate success
+        QMessageBox.information(None, "Calibration Saved", f"Calibration '{calibration_name}' has been saved.")
+        self.last_action('Calibration saved')
+        self.save_status()
 
     def update_project(self):
         """Update the project instance when it changes in ProjectManager."""
@@ -267,14 +336,17 @@ class CalibrationManager:
 
                     # Load saved fits
                     left_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'left')
-                    if left_peak_fit and not any(np.isnan(val) for val in left_peak_fit.values()):
+                    if left_peak_fit and not any(np.any(np.isnan(val)) if isinstance(val, np.ndarray) else np.isnan(val)
+                                                 for val in left_peak_fit.values()):
                         self.calibration_plot_widget.load_saved_fit('left', left_peak_fit)
                         self.update_left_peak_list_from_saved_fit(left_peak_fit)
                     else:
                         self.ui.listWidget_calibLeftPeak.clear()
 
                     right_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'right')
-                    if right_peak_fit and not any(np.isnan(val) for val in right_peak_fit.values()):
+                    if right_peak_fit and not any(
+                            np.any(np.isnan(val)) if isinstance(val, np.ndarray) else np.isnan(val)
+                            for val in right_peak_fit.values()):
                         self.calibration_plot_widget.load_saved_fit('right', right_peak_fit)
                         self.update_right_peak_list_from_saved_fit(right_peak_fit)
                     else:
