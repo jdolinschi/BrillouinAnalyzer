@@ -68,20 +68,43 @@ class CalibrationPlotWidget(QObject):
     def plot_data(self, x, y):
         self.x_data = x
         self.y_data = y
+
+        # Clear the plot and reset fits
         self.plot_item.clear()
-        self.reset_fits()  # Ensure fits are reset
-        self.data_curve = self.plot_item.plot(x, y, pen='w')  # Plot data in white
+        self.reset_fits()
+
+        # Reset interaction modes
+        self.ui.pushButton_calibZoom.setChecked(False)
+        self.ui.pushButton_calibPan.setChecked(False)
+        self.ui.pushButton_calibFitLeftPeak.setChecked(False)
+        self.ui.pushButton_calibFitRightPeak.setChecked(False)
+        self.view_box.disable_zoom_mode()
+        self.view_box.disable_pan_mode()
+        self.view_box.disable_fitting_mode()
+
+        # Plot the new data
+        self.data_curve = self.plot_item.plot(x, y, pen='w')
+
+        # Enable auto-ranging to adjust the view to the new data
+        self.plot_item.enableAutoRange()
+        self.plot_item.autoRange()
         self.initial_view_range = self.plot_item.viewRange()
 
-        # Set x and y limits
-        min_x, max_x = np.min(x), np.max(x)
-        self.view_box.setLimits(
-            xMin=min_x, xMax=max_x,
-        )
+        # Set x-axis limits only
+        self.min_x, self.max_x = np.min(x), np.max(x)
+        self.view_box.setLimits(xMin=self.min_x, xMax=self.max_x)
+        # Remove any y-axis limits
+        self.view_box.setLimits(yMin=None, yMax=None)
+
+        # Disable auto-range on x-axis to prevent automatic adjustments during interactions
+        self.plot_item.disableAutoRange()
 
     def reset_view(self):
         if self.initial_view_range:
             self.plot_item.setRange(xRange=self.initial_view_range[0], yRange=self.initial_view_range[1])
+            self.view_box.setLimits(
+                xMin=self.min_x, xMax=self.max_x,
+            )
 
     def zoom_button_clicked(self):
         if self.ui.pushButton_calibZoom.isChecked():
@@ -205,18 +228,17 @@ class CalibrationViewBox(ViewBox):
         self.wheel_event_triggered = False
         # Enable hover events to track mouse without button presses
         self.setAcceptHoverEvents(True)
+        self.enableAutoRange(False)
 
     def enable_zoom_mode(self):
         self.zoom_mode = True
         self.setMouseEnabled(False, False)
         self.calibration_plot_widget.plot_widget.setCursor(Qt.CrossCursor)
-        self.enableAutoRange(False)
 
     def disable_zoom_mode(self):
         self.zoom_mode = False
         self.setMouseEnabled(True, True)
         self.calibration_plot_widget.plot_widget.setCursor(Qt.ArrowCursor)
-        self.enableAutoRange(True)
 
     def enable_pan_mode(self):
         self.setMouseMode(pg.ViewBox.PanMode)
@@ -229,7 +251,6 @@ class CalibrationViewBox(ViewBox):
     def enable_fitting_mode(self, peak_type):
         self.saved_view_range = self.viewRange()
         self.fitting = True
-        self.enableAutoRange(False)  # Disable auto-range during fitting
         self.current_peak = peak_type
         self.setMouseEnabled(False, False)
         # Save the current view range before starting fitting
@@ -257,7 +278,6 @@ class CalibrationViewBox(ViewBox):
         self.setMouseEnabled(True, True)
         self.calibration_plot_widget.plot_widget.setCursor(Qt.ArrowCursor)
         self.fit_timer.stop()
-        self.enableAutoRange(True)  # Re-enable auto-range after fitting
 
     def mousePressEvent(self, ev):
         if self.zoom_mode and ev.button() == Qt.LeftButton:
