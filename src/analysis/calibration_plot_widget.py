@@ -381,7 +381,7 @@ class CalibrationViewBox(ViewBox):
                 # Perform Voigt fit
                 fitter = VoigtFitter(inverted=True, method='pseudo_voigt')
                 try:
-                    fitter.fit(x_fit, y_fit)
+                    fitter.fit(x_fit, y_fit, increase_fit_time_on_failure=True)
                     fitter.x_min = x_min
                     fitter.x_max = x_max
                     fitter.x_fit = x_fit
