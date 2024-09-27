@@ -375,6 +375,9 @@ class BrillouinProject:
         group.attrs['nm_per_channel'] = np.nan
         group.attrs['ghz_per_channel'] = np.nan
 
+        # Initialize inverted attribute
+        group.attrs['inverted'] = 1  # Default to 1 (True)
+
         self.h5file.flush()
 
     def remove_file_from_calibration(self, calibration_name, file_name):
@@ -424,18 +427,14 @@ class BrillouinProject:
 
         self.h5file.flush()
 
-    def update_calibration_file_data(self, calibration_name, file_name, channels=np.nan, nm_per_channel=np.nan, ghz_per_channel=np.nan, left_peak_fit=None, right_peak_fit=None):
+    def update_calibration_file_data(self, calibration_name, file_name, **attributes):
         """
         Updates file-level data within a calibration, including calibration ratios and peak fits.
 
         Parameters:
             calibration_name (str): The name of the calibration.
             file_name (str): The name of the file within the calibration.
-            channels (float): The channels value for the file.
-            nm_per_channel (float): The nm per channel value.
-            ghz_per_channel (float): The GHz per channel value.
-            left_peak_fit (dict): The left peak fit parameters.
-            right_peak_fit (dict): The right peak fit parameters.
+            **attributes: Arbitrary keyword arguments representing attributes to update.
         """
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
@@ -448,17 +447,21 @@ class BrillouinProject:
         group = calibration_group[file_name]
 
         # Update attributes
-        group.attrs['channels'] = channels
-        group.attrs['nm_per_channel'] = nm_per_channel
-        group.attrs['ghz_per_channel'] = ghz_per_channel
+        for attr_name, attr_value in attributes.items():
+            if attr_name in ['left_peak_fit', 'right_peak_fit']:
+                continue  # Handle peak fits separately
+            group.attrs[attr_name] = attr_value
 
-        # Update peak fits
-        if left_peak_fit is not None:
-            self.update_peak_fit(calibration_name, file_name, left_peak_fit=left_peak_fit)
-        if right_peak_fit is not None:
-            self.update_peak_fit(calibration_name, file_name, right_peak_fit=right_peak_fit)
+        # Update peak fits if provided
+        if 'left_peak_fit' in attributes:
+            left_peak_fit = attributes['left_peak_fit']
+            if left_peak_fit is not None:
+                self.update_peak_fit(calibration_name, file_name, left_peak_fit=left_peak_fit)
 
-        print('update_calibration_file_data')
+        if 'right_peak_fit' in attributes:
+            right_peak_fit = attributes['right_peak_fit']
+            if right_peak_fit is not None:
+                self.update_peak_fit(calibration_name, file_name, right_peak_fit=right_peak_fit)
 
         self.h5file.flush()
 
@@ -664,6 +667,28 @@ class BrillouinProject:
             'ghz_per_channel': group.attrs.get('ghz_per_channel', np.nan)
         }
         return attributes
+
+    def get_calibration_file_attribute(self, calibration_name, file_name, attribute_name):
+        """
+        Retrieves a specific attribute of a calibration file.
+
+        Parameters:
+            calibration_name (str): The name of the calibration.
+            file_name (str): The name of the file within the calibration.
+            attribute_name (str): The name of the attribute to retrieve.
+
+        Returns:
+            The value of the attribute, or np.nan if it does not exist.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
+        calibration_group = self.h5file['calibrations'][calibration_name]
+        if file_name not in calibration_group:
+            raise ValueError(f"File '{file_name}' does not exist in the calibration.")
+        group = calibration_group[file_name]
+        return group.attrs.get(attribute_name, np.nan)
 
 
     def list_calibrations(self):

@@ -234,6 +234,7 @@ class CalibrationManager:
             'x_max': fitter.x_max,
             'x_fit': fitter.x_fit.tolist(),
             'y_fit': fitter.y_fit.tolist()
+            # Note: 'inverted' is saved as a file attribute below
         }
 
         # Save to the project
@@ -243,6 +244,14 @@ class CalibrationManager:
             self.project.update_peak_fit(calibration_name, filename, right_peak_fit=peak_fit)
         self.last_action(f'{peak_type.capitalize()} peak fitted')
         self.save_status()
+
+        # Save inverted parameter as file attribute
+        inverted = fitter.inverted
+        self.project.update_calibration_file_data(
+            calibration_name,
+            filename,
+            inverted=inverted
+        )
 
         # Attempt to calculate calibration constants
         self.attempt_calculate_calibration_constants(filename)
@@ -459,6 +468,14 @@ class CalibrationManager:
                 data = self.project.get_calibration_file_data(calibration_name, filename)
                 if data is not None:
                     self.current_calibration_data = data
+
+                    # Get inverted parameter
+                    inverted = self.project.get_calibration_file_attribute(calibration_name, filename, 'inverted')
+                    if not np.isnan(inverted):
+                        self.ui.checkBox_calibInvertedPeaks.setChecked(bool(inverted))
+                    else:
+                        self.ui.checkBox_calibInvertedPeaks.setChecked(False)
+
                     self.plot_calibration_data(data)
                     self.last_action('Calibration file plotted')
 
