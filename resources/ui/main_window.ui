@@ -348,6 +348,13 @@
                    </property>
                   </spacer>
                  </item>
+                 <item>
+                  <widget class="QCheckBox" name="checkBox_calibInvertedPeaks">
+                   <property name="text">
+                    <string>Inverted peaks</string>
+                   </property>
+                  </widget>
+                 </item>
                 </layout>
                </widget>
               </item>

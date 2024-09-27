@@ -187,16 +187,30 @@ class CalibrationManager:
         calibration_name, ok = QInputDialog.getText(None, "New Calibration", "Enter a calibration name:")
         if ok and calibration_name:
             try:
+                # Add the new calibration to the project
                 self.project.add_calibration(calibration_name)
+
+                # Populate the dropdown and select the new calibration
                 self.populate_calibration_dropdown()
                 index = self.ui.comboBox_calibSelect.findText(calibration_name)
                 if index >= 0:
                     self.ui.comboBox_calibSelect.setCurrentIndex(index)
+
+                # Clear input fields for calibration parameters
                 self.ui.lineEdit_calibLaserWavelength.clear()
                 self.ui.lineEdit_calibMirrorSpacing.clear()
                 self.ui.lineEdit_calibScatteringAngle.clear()
+
+                # Clear the calibration files table
                 self.calib_files_model.clear()
                 self.update_calibration_stats()
+
+                # Clear the plot and reset the peak lists
+                self.calibration_plot_widget.reset_fits()  # Reset the plot and fit curves
+                self.clear_left_peak_list()  # Clear the left peak list widget
+                self.clear_right_peak_list()  # Clear the right peak list widget
+
+                # Update status and last action
                 self.last_action('Calibration added')
                 self.save_status()
             except ValueError as e:

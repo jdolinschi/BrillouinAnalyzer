@@ -16,13 +16,13 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGridLayout,
-    QGroupBox, QHBoxLayout, QHeaderView, QLabel,
-    QLayout, QLineEdit, QListWidget, QListWidgetItem,
-    QMainWindow, QMenu, QMenuBar, QPushButton,
-    QSizePolicy, QSpacerItem, QSplitter, QStatusBar,
-    QTabWidget, QTableView, QTableWidget, QTableWidgetItem,
-    QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
+    QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
+    QLabel, QLayout, QLineEdit, QListWidget,
+    QListWidgetItem, QMainWindow, QMenu, QMenuBar,
+    QPushButton, QSizePolicy, QSpacerItem, QSplitter,
+    QStatusBar, QTabWidget, QTableView, QTableWidget,
+    QTableWidgetItem, QVBoxLayout, QWidget)
 
 from pyqtgraph import PlotWidget
 
@@ -279,6 +279,11 @@ class Ui_MainWindow(object):
         self.horizontalSpacer_7 = QSpacerItem(654, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_14.addItem(self.horizontalSpacer_7)
+
+        self.checkBox_calibInvertedPeaks = QCheckBox(self.frame_14)
+        self.checkBox_calibInvertedPeaks.setObjectName(u"checkBox_calibInvertedPeaks")
+
+        self.horizontalLayout_14.addWidget(self.checkBox_calibInvertedPeaks)
 
 
         self.verticalLayout_31.addWidget(self.frame_14)
@@ -988,6 +993,7 @@ class Ui_MainWindow(object):
         self.tabWidget_project.setTabText(self.tabWidget_project.indexOf(self.Project), QCoreApplication.translate("MainWindow", u"Project", None))
         self.pushButton_calibResetView.setText(QCoreApplication.translate("MainWindow", u"Reset zoom", None))
         self.pushButton_calibZoom.setText(QCoreApplication.translate("MainWindow", u"Zoom", None))
+        self.checkBox_calibInvertedPeaks.setText(QCoreApplication.translate("MainWindow", u"Inverted peaks", None))
         self.label_calibText1.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
         self.label_calibText2.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
         self.label_calibText3.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
