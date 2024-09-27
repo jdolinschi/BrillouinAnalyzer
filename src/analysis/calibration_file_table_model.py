@@ -26,8 +26,9 @@ class CalibrationFileTableModel(QAbstractTableModel):
         value = self._files[row][col]
 
         if role in (Qt.DisplayRole, Qt.EditRole):
-            if isinstance(value, np.float64):
+            if isinstance(value, (np.float64, float)):
                 value = float(value)
+                return "" if np.isnan(value) else f"{value:.6f}"
             return "" if value is None else value
         return None
 
@@ -77,3 +78,39 @@ class CalibrationFileTableModel(QAbstractTableModel):
             'nm_per_channel': self._files[row][2],
             'ghz_per_channel': self._files[row][3]
         }
+
+    def update_calibration_constants(self, filename, nm_per_channel, ghz_per_channel):
+        for row, file_data in enumerate(self._files):
+            if file_data[0] == filename:
+                file_data[2] = nm_per_channel  # nm_per_channel column
+                file_data[3] = ghz_per_channel  # ghz_per_channel column
+                index_nm = self.index(row, 2)
+                index_ghz = self.index(row, 3)
+                self.dataChanged.emit(index_nm, index_nm, [Qt.DisplayRole])
+                self.dataChanged.emit(index_ghz, index_ghz, [Qt.DisplayRole])
+                break
+
+    def clear_calibration_constants(self, filename):
+        for row, file_data in enumerate(self._files):
+            if file_data[0] == filename:
+                file_data[2] = None
+                file_data[3] = None
+                index_nm = self.index(row, 2)
+                index_ghz = self.index(row, 3)
+                self.dataChanged.emit(index_nm, index_nm, [Qt.DisplayRole])
+                self.dataChanged.emit(index_ghz, index_ghz, [Qt.DisplayRole])
+                break
+
+    def update_file_data(self, filename, channels, nm_per_channel, ghz_per_channel):
+        for row, file_data in enumerate(self._files):
+            if file_data[0] == filename:
+                file_data[1] = channels
+                file_data[2] = nm_per_channel
+                file_data[3] = ghz_per_channel
+                index_channels = self.index(row, 1)
+                index_nm = self.index(row, 2)
+                index_ghz = self.index(row, 3)
+                self.dataChanged.emit(index_channels, index_channels, [Qt.DisplayRole])
+                self.dataChanged.emit(index_nm, index_nm, [Qt.DisplayRole])
+                self.dataChanged.emit(index_ghz, index_ghz, [Qt.DisplayRole])
+                break

@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt, QItemSelectionModel
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
 from .calibration_file_table_model import CalibrationFileTableModel
 from .calibration_plot_widget import CalibrationPlotWidget
+from ..utils.brillouin_calibration import BrillouinCalibration
 
 class CalibrationManager:
     def __init__(self, ui, project_manager):
@@ -37,7 +38,50 @@ class CalibrationManager:
         self.ui.pushButton_calibDeleteRightPeak.clicked.connect(self.calibration_plot_widget.delete_right_peak)
         self.ui.pushButton_calibSaveCalib.clicked.connect(self.save_current_calibration)
 
-    # calibration_manager.py
+    def attempt_calculate_calibration_constants(self, filename):
+        if self.project:
+            calibration_name = self.ui.comboBox_calibSelect.currentText()
+            # Get left and right peak fits
+            left_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'left')
+            right_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'right')
+            # Check if centers are valid
+            if left_peak_fit and 'center' in left_peak_fit and not np.isnan(left_peak_fit['center']) and \
+               right_peak_fit and 'center' in right_peak_fit and not np.isnan(right_peak_fit['center']):
+                # Get calibration parameters
+                laser_wavelength_text = self.ui.lineEdit_calibLaserWavelength.text()
+                mirror_spacing_text = self.ui.lineEdit_calibMirrorSpacing.text()
+                scattering_angle_text = self.ui.lineEdit_calibScatteringAngle.text()
+                if laser_wavelength_text and mirror_spacing_text and scattering_angle_text:
+                    try:
+                        laser_wavelength = float(laser_wavelength_text)
+                        mirror_spacing = float(mirror_spacing_text)
+                        scattering_angle = float(scattering_angle_text)
+                        # Perform calculation
+                        calibration = BrillouinCalibration()
+                        calibration.set_parameters(laser_wavelength, mirror_spacing, scattering_angle)
+                        x1 = left_peak_fit['center']
+                        x2 = right_peak_fit['center']
+                        calibration.set_peak_positions(x1, x2)
+                        calibration.calculate()
+                        results = calibration.get_results()
+                        nm_per_channel = results['nm_per_channel']
+                        ghz_per_channel = results['ghz_per_channel']
+                        # Update the table model
+                        self.calib_files_model.update_calibration_constants(filename, nm_per_channel, ghz_per_channel)
+                        # Update the calibration file data in the project
+                        self.project.update_calibration_file_data(
+                            calibration_name,
+                            filename,
+                            nm_per_channel=nm_per_channel,
+                            ghz_per_channel=ghz_per_channel
+                        )
+                    except ValueError as e:
+                        print(f"Error in calibration calculation: {e}")
+                else:
+                    print("Calibration parameters not set")
+            else:
+                print("Both peaks are not fitted")
+
 
     def save_current_calibration(self):
         if not self.project:
@@ -163,12 +207,16 @@ class CalibrationManager:
         self.last_action(f'{peak_type.capitalize()} peak fitted')
         self.save_status()
 
+        # Attempt to calculate calibration constants
+        self.attempt_calculate_calibration_constants(filename)
+
     def delete_left_peak_fit(self):
         if self.project and hasattr(self, 'current_calibration_name') and hasattr(self, 'current_calibration_file'):
             self.project.update_peak_fit(self.current_calibration_name, self.current_calibration_file, left_peak_fit={})
             self.ui.listWidget_calibLeftPeak.clear()
             self.last_action('Left peak fit deleted')
             self.save_status()
+            self.clear_calibration_constants(self.current_calibration_file)
         else:
             QMessageBox.warning(None, "No File Selected", "Please select a calibration file first.")
 
@@ -178,6 +226,7 @@ class CalibrationManager:
             self.ui.listWidget_calibRightPeak.clear()
             self.last_action('Right peak fit deleted')
             self.save_status()
+            self.clear_calibration_constants(self.current_calibration_file)
         else:
             QMessageBox.warning(None, "No File Selected", "Please select a calibration file first.")
 
@@ -194,6 +243,19 @@ class CalibrationManager:
         for param in params:
             value = fitter.get_parameter(param)
             self.ui.listWidget_calibRightPeak.addItem(f"{param.capitalize()}: {value}")
+
+    def clear_calibration_constants(self, filename):
+        # Update the table model
+        self.calib_files_model.clear_calibration_constants(filename)
+        # Update the calibration file data in the project
+        if self.project:
+            calibration_name = self.ui.comboBox_calibSelect.currentText()
+            self.project.update_calibration_file_data(
+                calibration_name,
+                filename,
+                nm_per_channel=np.nan,
+                ghz_per_channel=np.nan
+            )
 
     def clear_left_peak_list(self):
         self.ui.listWidget_calibLeftPeak.clear()
@@ -246,6 +308,20 @@ class CalibrationManager:
                 # Clear and populate calib_files_model
                 self.calib_files_model.clear()
                 self.calib_files_model.addFiles(files)
+
+                # Update file data in the model
+                for filename in files:
+                    data = self.project.get_calibration_file_data(calibration_name, filename)
+                    channels = len(data) if data is not None else None
+
+                    # Get attributes from the project
+                    file_attributes = self.project.get_calibration_file_attributes(calibration_name, filename)
+                    nm_per_channel = file_attributes.get('nm_per_channel', None)
+                    ghz_per_channel = file_attributes.get('ghz_per_channel', None)
+
+                    # Update the model
+                    self.calib_files_model.update_file_data(filename, channels, nm_per_channel, ghz_per_channel)
+
                 self.last_action('Calibration selected')
                 self.save_status()
 
@@ -259,6 +335,10 @@ class CalibrationManager:
                     self.project.update_calibration_attributes(calibration_name, laser_wavelength=laser_wavelength)
                     self.last_action('Laser wavelength updated')
                     self.save_status()
+                    # Recalculate calibration constants for all files
+                    files = self.project.list_files_in_calibration(calibration_name)
+                    for filename in files:
+                        self.attempt_calculate_calibration_constants(filename)
                 except ValueError:
                     QMessageBox.warning(None, "Invalid Input", "Please enter a valid number for laser wavelength.")
 
@@ -272,6 +352,10 @@ class CalibrationManager:
                     self.project.update_calibration_attributes(calibration_name, mirror_spacing=mirror_spacing)
                     self.last_action('Mirror spacing updated')
                     self.save_status()
+                    # Recalculate calibration constants for all files
+                    files = self.project.list_files_in_calibration(calibration_name)
+                    for filename in files:
+                        self.attempt_calculate_calibration_constants(filename)
                 except ValueError:
                     QMessageBox.warning(None, "Invalid Input", "Please enter a valid number for mirror spacing.")
 
@@ -285,6 +369,10 @@ class CalibrationManager:
                     self.project.update_calibration_attributes(calibration_name, scattering_angle=scattering_angle)
                     self.last_action('Scattering angle updated')
                     self.save_status()
+                    # Recalculate calibration constants for all files
+                    files = self.project.list_files_in_calibration(calibration_name)
+                    for filename in files:
+                        self.attempt_calculate_calibration_constants(filename)
                 except ValueError:
                     QMessageBox.warning(None, "Invalid Input", "Please enter a valid number for scattering angle.")
 

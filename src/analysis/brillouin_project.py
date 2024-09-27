@@ -639,6 +639,33 @@ class BrillouinProject:
         data = group['original_data'][()]
         return data
 
+    def get_calibration_file_attributes(self, calibration_name, file_name):
+        """
+        Retrieves attributes of a calibration file.
+
+        Parameters:
+            calibration_name (str): The name of the calibration.
+            file_name (str): The name of the file within the calibration.
+
+        Returns:
+            dict: A dictionary containing the file attributes.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'calibrations' not in self.h5file or calibration_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{calibration_name}' does not exist.")
+        calibration_group = self.h5file['calibrations'][calibration_name]
+        if file_name not in calibration_group:
+            raise ValueError(f"File '{file_name}' does not exist in the calibration.")
+        group = calibration_group[file_name]
+        attributes = {
+            'channels': group.attrs.get('channels', np.nan),
+            'nm_per_channel': group.attrs.get('nm_per_channel', np.nan),
+            'ghz_per_channel': group.attrs.get('ghz_per_channel', np.nan)
+        }
+        return attributes
+
+
     def list_calibrations(self):
         """
         Lists all calibrations in the project.
