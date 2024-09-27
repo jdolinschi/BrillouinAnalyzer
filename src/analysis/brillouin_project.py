@@ -458,6 +458,8 @@ class BrillouinProject:
         if right_peak_fit is not None:
             self.update_peak_fit(calibration_name, file_name, right_peak_fit=right_peak_fit)
 
+        print('update_calibration_file_data')
+
         self.h5file.flush()
 
     def update_peak_fit(self, calibration_name, file_name, left_peak_fit=None, right_peak_fit=None):
