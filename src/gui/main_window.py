@@ -276,12 +276,6 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_14.addWidget(self.pushButton_calibZoom)
 
-        self.pushButton_calibPan = QPushButton(self.frame_14)
-        self.pushButton_calibPan.setObjectName(u"pushButton_calibPan")
-        self.pushButton_calibPan.setCheckable(True)
-
-        self.horizontalLayout_14.addWidget(self.pushButton_calibPan)
-
         self.horizontalSpacer_7 = QSpacerItem(654, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_14.addItem(self.horizontalSpacer_7)
@@ -480,6 +474,40 @@ class Ui_MainWindow(object):
         self.tableView_calibFiles.setObjectName(u"tableView_calibFiles")
 
         self.verticalLayout_33.addWidget(self.tableView_calibFiles)
+
+        self.horizontalLayout_11 = QHBoxLayout()
+        self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
+        self.horizontalSpacer_9 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_11.addItem(self.horizontalSpacer_9)
+
+        self.label_6 = QLabel(self.frame_19)
+        self.label_6.setObjectName(u"label_6")
+        self.label_6.setContextMenuPolicy(Qt.PreventContextMenu)
+
+        self.horizontalLayout_11.addWidget(self.label_6)
+
+        self.label_calibStatsNM = QLabel(self.frame_19)
+        self.label_calibStatsNM.setObjectName(u"label_calibStatsNM")
+
+        self.horizontalLayout_11.addWidget(self.label_calibStatsNM)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_11.addItem(self.horizontalSpacer_2)
+
+        self.label_7 = QLabel(self.frame_19)
+        self.label_7.setObjectName(u"label_7")
+
+        self.horizontalLayout_11.addWidget(self.label_7)
+
+        self.label_calibStatsGHz = QLabel(self.frame_19)
+        self.label_calibStatsGHz.setObjectName(u"label_calibStatsGHz")
+
+        self.horizontalLayout_11.addWidget(self.label_calibStatsGHz)
+
+
+        self.verticalLayout_33.addLayout(self.horizontalLayout_11)
 
         self.splitter_6.addWidget(self.frame_19)
         self.frame_20 = QFrame(self.splitter_6)
@@ -927,7 +955,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget_project.setCurrentIndex(0)
+        self.tabWidget_project.setCurrentIndex(1)
         self.tabWidget_calib.setCurrentIndex(0)
         self.tabWidget_sideBar.setCurrentIndex(0)
 
@@ -958,9 +986,8 @@ class Ui_MainWindow(object):
         self.pushButton_renameCrystal.setText(QCoreApplication.translate("MainWindow", u"Rename", None))
         self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"Settings", None))
         self.tabWidget_project.setTabText(self.tabWidget_project.indexOf(self.Project), QCoreApplication.translate("MainWindow", u"Project", None))
-        self.pushButton_calibResetView.setText(QCoreApplication.translate("MainWindow", u"Reset zom", None))
+        self.pushButton_calibResetView.setText(QCoreApplication.translate("MainWindow", u"Reset zoom", None))
         self.pushButton_calibZoom.setText(QCoreApplication.translate("MainWindow", u"Zoom", None))
-        self.pushButton_calibPan.setText(QCoreApplication.translate("MainWindow", u"Pan", None))
         self.label_calibText1.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
         self.label_calibText2.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
         self.label_calibText3.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
@@ -976,6 +1003,10 @@ class Ui_MainWindow(object):
         self.pushButton_calibAddFiles.setText(QCoreApplication.translate("MainWindow", u"Add files", None))
         self.pushButton_calibRemoveFiles.setText(QCoreApplication.translate("MainWindow", u"Remove files", None))
         self.pushButton_calibResetFits.setText(QCoreApplication.translate("MainWindow", u"Reset calibration", None))
+        self.label_6.setText(QCoreApplication.translate("MainWindow", u"Ave./STD nm/channel:", None))
+        self.label_calibStatsNM.setText("")
+        self.label_7.setText(QCoreApplication.translate("MainWindow", u"Ave./STD GHz/channel:", None))
+        self.label_calibStatsGHz.setText("")
         self.pushButton_calibFitLeftPeak.setText(QCoreApplication.translate("MainWindow", u"Fit left peak", None))
         self.pushButton_calibDeleteLeftPeak.setText(QCoreApplication.translate("MainWindow", u"Delete left peak", None))
         self.pushButton_calibFitRightPeak.setText(QCoreApplication.translate("MainWindow", u"Fit right peak", None))

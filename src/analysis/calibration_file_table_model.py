@@ -10,6 +10,22 @@ class CalibrationFileTableModel(QAbstractTableModel):
         self._files = files if files else []
         self._headers = ['Filename', 'Channels', 'nm/Channel', 'GHz/Channel']
 
+    def get_nm_per_channel_values(self):
+        values = []
+        for file_data in self._files:
+            nm_per_channel = file_data[2]
+            if nm_per_channel is not None and not np.isnan(nm_per_channel):
+                values.append(nm_per_channel)
+        return values
+
+    def get_ghz_per_channel_values(self):
+        values = []
+        for file_data in self._files:
+            ghz_per_channel = file_data[3]
+            if ghz_per_channel is not None and not np.isnan(ghz_per_channel):
+                values.append(ghz_per_channel)
+        return values
+
     def rowCount(self, parent=QModelIndex()):
         return len(self._files)
 

@@ -22,6 +22,12 @@ class CalibrationManager:
         # Connect signals to corresponding slots
         self.setup_connections()
 
+        # Connect model signals to update stats
+        self.calib_files_model.dataChanged.connect(self.update_calibration_stats)
+        self.calib_files_model.rowsInserted.connect(self.update_calibration_stats)
+        self.calib_files_model.rowsRemoved.connect(self.update_calibration_stats)
+        self.calib_files_model.modelReset.connect(self.update_calibration_stats)
+
     def setup_connections(self):
         # Calibration tab connections
         self.ui.pushButton_calibNewCalib.clicked.connect(self.calib_new_calibration_clicked)
@@ -37,6 +43,24 @@ class CalibrationManager:
         self.ui.pushButton_calibDeleteLeftPeak.clicked.connect(self.calibration_plot_widget.delete_left_peak)
         self.ui.pushButton_calibDeleteRightPeak.clicked.connect(self.calibration_plot_widget.delete_right_peak)
         self.ui.pushButton_calibSaveCalib.clicked.connect(self.save_current_calibration)
+
+    def update_calibration_stats(self):
+        nm_values = self.calib_files_model.get_nm_per_channel_values()
+        ghz_values = self.calib_files_model.get_ghz_per_channel_values()
+
+        if len(nm_values) >= 2:
+            nm_avg = np.mean(nm_values)
+            nm_std = np.std(nm_values, ddof=1)
+            self.ui.label_calibStatsNM.setText(f"{nm_avg:.6f} ± {nm_std:.6f}")
+        else:
+            self.ui.label_calibStatsNM.setText("")
+
+        if len(ghz_values) >= 2:
+            ghz_avg = np.mean(ghz_values)
+            ghz_std = np.std(ghz_values, ddof=1)
+            self.ui.label_calibStatsGHz.setText(f"{ghz_avg:.6f} ± {ghz_std:.6f}")
+        else:
+            self.ui.label_calibStatsGHz.setText("")
 
     def attempt_calculate_calibration_constants(self, filename):
         if self.project:
@@ -172,12 +196,11 @@ class CalibrationManager:
                 self.ui.lineEdit_calibMirrorSpacing.clear()
                 self.ui.lineEdit_calibScatteringAngle.clear()
                 self.calib_files_model.clear()
+                self.update_calibration_stats()
                 self.last_action('Calibration added')
                 self.save_status()
             except ValueError as e:
                 QMessageBox.warning(None, "Error", str(e))
-
-    # calibration_manager.py
 
     def save_peak_fit(self, peak_type, fitter):
         # Get the current calibration and file
@@ -324,6 +347,9 @@ class CalibrationManager:
 
                 self.last_action('Calibration selected')
                 self.save_status()
+
+                # Update stats after loading the calibration
+                self.update_calibration_stats()
 
     def calib_laser_wavelength_changed(self):
         if self.project:
@@ -493,6 +519,7 @@ class CalibrationManager:
                         self.ui.lineEdit_calibMirrorSpacing.clear()
                         self.ui.lineEdit_calibScatteringAngle.clear()
                         self.calib_files_model.clear()
+                        self.update_calibration_stats()
                         self.last_action('Calibration removed')
                         self.save_status()
                     except ValueError as e:
