@@ -205,10 +205,10 @@ class CalibrationManager:
                 self.calib_files_model.clear()
                 self.update_calibration_stats()
 
-                # Clear the plot and reset the peak lists
-                self.calibration_plot_widget.reset_fits()  # Reset the plot and fit curves
-                self.clear_left_peak_list()  # Clear the left peak list widget
-                self.clear_right_peak_list()  # Clear the right peak list widget
+                # **Clear the plot and reset the peak lists**
+                self.calibration_plot_widget.clear_plot()
+                self.clear_left_peak_list()
+                self.clear_right_peak_list()
 
                 # Update status and last action
                 self.last_action('Calibration added')
@@ -374,6 +374,35 @@ class CalibrationManager:
                 # Update stats after loading the calibration
                 self.update_calibration_stats()
 
+                # **Clear the plot and reset the peak lists**
+                self.calibration_plot_widget.clear_plot()
+                self.clear_left_peak_list()
+                self.clear_right_peak_list()
+                # Clear the plotted file highlight
+                self.clear_plotted_file()
+            else:
+                # No calibration selected, clear UI elements
+                self.ui.lineEdit_calibLaserWavelength.clear()
+                self.ui.lineEdit_calibMirrorSpacing.clear()
+                self.ui.lineEdit_calibScatteringAngle.clear()
+                self.calib_files_model.clear()
+                self.update_calibration_stats()
+                self.calibration_plot_widget.clear_plot()
+                self.clear_left_peak_list()
+                self.clear_right_peak_list()
+                self.clear_plotted_file()
+        else:
+            # No project loaded, clear UI elements
+            self.ui.lineEdit_calibLaserWavelength.clear()
+            self.ui.lineEdit_calibMirrorSpacing.clear()
+            self.ui.lineEdit_calibScatteringAngle.clear()
+            self.calib_files_model.clear()
+            self.update_calibration_stats()
+            self.calibration_plot_widget.clear_plot()
+            self.clear_left_peak_list()
+            self.clear_right_peak_list()
+            self.clear_plotted_file()
+
     def calib_laser_wavelength_changed(self):
         if self.project:
             calibration_name = self.ui.comboBox_calibSelect.currentText()
@@ -424,6 +453,9 @@ class CalibrationManager:
                         self.attempt_calculate_calibration_constants(filename)
                 except ValueError:
                     QMessageBox.warning(None, "Invalid Input", "Please enter a valid number for scattering angle.")
+
+    def clear_plotted_file(self):
+        self.calib_files_model.setPlottedFile(None)
 
     def calib_add_files_clicked(self):
         if self.project:
@@ -478,6 +510,9 @@ class CalibrationManager:
 
                     self.plot_calibration_data(data)
                     self.last_action('Calibration file plotted')
+
+                    # Set the plotted file in the model
+                    self.calib_files_model.setPlottedFile(filename)
 
                     # Load saved fits
                     left_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'left')
@@ -546,12 +581,23 @@ class CalibrationManager:
                     try:
                         self.project.remove_calibration(calibration_name)
                         self.populate_calibration_dropdown()
+
+                        # Clear input fields for calibration parameters
                         self.ui.lineEdit_calibLaserWavelength.clear()
                         self.ui.lineEdit_calibMirrorSpacing.clear()
                         self.ui.lineEdit_calibScatteringAngle.clear()
+
+                        # Clear the calibration files table
                         self.calib_files_model.clear()
                         self.update_calibration_stats()
+
+                        # **Clear the plot and reset the peak lists**
+                        self.calibration_plot_widget.clear_plot()
+                        self.clear_left_peak_list()
+                        self.clear_right_peak_list()
+
                         self.last_action('Calibration removed')
                         self.save_status()
                     except ValueError as e:
                         QMessageBox.warning(None, "Error", str(e))
+

@@ -183,6 +183,27 @@ class CalibrationPlotWidget(QObject):
             elif peak_type == 'right':
                 self.calibration_manager.clear_right_peak_list()
 
+    def clear_plot(self):
+        # Clear the plot and reset variables
+        self.plot_item.clear()
+        self.x_data = None
+        self.y_data = None
+        self.data_curve = None
+        self.reset_fits()
+
+        # Reset interaction modes
+        self.ui.pushButton_calibZoom.setChecked(False)
+        self.ui.pushButton_calibFitLeftPeak.setChecked(False)
+        self.ui.pushButton_calibFitRightPeak.setChecked(False)
+        self.view_box.disable_zoom_mode()
+        self.view_box.disable_fitting_mode()
+
+        # Clear the initial view range
+        self.initial_view_range = None
+
+        # Clear the plotted file in CalibrationManager
+        self.calibration_manager.clear_plotted_file()
+
     def load_saved_fit(self, peak_type, peak_fit):
         x_min = peak_fit['x_min']
         x_max = peak_fit['x_max']

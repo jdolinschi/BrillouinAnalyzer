@@ -1,6 +1,8 @@
 # src/analysis/calibration_file_table_model.py
 import numpy as np
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal
+from PySide6.QtGui import QBrush, QColor
+
 
 class CalibrationFileTableModel(QAbstractTableModel):
     data_changed_signal = Signal(int, str, dict)
@@ -9,6 +11,7 @@ class CalibrationFileTableModel(QAbstractTableModel):
         super(CalibrationFileTableModel, self).__init__(parent)
         self._files = files if files else []
         self._headers = ['Filename', 'Channels', 'nm/Channel', 'GHz/Channel']
+        self._plotted_file = None  # Add this line
 
     def get_nm_per_channel_values(self):
         values = []
@@ -46,7 +49,38 @@ class CalibrationFileTableModel(QAbstractTableModel):
                 value = float(value)
                 return "" if np.isnan(value) else f"{value:.6f}"
             return "" if value is None else value
+        elif role == Qt.BackgroundRole:
+            if self._plotted_file is not None and self._files[row][0] == self._plotted_file:
+                # Return a special background color
+                return QBrush(QColor(255, 255, 0, 127))  # Semi-transparent yellow
         return None
+
+    def setPlottedFile(self, filename):
+        # Find the index of the previous plotted file
+        prev_row = None
+        if self._plotted_file is not None:
+            for row, file_data in enumerate(self._files):
+                if file_data[0] == self._plotted_file:
+                    prev_row = row
+                    break
+        # Update the plotted file
+        self._plotted_file = filename
+        # Find the index of the new plotted file
+        new_row = None
+        if self._plotted_file is not None:
+            for row, file_data in enumerate(self._files):
+                if file_data[0] == self._plotted_file:
+                    new_row = row
+                    break
+        # Emit dataChanged for the previous and new rows
+        if prev_row is not None:
+            top_left = self.index(prev_row, 0)
+            bottom_right = self.index(prev_row, self.columnCount() - 1)
+            self.dataChanged.emit(top_left, bottom_right, [Qt.BackgroundRole])
+        if new_row is not None:
+            top_left = self.index(new_row, 0)
+            bottom_right = self.index(new_row, self.columnCount() - 1)
+            self.dataChanged.emit(top_left, bottom_right, [Qt.BackgroundRole])
 
     def setData(self, index, value, role=Qt.EditRole):
         # Implement if needed
