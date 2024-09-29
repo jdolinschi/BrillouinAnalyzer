@@ -33,9 +33,8 @@ class CheckboxLineEditDelegate(QStyledItemDelegate):
     def setModelData(self, editor, model, index):
         text = editor.findChild(QLineEdit).text()
         checked = editor.findChild(QCheckBox).isChecked()
-
-        model.setData(index, text, Qt.EditRole)
-        model.setData(index, Qt.Checked if checked else Qt.Unchecked, Qt.CheckStateRole)
+        data = {'value': text, 'use_default': checked}
+        model.setData(index, data, Qt.EditRole)
 
     def updateEditorGeometry(self, editor, option, index):
         editor.setGeometry(option.rect)

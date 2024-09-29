@@ -61,14 +61,13 @@ class FileTableModel(QAbstractTableModel):
                 # Filename column is not editable
                 return False
             if role == Qt.EditRole:
-                # Update default value
-                self._default_values[col]['value'] = value if value != '' else None
+                # Update default value and use_default flag
+                if isinstance(value, dict):
+                    self._default_values[col]['value'] = value['value'] if value['value'] != '' else None
+                    self._default_values[col]['use_default'] = value['use_default']
+                else:
+                    self._default_values[col]['value'] = value if value != '' else None
                 self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
-                return True
-            elif role == Qt.CheckStateRole:
-                # Update checkbox state
-                self._default_values[col]['use_default'] = (value == Qt.Checked)
-                self.dataChanged.emit(index, index, [Qt.CheckStateRole])
                 return True
             return False
         else:
