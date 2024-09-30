@@ -269,10 +269,10 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_17.addLayout(self.horizontalLayout_36)
 
-        self.tableWidget = QTableWidget(self.groupBox_3)
-        self.tableWidget.setObjectName(u"tableWidget")
+        self.tableWidget_velocities = QTableWidget(self.groupBox_3)
+        self.tableWidget_velocities.setObjectName(u"tableWidget_velocities")
 
-        self.verticalLayout_17.addWidget(self.tableWidget)
+        self.verticalLayout_17.addWidget(self.tableWidget_velocities)
 
 
         self.horizontalLayout_34.addLayout(self.verticalLayout_17)
