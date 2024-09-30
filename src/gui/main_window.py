@@ -124,8 +124,8 @@ class Ui_MainWindow(object):
 
         self.groupBox_3 = QGroupBox(self.groupBox)
         self.groupBox_3.setObjectName(u"groupBox_3")
-        self.verticalLayout_40 = QVBoxLayout(self.groupBox_3)
-        self.verticalLayout_40.setObjectName(u"verticalLayout_40")
+        self.horizontalLayout_37 = QHBoxLayout(self.groupBox_3)
+        self.horizontalLayout_37.setObjectName(u"horizontalLayout_37")
         self.horizontalLayout_34 = QHBoxLayout()
         self.horizontalLayout_34.setObjectName(u"horizontalLayout_34")
         self.verticalLayout_38 = QVBoxLayout()
@@ -224,8 +224,61 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_34.addLayout(self.verticalLayout_39)
 
+        self.verticalLayout_17 = QVBoxLayout()
+        self.verticalLayout_17.setObjectName(u"verticalLayout_17")
+        self.horizontalLayout_20 = QHBoxLayout()
+        self.horizontalLayout_20.setObjectName(u"horizontalLayout_20")
+        self.horizontalSpacer_16 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.verticalLayout_40.addLayout(self.horizontalLayout_34)
+        self.horizontalLayout_20.addItem(self.horizontalSpacer_16)
+
+        self.label_12 = QLabel(self.groupBox_3)
+        self.label_12.setObjectName(u"label_12")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.label_12.sizePolicy().hasHeightForWidth())
+        self.label_12.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_20.addWidget(self.label_12)
+
+        self.horizontalSpacer_15 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_20.addItem(self.horizontalSpacer_15)
+
+
+        self.verticalLayout_17.addLayout(self.horizontalLayout_20)
+
+        self.horizontalLayout_36 = QHBoxLayout()
+        self.horizontalLayout_36.setObjectName(u"horizontalLayout_36")
+        self.pushButton_newVelocity = QPushButton(self.groupBox_3)
+        self.pushButton_newVelocity.setObjectName(u"pushButton_newVelocity")
+
+        self.horizontalLayout_36.addWidget(self.pushButton_newVelocity)
+
+        self.pushButton_deleteVelocity = QPushButton(self.groupBox_3)
+        self.pushButton_deleteVelocity.setObjectName(u"pushButton_deleteVelocity")
+
+        self.horizontalLayout_36.addWidget(self.pushButton_deleteVelocity)
+
+        self.pushButton_renameVelocity = QPushButton(self.groupBox_3)
+        self.pushButton_renameVelocity.setObjectName(u"pushButton_renameVelocity")
+
+        self.horizontalLayout_36.addWidget(self.pushButton_renameVelocity)
+
+
+        self.verticalLayout_17.addLayout(self.horizontalLayout_36)
+
+        self.tableWidget = QTableWidget(self.groupBox_3)
+        self.tableWidget.setObjectName(u"tableWidget")
+
+        self.verticalLayout_17.addWidget(self.tableWidget)
+
+
+        self.horizontalLayout_34.addLayout(self.verticalLayout_17)
+
+
+        self.horizontalLayout_37.addLayout(self.horizontalLayout_34)
 
 
         self.verticalLayout_42.addWidget(self.groupBox_3)
@@ -256,9 +309,6 @@ class Ui_MainWindow(object):
         self.verticalLayout_31.setObjectName(u"verticalLayout_31")
         self.frame_14 = QFrame(self.frame_12)
         self.frame_14.setObjectName(u"frame_14")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.frame_14.sizePolicy().hasHeightForWidth())
         self.frame_14.setSizePolicy(sizePolicy)
         self.frame_14.setFrameShape(QFrame.NoFrame)
@@ -472,6 +522,10 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_23.addWidget(self.pushButton_calibResetFits)
 
+        self.horizontalSpacer_17 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_23.addItem(self.horizontalSpacer_17)
+
 
         self.verticalLayout_33.addWidget(self.frame_18)
 
@@ -596,8 +650,8 @@ class Ui_MainWindow(object):
         self.tabWidget_project.addTab(self.tab_calib, "")
         self.tab_fit = QWidget()
         self.tab_fit.setObjectName(u"tab_fit")
-        self.verticalLayout_3 = QVBoxLayout(self.tab_fit)
-        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.verticalLayout_16 = QVBoxLayout(self.tab_fit)
+        self.verticalLayout_16.setObjectName(u"verticalLayout_16")
         self.splitter_3 = QSplitter(self.tab_fit)
         self.splitter_3.setObjectName(u"splitter_3")
         self.splitter_3.setOrientation(Qt.Horizontal)
@@ -608,143 +662,219 @@ class Ui_MainWindow(object):
         self.frame.setObjectName(u"frame")
         self.frame.setFrameShape(QFrame.NoFrame)
         self.frame.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_15 = QVBoxLayout(self.frame)
-        self.verticalLayout_15.setObjectName(u"verticalLayout_15")
-        self.verticalLayout_9 = QVBoxLayout()
+        self.verticalLayout_9 = QVBoxLayout(self.frame)
         self.verticalLayout_9.setObjectName(u"verticalLayout_9")
-        self.frame_topPlotToolbar = QFrame(self.frame)
-        self.frame_topPlotToolbar.setObjectName(u"frame_topPlotToolbar")
-        self.frame_topPlotToolbar.setEnabled(True)
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.frame_topPlotToolbar.sizePolicy().hasHeightForWidth())
-        self.frame_topPlotToolbar.setSizePolicy(sizePolicy1)
-        self.frame_topPlotToolbar.setFrameShape(QFrame.NoFrame)
-        self.frame_topPlotToolbar.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_8 = QVBoxLayout(self.frame_topPlotToolbar)
+        self.verticalLayout_8 = QVBoxLayout()
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
+        self.frame_6 = QFrame(self.frame)
+        self.frame_6.setObjectName(u"frame_6")
+        sizePolicy.setHeightForWidth(self.frame_6.sizePolicy().hasHeightForWidth())
+        self.frame_6.setSizePolicy(sizePolicy)
+        self.frame_6.setFrameShape(QFrame.NoFrame)
+        self.frame_6.setFrameShadow(QFrame.Plain)
+        self.horizontalLayout_12 = QHBoxLayout(self.frame_6)
+        self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
         self.horizontalLayout_6 = QHBoxLayout()
         self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        self.pushButton_2 = QPushButton(self.frame_topPlotToolbar)
-        self.pushButton_2.setObjectName(u"pushButton_2")
+        self.pushButton_fitResetZoom = QPushButton(self.frame_6)
+        self.pushButton_fitResetZoom.setObjectName(u"pushButton_fitResetZoom")
 
-        self.horizontalLayout_6.addWidget(self.pushButton_2)
+        self.horizontalLayout_6.addWidget(self.pushButton_fitResetZoom)
+
+        self.pushButton_fitZoom = QPushButton(self.frame_6)
+        self.pushButton_fitZoom.setObjectName(u"pushButton_fitZoom")
+
+        self.horizontalLayout_6.addWidget(self.pushButton_fitZoom)
 
         self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_6.addItem(self.horizontalSpacer_3)
 
+        self.checkBox_fitOverlapMode = QCheckBox(self.frame_6)
+        self.checkBox_fitOverlapMode.setObjectName(u"checkBox_fitOverlapMode")
 
-        self.verticalLayout_8.addLayout(self.horizontalLayout_6)
+        self.horizontalLayout_6.addWidget(self.checkBox_fitOverlapMode)
+
+        self.checkBox_fitInvertedPeaks = QCheckBox(self.frame_6)
+        self.checkBox_fitInvertedPeaks.setObjectName(u"checkBox_fitInvertedPeaks")
+
+        self.horizontalLayout_6.addWidget(self.checkBox_fitInvertedPeaks)
 
 
-        self.verticalLayout_9.addWidget(self.frame_topPlotToolbar)
+        self.horizontalLayout_12.addLayout(self.horizontalLayout_6)
+
+
+        self.verticalLayout_8.addWidget(self.frame_6)
 
         self.main_plotwidget = PlotWidget(self.frame)
         self.main_plotwidget.setObjectName(u"main_plotwidget")
 
-        self.verticalLayout_9.addWidget(self.main_plotwidget)
+        self.verticalLayout_8.addWidget(self.main_plotwidget)
 
 
-        self.verticalLayout_15.addLayout(self.verticalLayout_9)
+        self.verticalLayout_9.addLayout(self.verticalLayout_8)
 
         self.splitter.addWidget(self.frame)
-        self.layoutWidget = QWidget(self.splitter)
-        self.layoutWidget.setObjectName(u"layoutWidget")
-        self.horizontalLayout_2 = QHBoxLayout(self.layoutWidget)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.frame_2 = QFrame(self.layoutWidget)
+        self.widget = QWidget(self.splitter)
+        self.widget.setObjectName(u"widget")
+        self.verticalLayout_15 = QVBoxLayout(self.widget)
+        self.verticalLayout_15.setObjectName(u"verticalLayout_15")
+        self.verticalLayout_15.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_19 = QHBoxLayout()
+        self.horizontalLayout_19.setObjectName(u"horizontalLayout_19")
+        self.frame_2 = QFrame(self.widget)
         self.frame_2.setObjectName(u"frame_2")
+        self.frame_2.setMinimumSize(QSize(0, 0))
         self.frame_2.setFrameShape(QFrame.NoFrame)
         self.frame_2.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_6 = QVBoxLayout(self.frame_2)
-        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-        self.verticalLayout_4 = QVBoxLayout()
-        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.frame_leftPlotToolbar = QFrame(self.frame_2)
-        self.frame_leftPlotToolbar.setObjectName(u"frame_leftPlotToolbar")
-        self.frame_leftPlotToolbar.setFrameShape(QFrame.NoFrame)
-        self.frame_leftPlotToolbar.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_17 = QVBoxLayout(self.frame_leftPlotToolbar)
-        self.verticalLayout_17.setObjectName(u"verticalLayout_17")
-        self.horizontalLayout_7 = QHBoxLayout()
-        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        self.pushButton_4 = QPushButton(self.frame_leftPlotToolbar)
-        self.pushButton_4.setObjectName(u"pushButton_4")
-
-        self.horizontalLayout_7.addWidget(self.pushButton_4)
-
-        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_7.addItem(self.horizontalSpacer_5)
-
-
-        self.verticalLayout_17.addLayout(self.horizontalLayout_7)
-
-
-        self.verticalLayout_4.addWidget(self.frame_leftPlotToolbar)
-
+        self.verticalLayout_5 = QVBoxLayout(self.frame_2)
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.verticalLayout_3 = QVBoxLayout()
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.left_plotwidget = PlotWidget(self.frame_2)
         self.left_plotwidget.setObjectName(u"left_plotwidget")
 
-        self.verticalLayout_4.addWidget(self.left_plotwidget)
+        self.verticalLayout_3.addWidget(self.left_plotwidget)
+
+        self.frame_leftPlotToolbar = QFrame(self.frame_2)
+        self.frame_leftPlotToolbar.setObjectName(u"frame_leftPlotToolbar")
+        sizePolicy.setHeightForWidth(self.frame_leftPlotToolbar.sizePolicy().hasHeightForWidth())
+        self.frame_leftPlotToolbar.setSizePolicy(sizePolicy)
+        self.frame_leftPlotToolbar.setFrameShape(QFrame.NoFrame)
+        self.frame_leftPlotToolbar.setFrameShadow(QFrame.Plain)
+        self.horizontalLayout_7 = QHBoxLayout(self.frame_leftPlotToolbar)
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.horizontalLayout_2 = QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.pushButton_fitLeftZoomReset = QPushButton(self.frame_leftPlotToolbar)
+        self.pushButton_fitLeftZoomReset.setObjectName(u"pushButton_fitLeftZoomReset")
+
+        self.horizontalLayout_2.addWidget(self.pushButton_fitLeftZoomReset)
+
+        self.checkBox_fitLeftManualFit = QCheckBox(self.frame_leftPlotToolbar)
+        self.checkBox_fitLeftManualFit.setObjectName(u"checkBox_fitLeftManualFit")
+
+        self.horizontalLayout_2.addWidget(self.checkBox_fitLeftManualFit)
+
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_4)
+
+
+        self.horizontalLayout_7.addLayout(self.horizontalLayout_2)
+
+
+        self.verticalLayout_3.addWidget(self.frame_leftPlotToolbar)
+
+
+        self.verticalLayout_5.addLayout(self.verticalLayout_3)
+
+
+        self.horizontalLayout_19.addWidget(self.frame_2)
+
+        self.frame_3 = QFrame(self.widget)
+        self.frame_3.setObjectName(u"frame_3")
+        self.frame_3.setMinimumSize(QSize(0, 0))
+        self.frame_3.setFrameShape(QFrame.NoFrame)
+        self.frame_3.setFrameShadow(QFrame.Plain)
+        self.verticalLayout_6 = QVBoxLayout(self.frame_3)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.verticalLayout_4 = QVBoxLayout()
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.right_plotwidget = PlotWidget(self.frame_3)
+        self.right_plotwidget.setObjectName(u"right_plotwidget")
+        self.right_plotwidget.setMinimumSize(QSize(0, 50))
+
+        self.verticalLayout_4.addWidget(self.right_plotwidget)
+
+        self.frame_rightPlotToolbar = QFrame(self.frame_3)
+        self.frame_rightPlotToolbar.setObjectName(u"frame_rightPlotToolbar")
+        sizePolicy.setHeightForWidth(self.frame_rightPlotToolbar.sizePolicy().hasHeightForWidth())
+        self.frame_rightPlotToolbar.setSizePolicy(sizePolicy)
+        self.frame_rightPlotToolbar.setFrameShape(QFrame.NoFrame)
+        self.frame_rightPlotToolbar.setFrameShadow(QFrame.Plain)
+        self.horizontalLayout_17 = QHBoxLayout(self.frame_rightPlotToolbar)
+        self.horizontalLayout_17.setObjectName(u"horizontalLayout_17")
+        self.horizontalLayout_8 = QHBoxLayout()
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+        self.pushButton_fitRightZoomReset = QPushButton(self.frame_rightPlotToolbar)
+        self.pushButton_fitRightZoomReset.setObjectName(u"pushButton_fitRightZoomReset")
+
+        self.horizontalLayout_8.addWidget(self.pushButton_fitRightZoomReset)
+
+        self.checkBox_fitRightManualFit = QCheckBox(self.frame_rightPlotToolbar)
+        self.checkBox_fitRightManualFit.setObjectName(u"checkBox_fitRightManualFit")
+
+        self.horizontalLayout_8.addWidget(self.checkBox_fitRightManualFit)
+
+        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_8.addItem(self.horizontalSpacer_5)
+
+
+        self.horizontalLayout_17.addLayout(self.horizontalLayout_8)
+
+
+        self.verticalLayout_4.addWidget(self.frame_rightPlotToolbar)
 
 
         self.verticalLayout_6.addLayout(self.verticalLayout_4)
 
 
-        self.horizontalLayout_2.addWidget(self.frame_2)
+        self.horizontalLayout_19.addWidget(self.frame_3)
 
-        self.frame_3 = QFrame(self.layoutWidget)
-        self.frame_3.setObjectName(u"frame_3")
-        self.frame_3.setFrameShape(QFrame.NoFrame)
-        self.frame_3.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_7 = QVBoxLayout(self.frame_3)
+
+        self.verticalLayout_15.addLayout(self.horizontalLayout_19)
+
+        self.frame_8 = QFrame(self.widget)
+        self.frame_8.setObjectName(u"frame_8")
+        sizePolicy.setHeightForWidth(self.frame_8.sizePolicy().hasHeightForWidth())
+        self.frame_8.setSizePolicy(sizePolicy)
+        self.frame_8.setFrameShape(QFrame.NoFrame)
+        self.frame_8.setFrameShadow(QFrame.Plain)
+        self.verticalLayout_7 = QVBoxLayout(self.frame_8)
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
-        self.verticalLayout_5 = QVBoxLayout()
-        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
-        self.frame_rightPlotToolbar = QFrame(self.frame_3)
-        self.frame_rightPlotToolbar.setObjectName(u"frame_rightPlotToolbar")
-        self.frame_rightPlotToolbar.setFrameShape(QFrame.NoFrame)
-        self.frame_rightPlotToolbar.setFrameShadow(QFrame.Plain)
-        self.verticalLayout_16 = QVBoxLayout(self.frame_rightPlotToolbar)
-        self.verticalLayout_16.setObjectName(u"verticalLayout_16")
-        self.horizontalLayout_8 = QHBoxLayout()
-        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
-        self.pushButton_3 = QPushButton(self.frame_rightPlotToolbar)
-        self.pushButton_3.setObjectName(u"pushButton_3")
+        self.horizontalLayout_18 = QHBoxLayout()
+        self.horizontalLayout_18.setObjectName(u"horizontalLayout_18")
+        self.label_9 = QLabel(self.frame_8)
+        self.label_9.setObjectName(u"label_9")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.label_9.sizePolicy().hasHeightForWidth())
+        self.label_9.setSizePolicy(sizePolicy1)
 
-        self.horizontalLayout_8.addWidget(self.pushButton_3)
+        self.horizontalLayout_18.addWidget(self.label_9)
 
-        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.checkBox_fitMatchX = QCheckBox(self.frame_8)
+        self.checkBox_fitMatchX.setObjectName(u"checkBox_fitMatchX")
 
-        self.horizontalLayout_8.addItem(self.horizontalSpacer_4)
+        self.horizontalLayout_18.addWidget(self.checkBox_fitMatchX)
 
+        self.checkBox_fitMatchY = QCheckBox(self.frame_8)
+        self.checkBox_fitMatchY.setObjectName(u"checkBox_fitMatchY")
 
-        self.verticalLayout_16.addLayout(self.horizontalLayout_8)
+        self.horizontalLayout_18.addWidget(self.checkBox_fitMatchY)
 
+        self.horizontalSpacer_14 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.verticalLayout_5.addWidget(self.frame_rightPlotToolbar)
-
-        self.right_plotwidget = PlotWidget(self.frame_3)
-        self.right_plotwidget.setObjectName(u"right_plotwidget")
-
-        self.verticalLayout_5.addWidget(self.right_plotwidget)
+        self.horizontalLayout_18.addItem(self.horizontalSpacer_14)
 
 
-        self.verticalLayout_7.addLayout(self.verticalLayout_5)
+        self.verticalLayout_7.addLayout(self.horizontalLayout_18)
 
 
-        self.horizontalLayout_2.addWidget(self.frame_3)
+        self.verticalLayout_15.addWidget(self.frame_8)
 
-        self.splitter.addWidget(self.layoutWidget)
+        self.splitter.addWidget(self.widget)
         self.splitter_3.addWidget(self.splitter)
         self.frame_4 = QFrame(self.splitter_3)
         self.frame_4.setObjectName(u"frame_4")
-        sizePolicy1.setHeightForWidth(self.frame_4.sizePolicy().hasHeightForWidth())
-        self.frame_4.setSizePolicy(sizePolicy1)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.frame_4.sizePolicy().hasHeightForWidth())
+        self.frame_4.setSizePolicy(sizePolicy2)
         self.frame_4.setFrameShape(QFrame.NoFrame)
         self.frame_4.setFrameShadow(QFrame.Plain)
         self.verticalLayout = QVBoxLayout(self.frame_4)
@@ -780,11 +910,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout_5.setSizeConstraint(QLayout.SetMaximumSize)
         self.label_2 = QLabel(self.frame_filesBrowserToolbar)
         self.label_2.setObjectName(u"label_2")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
-        self.label_2.setSizePolicy(sizePolicy2)
+        sizePolicy1.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
+        self.label_2.setSizePolicy(sizePolicy1)
 
         self.horizontalLayout_5.addWidget(self.label_2)
 
@@ -795,8 +922,8 @@ class Ui_MainWindow(object):
 
         self.label_3 = QLabel(self.frame_filesBrowserToolbar)
         self.label_3.setObjectName(u"label_3")
-        sizePolicy2.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
-        self.label_3.setSizePolicy(sizePolicy2)
+        sizePolicy1.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
+        self.label_3.setSizePolicy(sizePolicy1)
 
         self.horizontalLayout_5.addWidget(self.label_3)
 
@@ -804,6 +931,18 @@ class Ui_MainWindow(object):
         self.comboBox_crystal.setObjectName(u"comboBox_crystal")
 
         self.horizontalLayout_5.addWidget(self.comboBox_crystal)
+
+        self.label_8 = QLabel(self.frame_filesBrowserToolbar)
+        self.label_8.setObjectName(u"label_8")
+        sizePolicy1.setHeightForWidth(self.label_8.sizePolicy().hasHeightForWidth())
+        self.label_8.setSizePolicy(sizePolicy1)
+
+        self.horizontalLayout_5.addWidget(self.label_8)
+
+        self.comboBox_calibration = QComboBox(self.frame_filesBrowserToolbar)
+        self.comboBox_calibration.setObjectName(u"comboBox_calibration")
+
+        self.horizontalLayout_5.addWidget(self.comboBox_calibration)
 
 
         self.verticalLayout_10.addLayout(self.horizontalLayout_5)
@@ -820,6 +959,10 @@ class Ui_MainWindow(object):
         self.pushButton_removeFiles.setObjectName(u"pushButton_removeFiles")
 
         self.horizontalLayout_9.addWidget(self.pushButton_removeFiles)
+
+        self.horizontalSpacer_18 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_9.addItem(self.horizontalSpacer_18)
 
 
         self.verticalLayout_10.addLayout(self.horizontalLayout_9)
@@ -850,6 +993,8 @@ class Ui_MainWindow(object):
         self.verticalLayout_12.setObjectName(u"verticalLayout_12")
         self.frame_peakToolbar = QFrame(self.frame_7)
         self.frame_peakToolbar.setObjectName(u"frame_peakToolbar")
+        sizePolicy.setHeightForWidth(self.frame_peakToolbar.sizePolicy().hasHeightForWidth())
+        self.frame_peakToolbar.setSizePolicy(sizePolicy)
         self.frame_peakToolbar.setMinimumSize(QSize(0, 30))
         self.frame_peakToolbar.setFrameShape(QFrame.NoFrame)
         self.frame_peakToolbar.setFrameShadow(QFrame.Plain)
@@ -857,10 +1002,15 @@ class Ui_MainWindow(object):
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.pushButton = QPushButton(self.frame_peakToolbar)
-        self.pushButton.setObjectName(u"pushButton")
+        self.pushButton_peakfitNewFit = QPushButton(self.frame_peakToolbar)
+        self.pushButton_peakfitNewFit.setObjectName(u"pushButton_peakfitNewFit")
 
-        self.horizontalLayout_3.addWidget(self.pushButton)
+        self.horizontalLayout_3.addWidget(self.pushButton_peakfitNewFit)
+
+        self.pushButton_peakfitRemoveFit = QPushButton(self.frame_peakToolbar)
+        self.pushButton_peakfitRemoveFit.setObjectName(u"pushButton_peakfitRemoveFit")
+
+        self.horizontalLayout_3.addWidget(self.pushButton_peakfitRemoveFit)
 
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -896,7 +1046,7 @@ class Ui_MainWindow(object):
 
         self.splitter_3.addWidget(self.frame_4)
 
-        self.verticalLayout_3.addWidget(self.splitter_3)
+        self.verticalLayout_16.addWidget(self.splitter_3)
 
         self.tabWidget_project.addTab(self.tab_fit, "")
 
@@ -960,7 +1110,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget_project.setCurrentIndex(1)
+        self.tabWidget_project.setCurrentIndex(0)
         self.tabWidget_calib.setCurrentIndex(0)
         self.tabWidget_sideBar.setCurrentIndex(0)
 
@@ -989,6 +1139,10 @@ class Ui_MainWindow(object):
         self.pushButton_newCrystal.setText(QCoreApplication.translate("MainWindow", u"New", None))
         self.pushButton_deleteCrystal.setText(QCoreApplication.translate("MainWindow", u"Delete", None))
         self.pushButton_renameCrystal.setText(QCoreApplication.translate("MainWindow", u"Rename", None))
+        self.label_12.setText(QCoreApplication.translate("MainWindow", u"Velocities", None))
+        self.pushButton_newVelocity.setText(QCoreApplication.translate("MainWindow", u"New", None))
+        self.pushButton_deleteVelocity.setText(QCoreApplication.translate("MainWindow", u"Delete", None))
+        self.pushButton_renameVelocity.setText(QCoreApplication.translate("MainWindow", u"Rename", None))
         self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"Settings", None))
         self.tabWidget_project.setTabText(self.tabWidget_project.indexOf(self.Project), QCoreApplication.translate("MainWindow", u"Project", None))
         self.pushButton_calibResetView.setText(QCoreApplication.translate("MainWindow", u"Reset zoom", None))
@@ -1020,14 +1174,24 @@ class Ui_MainWindow(object):
         self.tabWidget_calib.setTabText(self.tabWidget_calib.indexOf(self.tab_calibMain), QCoreApplication.translate("MainWindow", u"Main", None))
         self.tabWidget_calib.setTabText(self.tabWidget_calib.indexOf(self.tab_calibSetup), QCoreApplication.translate("MainWindow", u"Setup", None))
         self.tabWidget_project.setTabText(self.tabWidget_project.indexOf(self.tab_calib), QCoreApplication.translate("MainWindow", u"Calibrate", None))
-        self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.pushButton_4.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        self.pushButton_fitResetZoom.setText(QCoreApplication.translate("MainWindow", u"Reset zoom", None))
+        self.pushButton_fitZoom.setText(QCoreApplication.translate("MainWindow", u"Zoom", None))
+        self.checkBox_fitOverlapMode.setText(QCoreApplication.translate("MainWindow", u"Overlap", None))
+        self.checkBox_fitInvertedPeaks.setText(QCoreApplication.translate("MainWindow", u"Inverted peaks", None))
+        self.pushButton_fitLeftZoomReset.setText(QCoreApplication.translate("MainWindow", u"Reset zoom", None))
+        self.checkBox_fitLeftManualFit.setText(QCoreApplication.translate("MainWindow", u"Manual fit", None))
+        self.pushButton_fitRightZoomReset.setText(QCoreApplication.translate("MainWindow", u"Reset zoom", None))
+        self.checkBox_fitRightManualFit.setText(QCoreApplication.translate("MainWindow", u"Manual fit", None))
+        self.label_9.setText(QCoreApplication.translate("MainWindow", u"Match range:", None))
+        self.checkBox_fitMatchX.setText(QCoreApplication.translate("MainWindow", u"x", None))
+        self.checkBox_fitMatchY.setText(QCoreApplication.translate("MainWindow", u"y", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Pressure (GPa): ", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"Crystal: ", None))
+        self.label_8.setText(QCoreApplication.translate("MainWindow", u"Calibration:", None))
         self.pushButton_addFiles.setText(QCoreApplication.translate("MainWindow", u"Add files", None))
         self.pushButton_removeFiles.setText(QCoreApplication.translate("MainWindow", u"Remove files", None))
-        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        self.pushButton_peakfitNewFit.setText(QCoreApplication.translate("MainWindow", u"New peak", None))
+        self.pushButton_peakfitRemoveFit.setText(QCoreApplication.translate("MainWindow", u"Remove peak", None))
         self.tabWidget_sideBar.setTabText(self.tabWidget_sideBar.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Main", None))
         self.tabWidget_sideBar.setTabText(self.tabWidget_sideBar.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Setup", None))
         self.tabWidget_project.setTabText(self.tabWidget_project.indexOf(self.tab_fit), QCoreApplication.translate("MainWindow", u"Fit", None))
