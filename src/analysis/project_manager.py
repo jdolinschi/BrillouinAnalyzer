@@ -34,13 +34,17 @@ class ProjectManager:
         # Ensure tables are not editable
         self.ui.tableWidget_pressures.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ui.tableWidget_crystals.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ui.tableWidget_velocities.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
-        # Define columns for the pressures and crystals tables
+        # Define columns for the pressures, crystals, and velocities tables
         self.ui.tableWidget_pressures.setColumnCount(1)
         self.ui.tableWidget_pressures.setHorizontalHeaderLabels(["Pressure (GPa)"])
 
         self.ui.tableWidget_crystals.setColumnCount(1)
         self.ui.tableWidget_crystals.setHorizontalHeaderLabels(["Crystal"])
+
+        self.ui.tableWidget_velocities.setColumnCount(1)
+        self.ui.tableWidget_velocities.setHorizontalHeaderLabels(["Velocity"])
 
         self.ui.tableView_files.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.tableView_files.customContextMenuRequested.connect(self.show_context_menu)
@@ -97,6 +101,9 @@ class ProjectManager:
         self.ui.pushButton_deletePressure.clicked.connect(self.delete_pressure_clicked)
         self.ui.pushButton_newCrystal.clicked.connect(self.new_crystal_clicked)
         self.ui.pushButton_deleteCrystal.clicked.connect(self.delete_crystal_clicked)
+        self.ui.pushButton_newVelocity.clicked.connect(self.new_velocity_clicked)
+        self.ui.pushButton_deleteVelocity.clicked.connect(self.delete_velocity_clicked)
+        self.ui.pushButton_renameVelocity.clicked.connect(self.rename_velocity_clicked)
         self.ui.pushButton_addFiles.clicked.connect(self.add_files_clicked)
         self.ui.pushButton_removeFiles.clicked.connect(self.remove_files_clicked)
         self.ui.lineEdit_currentProject.editingFinished.connect(self.rename_project_clicked)
@@ -246,9 +253,9 @@ class ProjectManager:
             self.save_status()
 
     def populate_table_widgets(self):
-        """Populate the pressure and crystal tableWidgets with unique values."""
+        """Populate the pressure, crystal, and velocity tableWidgets with unique values."""
         if self.project:
-            pressures, crystals = self.project.get_unique_pressures_and_crystals()
+            pressures, crystals, velocities = self.project.get_unique_pressures_crystals_velocities()
 
             # Populate pressure tableWidget
             self.ui.tableWidget_pressures.setRowCount(0)  # Clear previous entries
@@ -263,6 +270,14 @@ class ProjectManager:
                 row_position = self.ui.tableWidget_crystals.rowCount()
                 self.ui.tableWidget_crystals.insertRow(row_position)
                 self.ui.tableWidget_crystals.setItem(row_position, 0, QTableWidgetItem(crystal))
+
+            # Populate velocity tableWidget
+            self.ui.tableWidget_velocities.setRowCount(0)  # Clear previous entries
+            for velocity in velocities:
+                row_position = self.ui.tableWidget_velocities.rowCount()
+                self.ui.tableWidget_velocities.insertRow(row_position)
+                self.ui.tableWidget_velocities.setItem(row_position, 0, QTableWidgetItem(velocity))
+
             self.save_status()
 
     def update_metadata(self, row, filename, metadata):
@@ -385,7 +400,7 @@ class ProjectManager:
     def populate_dropdowns(self):
         """Populate pressure and crystal comboboxes with unique values from the project."""
         if self.project:
-            unique_pressures, unique_crystals = self.project.get_unique_pressures_and_crystals()
+            unique_pressures, unique_crystals, _ = self.project.get_unique_pressures_crystals_velocities()
 
             self.ui.comboBox_pressure.clear()
             self.ui.comboBox_crystal.clear()
@@ -484,6 +499,20 @@ class ProjectManager:
                 self.last_action('Pressure deleted')
                 self.save_status()
 
+    def rename_velocity_clicked(self):
+        """Handle the rename velocity button click."""
+        selected_rows = self.ui.tableWidget_velocities.selectionModel().selectedRows()
+        if selected_rows and len(selected_rows) == 1:
+            row = selected_rows[0].row()
+            old_velocity = self.ui.tableWidget_velocities.item(row, 0).text()
+            new_velocity, ok = QInputDialog.getText(None, "Rename Velocity", "Enter new velocity name:",
+                                                    text=old_velocity)
+            if ok and new_velocity:
+                self.project.rename_velocity(old_velocity, new_velocity)  # Rename in project file
+                self.populate_table_widgets()  # Update tableWidget
+                self.last_action('Velocity renamed')
+                self.save_status()
+
     def new_crystal_clicked(self):
         """Handle the new crystal button click."""
         crystal_name, ok = QInputDialog.getText(None, "New Crystal", "Enter crystal name:")
@@ -507,6 +536,29 @@ class ProjectManager:
                 self.populate_table_widgets()  # Update tableWidget
                 self.populate_dropdowns()
                 self.last_action('Crystal deleted')
+                self.save_status()
+
+    def new_velocity_clicked(self):
+        """Handle the new velocity button click."""
+        velocity_name, ok = QInputDialog.getText(None, "New Velocity", "Enter velocity name:")
+        if ok and velocity_name:
+            self.project.add_velocity(velocity_name)  # Add to project file
+            self.populate_table_widgets()  # Update tableWidget
+            self.last_action('Velocity added')
+            self.save_status()
+
+    def delete_velocity_clicked(self):
+        """Handle the delete velocity button click."""
+        selected_rows = self.ui.tableWidget_velocities.selectionModel().selectedRows()
+        if selected_rows:
+            confirm = QMessageBox.question(None, "Confirm Delete", "Do you want to delete the selected velocity(s)?",
+                                           QMessageBox.Yes | QMessageBox.No)
+            if confirm == QMessageBox.Yes:
+                for row in selected_rows:
+                    velocity = self.ui.tableWidget_velocities.item(row.row(), 0).text()
+                    self.project.remove_velocity(velocity)  # Remove from project file
+                self.populate_table_widgets()  # Update tableWidget
+                self.last_action('Velocity deleted')
                 self.save_status()
 
     def add_files_clicked(self):

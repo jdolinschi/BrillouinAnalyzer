@@ -597,6 +597,52 @@ class BrillouinProject:
 
         return peak_fit
 
+    def add_velocity(self, velocity):
+        """Add a new velocity to the project."""
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        if 'velocities' not in self.h5file.attrs:
+            self.h5file.attrs['velocities'] = []
+
+        velocities = list(self.h5file.attrs['velocities'])
+        if velocity not in velocities:
+            velocities.append(velocity)
+            self.h5file.attrs['velocities'] = velocities
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def remove_velocity(self, velocity):
+        """Remove an existing velocity from the project."""
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        velocities = list(self.h5file.attrs['velocities'])
+        if velocity in velocities:
+            velocities.remove(velocity)
+            self.h5file.attrs['velocities'] = velocities
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def rename_velocity(self, old_velocity, new_velocity):
+        """Rename an existing velocity in the project."""
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        velocities = list(self.h5file.attrs['velocities'])
+        if old_velocity in velocities:
+            velocities[velocities.index(old_velocity)] = new_velocity
+            self.h5file.attrs['velocities'] = velocities
+
+        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def get_unique_pressures_crystals_velocities(self):
+        """Return the unique pressures, crystals, and velocities."""
+        pressures = self.h5file.attrs.get('pressures', [])
+        crystals = self.h5file.attrs.get('crystals', [])
+        velocities = self.h5file.attrs.get('velocities', [])
+        return sorted(pressures), sorted(crystals), sorted(velocities)
+
     def get_calibration_attributes(self, calibration_name):
         """
         Retrieves attributes of a calibration.
