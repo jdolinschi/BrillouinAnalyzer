@@ -4,13 +4,12 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QClipboard
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QAbstractItemView, QTableWidgetItem, QMenu, \
     QApplication, QTableView
-from scipy.optimize import curve_fit
-from scipy.special import wofz
 
 from .brillouin_project import BrillouinProject
 from .file_table_model import FileTableModel  # Import the custom model
 from .calibration_file_table_model import CalibrationFileTableModel
-from ..utils.custom_delegate import CheckboxLineEditDelegate
+from ..utils.checkbox_lineedit_delegate import CheckboxLineEditDelegate
+from ..utils.calibration_combobox_delegate import CalibrationComboBoxDelegate  # Import the new delegate
 import os
 
 
@@ -52,9 +51,13 @@ class ProjectManager:
         # Enable copy-paste shortcuts in the tableView_files
         self.ui.tableView_files.keyPressEvent = self.table_keyPressEvent
 
-        # Assign the custom delegate to the top row
+        # Assign the custom delegate to the default values row
         delegate = CheckboxLineEditDelegate(self.ui.tableView_files)
         self.ui.tableView_files.setItemDelegateForRow(0, delegate)
+
+        # Create and assign the custom delegate for the Calibration column
+        self.calibration_delegate = CalibrationComboBoxDelegate(self.ui.tableView_files)
+        self.ui.tableView_files.setItemDelegateForColumn(1, self.calibration_delegate)
 
         # Connect signals to corresponding slots
         self.setup_connections()
@@ -63,10 +66,28 @@ class ProjectManager:
 
     def set_calibration_manager(self, calibration_manager):
         self.calibration_manager = calibration_manager
+        # Connect to the calibrations_updated signal
+        self.calibration_manager.calibrations_updated.connect(self.update_calibrations)
 
     def last_action(self, text):
         """Update the last action label."""
         self.ui.label_lastAction.setText(f"| Last action: {text} ")
+
+    def update_calibrations(self):
+        # Re-populate the calibration dropdowns
+        self.populate_calibration_dropdowns()
+
+    def populate_calibration_dropdowns(self):
+        """Populate calibration comboboxes with unique values from the project."""
+        if self.project:
+            calibration_names = self.project.list_calibrations()
+            self.ui.comboBox_calibration.clear()
+            self.ui.comboBox_calibration.addItems(calibration_names)
+            # Update the calibration delegate with new calibration names
+            self.calibration_delegate.updateCalibrations(calibration_names)
+            self.file_model.calibration_options = calibration_names
+            # Notify the model that data has changed
+            self.file_model.layoutChanged.emit()
 
     def update_file_count(self):
         """Update the file count label."""
@@ -112,6 +133,8 @@ class ProjectManager:
         self.ui.comboBox_pressure.currentIndexChanged.connect(self.pressure_combobox_changed)
         self.ui.comboBox_crystal.currentIndexChanged.connect(self.crystal_combobox_changed)
 
+        # Connect calibration combobox
+        self.ui.comboBox_calibration.currentIndexChanged.connect(self.calibration_combobox_changed)
 
     # Add a new method for context menu:
     def show_context_menu(self, pos):
@@ -289,6 +312,10 @@ class ProjectManager:
                 # Ensure the file exists in the HDF5 file before updating metadata
                 if filename in self.project.h5file['data']:
                     for key, value in metadata.items():
+                        if key == 'calibration':
+                            # Store the calibration name as metadata
+                            self.project.add_metadata_to_dataset(filename, key, value)
+                            continue
                         if value is None and key in ['chi_angle', 'pinhole', 'power', 'polarization', 'scans',
                                                      'laser_wavelength', 'mirror_spacing', 'scattering_angle']:
                             value = np.nan  # Use np.nan for missing numeric values
@@ -304,6 +331,14 @@ class ProjectManager:
         """Handle pressure combobox change."""
         self.update_table()
         self.last_action('Pressure changed')
+        self.save_status()
+
+    def calibration_combobox_changed(self):
+        """Handle calibration combobox change."""
+        default_calibration = self.ui.comboBox_calibration.currentText()
+        # Update the default value in the model
+        self.file_model._default_values[1]['value'] = default_calibration
+        self.file_model._default_values[1]['use_default'] = True
         self.save_status()
 
     def crystal_combobox_changed(self):
@@ -398,7 +433,7 @@ class ProjectManager:
         self.update_file_count()
 
     def populate_dropdowns(self):
-        """Populate pressure and crystal comboboxes with unique values from the project."""
+        """Populate pressure, crystal, and calibration comboboxes with unique values from the project."""
         if self.project:
             unique_pressures, unique_crystals, _ = self.project.get_unique_pressures_crystals_velocities()
 
@@ -409,6 +444,18 @@ class ProjectManager:
                 self.ui.comboBox_pressure.addItem(str(pressure))
             for crystal in unique_crystals:
                 self.ui.comboBox_crystal.addItem(crystal)
+
+            # Populate calibration combobox
+            calibration_names = self.project.list_calibrations()
+            self.ui.comboBox_calibration.clear()
+            self.ui.comboBox_calibration.addItems(calibration_names)
+
+            # Update the calibration delegate with new calibration names
+            self.calibration_delegate.updateCalibrations(calibration_names)
+            self.file_model.calibration_options = calibration_names
+
+            # Populate calibration dropdowns
+            self.populate_calibration_dropdowns()
             self.save_status()
 
     def save_project_clicked(self):
@@ -565,20 +612,21 @@ class ProjectManager:
         """Handle the add files button click."""
         pressure = self.ui.comboBox_pressure.currentText()
         crystal_name = self.ui.comboBox_crystal.currentText()
+        default_calibration = self.ui.comboBox_calibration.currentText()
 
         if pressure and crystal_name:
-            self.add_files(float(pressure), crystal_name)
+            self.add_files(float(pressure), crystal_name, default_calibration)
             self.update_file_count()
             self.last_action('Files added')
             self.save_status()
 
-    def add_files(self, pressure, crystal_name):
+    def add_files(self, pressure, crystal_name, default_calibration):
         """Prompt the user to select files and add them to the project."""
         filepaths, _ = QFileDialog.getOpenFileNames(None, "Add Files", "", "Data Files (*.DAT)")
         if filepaths:
             try:
                 self.project.load_all_files_with_metadata(filepaths, pressure, crystal_name)
-                self.file_model.addFiles(filepaths)
+                self.file_model.addFiles(filepaths, default_calibration=default_calibration)
             except Exception as e:
                 QMessageBox.critical(None, "Error", f"Failed to add files: {e}")
 
@@ -634,17 +682,16 @@ class ProjectManager:
                 for row in range(1, row_count+1):
                     filename = self.file_model.data(self.file_model.index(row, 0), Qt.DisplayRole)
                     metadata = {
-                        'chi_angle': self.file_model.data(self.file_model.index(row, 1), Qt.DisplayRole),
-                        'pinhole': self.file_model.data(self.file_model.index(row, 2), Qt.DisplayRole),
-                        'power': self.file_model.data(self.file_model.index(row, 3), Qt.DisplayRole),
-                        'polarization': self.file_model.data(self.file_model.index(row, 4), Qt.DisplayRole),
-                        'scans': self.file_model.data(self.file_model.index(row, 5), Qt.DisplayRole),
-                        'laser_wavelength': self.file_model.data(self.file_model.index(row, 6), Qt.DisplayRole),
-                        'mirror_spacing': self.file_model.data(self.file_model.index(row, 7), Qt.DisplayRole),
-                        'scattering_angle': self.file_model.data(self.file_model.index(row, 8), Qt.DisplayRole),
+                        'calibration': self.file_model.data(self.file_model.index(row, 1), Qt.DisplayRole),
+                        'chi_angle': self.file_model.data(self.file_model.index(row, 2), Qt.DisplayRole),
+                        'pinhole': self.file_model.data(self.file_model.index(row, 3), Qt.DisplayRole),
+                        'power': self.file_model.data(self.file_model.index(row, 4), Qt.DisplayRole),
+                        'polarization': self.file_model.data(self.file_model.index(row, 5), Qt.DisplayRole),
+                        'scans': self.file_model.data(self.file_model.index(row, 6), Qt.DisplayRole),
+                        'laser_wavelength': self.file_model.data(self.file_model.index(row, 7), Qt.DisplayRole),
+                        'mirror_spacing': self.file_model.data(self.file_model.index(row, 8), Qt.DisplayRole),
+                        'scattering_angle': self.file_model.data(self.file_model.index(row, 9), Qt.DisplayRole),
                     }
                     for key, value in metadata.items():
                         if value is not None:
                             self.project.add_metadata_to_dataset(filename, key, value)
-
-

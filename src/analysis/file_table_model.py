@@ -10,17 +10,39 @@ class FileTableModel(QAbstractTableModel):
     def __init__(self, files=None, parent=None):
         super(FileTableModel, self).__init__(parent)
         self._files = files if files else []
-        self._headers = ['Filename', 'Chi angle (degrees)', 'Pinhole', 'Power', 'Polarization', 'Scans',
-                         'Laser wavelength (nm)', 'Mirror spacing (mm)', 'Scattering angle (degrees)']
+        self._headers = [
+            'Filename',
+            'Calibration',  # New column added here
+            'Chi angle (degrees)',
+            'Pinhole',
+            'Power',
+            'Polarization',
+            'Scans',
+            'Laser wavelength (nm)',
+            'Mirror spacing (mm)',
+            'Scattering angle (degrees)'
+        ]
         self._sort_order = Qt.AscendingOrder
         self._sort_column = -1  # No sorting by default
 
         # Initialize default values for each column (starting from column 1)
         self._default_values = {col: {'value': None, 'use_default': False} for col in range(1, len(self._headers))}
 
+        self.calibration_options = []  # This will be populated from the ProjectManager
+
     def rowCount(self, parent=QModelIndex()):
         # Include an extra row for default values (row 0)
         return len(self._files) + 1
+
+    @property
+    def calibration_options(self):
+        return self._calibration_options
+
+    @calibration_options.setter
+    def calibration_options(self, calibrations):
+        self._calibration_options = calibrations
+        # Notify the view that data has changed
+        self.layoutChanged.emit()
 
     def columnCount(self, parent=QModelIndex()):
         return len(self._headers)
@@ -46,6 +68,14 @@ class FileTableModel(QAbstractTableModel):
                 if isinstance(value, np.float64):
                     value = float(value)
                 return "" if value is None else value
+            elif role == Qt.EditRole and col == 1:
+                # Return the calibration name for the combo box editor
+                return value
+            elif role == Qt.DisplayRole and col == 1:
+                # Display the calibration name
+                return value
+            elif role == Qt.ToolTipRole and col == 1:
+                return value
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
@@ -95,6 +125,8 @@ class FileTableModel(QAbstractTableModel):
             # Regular file rows
             if col == 0:
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            elif col == 1:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable  # Enable editing for Calibration column
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
@@ -104,7 +136,16 @@ class FileTableModel(QAbstractTableModel):
 
     def insertRows(self, position, rows, parent=QModelIndex()):
         self.beginInsertRows(parent, position + 1, position + rows)  # Skip the default row
-        self._files[position:position] = [['', None, None, None, None, None, None, None, None] for _ in range(rows)]
+        for _ in range(rows):
+            # Initialize the row with default values, including the default calibration
+            row_data = ['']
+            for col in range(1, self.columnCount()):
+                if self._default_values[col]['use_default']:
+                    value = self._default_values[col]['value']
+                else:
+                    value = None
+                row_data.append(value)
+            self._files.insert(position, row_data)
         self.endInsertRows()
         return True
 
@@ -117,7 +158,7 @@ class FileTableModel(QAbstractTableModel):
     def removeFileByName(self, filename):
         self._remove_file_by_condition(lambda row: row[0] == filename)
 
-    def addFiles(self, filepaths):
+    def addFiles(self, filepaths, default_calibration=None):
         new_files = []
         for filepath in filepaths:
             file_data = [os.path.basename(filepath)]
@@ -127,6 +168,9 @@ class FileTableModel(QAbstractTableModel):
                 else:
                     value = None
                 file_data.append(value)
+            # Set the default calibration
+            if default_calibration is not None:
+                file_data[1] = default_calibration  # Calibration column is at index 1
             new_files.append(file_data)
         self._add_files_to_model(new_files)
 
@@ -155,9 +199,12 @@ class FileTableModel(QAbstractTableModel):
 
     def _validate_and_set_data(self, index, value):
         try:
-            if index.column() > 0:
+            if index.column() == 1:
+                # Calibration column
+                self._files[index.row() - 1][index.column()] = value  # Store the calibration name
+            elif index.column() > 1:
                 value = float(value) if value else None  # Convert to float or None for empty
-            self._files[index.row() - 1][index.column()] = value  # Adjust for default row
+                self._files[index.row() - 1][index.column()] = value  # Adjust for default row
             return True
         except ValueError:
             return False
@@ -183,14 +230,15 @@ class FileTableModel(QAbstractTableModel):
 
     def _get_metadata(self, row):
         return {
-            'chi_angle': self._files[row][1],
-            'pinhole': self._files[row][2],
-            'power': self._files[row][3],
-            'polarization': self._files[row][4],
-            'scans': self._files[row][5],
-            'laser_wavelength': self._files[row][6],
-            'mirror_spacing': self._files[row][7],
-            'scattering_angle': self._files[row][8]
+            'calibration': self._files[row][1],  # Calibration column
+            'chi_angle': self._files[row][2],
+            'pinhole': self._files[row][3],
+            'power': self._files[row][4],
+            'polarization': self._files[row][5],
+            'scans': self._files[row][6],
+            'laser_wavelength': self._files[row][7],
+            'mirror_spacing': self._files[row][8],
+            'scattering_angle': self._files[row][9]
         }
 
     def _remove_file_by_condition(self, condition):

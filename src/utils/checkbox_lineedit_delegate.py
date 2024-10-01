@@ -1,4 +1,4 @@
-# custom_delegate.py
+# checkbox_lineedit_delegate.py
 from PySide6.QtWidgets import QStyledItemDelegate, QWidget, QLineEdit, QCheckBox, QHBoxLayout, QApplication, QStyle, QStyleOptionButton
 from PySide6.QtCore import Qt, QRect
 from PySide6.QtGui import QPainter

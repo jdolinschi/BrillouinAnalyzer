@@ -1,13 +1,16 @@
 # calibration_manager.py
 import numpy as np
-from PySide6.QtCore import Qt, QItemSelectionModel
+from PySide6.QtCore import Qt, QObject, Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
 from .calibration_file_table_model import CalibrationFileTableModel
 from .calibration_plot_widget import CalibrationPlotWidget
 from ..utils.brillouin_calibration import BrillouinCalibration
 
-class CalibrationManager:
+class CalibrationManager(QObject):
+    calibrations_updated = Signal()
+
     def __init__(self, ui, project_manager):
+        super().__init__()
         self.ui = ui
         self.project_manager = project_manager  # Reference to ProjectManager
         self.project = project_manager.project  # Access the project instance
@@ -213,6 +216,8 @@ class CalibrationManager:
                 # Update status and last action
                 self.last_action('Calibration added')
                 self.save_status()
+
+                self.calibrations_updated.emit()
             except ValueError as e:
                 QMessageBox.warning(None, "Error", str(e))
 
@@ -566,6 +571,7 @@ class CalibrationManager:
                             self.ui.comboBox_calibSelect.setCurrentIndex(index)
                         self.last_action('Calibration renamed')
                         self.save_status()
+                        self.calibrations_updated.emit()
                     except ValueError as e:
                         QMessageBox.warning(None, "Error", str(e))
 
@@ -598,6 +604,7 @@ class CalibrationManager:
 
                         self.last_action('Calibration removed')
                         self.save_status()
+                        self.calibrations_updated.emit()
                     except ValueError as e:
                         QMessageBox.warning(None, "Error", str(e))
 
