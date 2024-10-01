@@ -9,7 +9,6 @@ from .brillouin_project import BrillouinProject
 from .file_table_model import FileTableModel  # Import the custom model
 from .calibration_file_table_model import CalibrationFileTableModel
 from ..utils.checkbox_lineedit_delegate import CheckboxLineEditDelegate
-from ..utils.calibration_combobox_delegate import CalibrationComboBoxDelegate  # Import the new delegate
 import os
 
 
@@ -55,10 +54,6 @@ class ProjectManager:
         delegate = CheckboxLineEditDelegate(self.ui.tableView_files)
         self.ui.tableView_files.setItemDelegateForRow(0, delegate)
 
-        # Create and assign the custom delegate for the Calibration column
-        self.calibration_delegate = CalibrationComboBoxDelegate(self.ui.tableView_files)
-        self.ui.tableView_files.setItemDelegateForColumn(1, self.calibration_delegate)
-
         # Connect signals to corresponding slots
         self.setup_connections()
 
@@ -83,9 +78,9 @@ class ProjectManager:
             calibration_names = self.project.list_calibrations()
             self.ui.comboBox_calibration.clear()
             self.ui.comboBox_calibration.addItems(calibration_names)
-            # Update the calibration delegate with new calibration names
-            self.calibration_delegate.updateCalibrations(calibration_names)
-            self.file_model.calibration_options = calibration_names
+            # Update the calibration for all files
+            default_calibration = self.ui.comboBox_calibration.currentText()
+            self.file_model.setCalibrationForAllFiles(default_calibration)
             # Notify the model that data has changed
             self.file_model.layoutChanged.emit()
 
@@ -175,6 +170,10 @@ class ProjectManager:
 
         column = index.column()
 
+        # Do not allow filling the 'Calibration' column
+        if column == 1:
+            return
+
         # Fill the entire column with the selected value
         for row in range(self.file_model.rowCount()):
             current_index = self.file_model.index(row, column)
@@ -213,6 +212,9 @@ class ProjectManager:
             for j, value in enumerate(row_data):
                 row = row_offset + i
                 col = col_offset + j
+                # Do not allow pasting into the 'Calibration' column
+                if col == 1:
+                    continue
                 index = self.file_model.index(row, col)
                 self.file_model.setData(index, value, Qt.EditRole)
 
@@ -336,9 +338,8 @@ class ProjectManager:
     def calibration_combobox_changed(self):
         """Handle calibration combobox change."""
         default_calibration = self.ui.comboBox_calibration.currentText()
-        # Update the default value in the model
-        self.file_model._default_values[1]['value'] = default_calibration
-        self.file_model._default_values[1]['use_default'] = True
+        # Update the calibration for all files
+        self.file_model.setCalibrationForAllFiles(default_calibration)
         self.save_status()
 
     def crystal_combobox_changed(self):
@@ -354,6 +355,7 @@ class ProjectManager:
 
         selected_pressure = self.ui.comboBox_pressure.currentText()
         selected_crystal = self.ui.comboBox_crystal.currentText()
+        default_calibration = self.ui.comboBox_calibration.currentText()
 
         if selected_pressure and selected_crystal:
             # Clear the table before adding new data
@@ -366,6 +368,7 @@ class ProjectManager:
             files_with_metadata = [
                 (
                     filename,
+                    default_calibration,  # Use current calibration
                     self.project.get_metadata_from_dataset(filename, 'chi_angle'),
                     self.project.get_metadata_from_dataset(filename, 'pinhole'),
                     self.project.get_metadata_from_dataset(filename, 'power'),
@@ -378,7 +381,7 @@ class ProjectManager:
                 for filename in matching_files
             ]
 
-            self.file_model.addFilesWithMetadata(files_with_metadata)
+            self.file_model.addFilesWithMetadata(files_with_metadata, default_calibration)
 
     def new_project_clicked(self):
         """Handle the new project button click."""
@@ -450,8 +453,6 @@ class ProjectManager:
             self.ui.comboBox_calibration.clear()
             self.ui.comboBox_calibration.addItems(calibration_names)
 
-            # Update the calibration delegate with new calibration names
-            self.calibration_delegate.updateCalibrations(calibration_names)
             self.file_model.calibration_options = calibration_names
 
             # Populate calibration dropdowns

@@ -254,6 +254,62 @@ class BrillouinProject:
 
         self.h5file.flush()
 
+    def rename_calibration(self, old_name, new_name):
+        """
+        Renames an existing calibration.
+
+        Parameters:
+            old_name (str): The current name of the calibration.
+            new_name (str): The new name for the calibration.
+
+        Raises:
+            ValueError: If the calibration does not exist or the new name is already in use.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+
+        if 'calibrations' not in self.h5file:
+            raise ValueError("No calibrations exist in the project.")
+
+        if old_name not in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{old_name}' does not exist.")
+
+        if new_name in self.h5file['calibrations']:
+            raise ValueError(f"Calibration '{new_name}' already exists.")
+
+        # Get the old calibration group
+        old_calibration_group = self.h5file['calibrations'][old_name]
+
+        # Create a new group with the new name
+        new_calibration_group = self.h5file['calibrations'].create_group(new_name)
+
+        # Copy attributes from the old calibration to the new one
+        for attr_name, attr_value in old_calibration_group.attrs.items():
+            new_calibration_group.attrs[attr_name] = attr_value
+
+        # Copy all datasets and groups from the old calibration to the new one
+        def copy_group_contents(source_group, target_group):
+            for key in source_group:
+                if isinstance(source_group[key], h5py.Group):
+                    sub_group = target_group.create_group(key)
+                    # Copy attributes of the group
+                    for attr_name, attr_value in source_group[key].attrs.items():
+                        sub_group.attrs[attr_name] = attr_value
+                    copy_group_contents(source_group[key], sub_group)
+                elif isinstance(source_group[key], h5py.Dataset):
+                    target_group.create_dataset(key, data=source_group[key][()])
+                    # Copy attributes of the dataset
+                    for attr_key, attr_value in source_group[key].attrs.items():
+                        target_group[key].attrs[attr_key] = attr_value
+
+        copy_group_contents(old_calibration_group, new_calibration_group)
+
+        # Delete the old calibration group
+        del self.h5file['calibrations'][old_name]
+
+        # Flush the changes to disk
+        self.h5file.flush()
+
     def remove_pressure(self, pressure):
         """Remove an existing pressure from the project."""
         if self.h5file is None:

@@ -12,7 +12,7 @@ class FileTableModel(QAbstractTableModel):
         self._files = files if files else []
         self._headers = [
             'Filename',
-            'Calibration',  # New column added here
+            'Calibration',
             'Chi angle (degrees)',
             'Pinhole',
             'Power',
@@ -25,24 +25,12 @@ class FileTableModel(QAbstractTableModel):
         self._sort_order = Qt.AscendingOrder
         self._sort_column = -1  # No sorting by default
 
-        # Initialize default values for each column (starting from column 1)
-        self._default_values = {col: {'value': None, 'use_default': False} for col in range(1, len(self._headers))}
-
-        self.calibration_options = []  # This will be populated from the ProjectManager
+        # Initialize default values for each column (excluding the 'Calibration' column)
+        self._default_values = {col: {'value': None, 'use_default': False} for col in range(1, len(self._headers)) if col != 1}
 
     def rowCount(self, parent=QModelIndex()):
         # Include an extra row for default values (row 0)
         return len(self._files) + 1
-
-    @property
-    def calibration_options(self):
-        return self._calibration_options
-
-    @calibration_options.setter
-    def calibration_options(self, calibrations):
-        self._calibration_options = calibrations
-        # Notify the view that data has changed
-        self.layoutChanged.emit()
 
     def columnCount(self, parent=QModelIndex()):
         return len(self._headers)
@@ -56,7 +44,7 @@ class FileTableModel(QAbstractTableModel):
 
         if row == 0:
             # Default values row
-            if col == 0:
+            if col in [0, 1]:
                 return '' if role in (Qt.DisplayRole, Qt.EditRole) else None
             elif role == Qt.DisplayRole or role == Qt.EditRole:
                 default_value = self._default_values[col]['value']
@@ -68,15 +56,8 @@ class FileTableModel(QAbstractTableModel):
                 if isinstance(value, np.float64):
                     value = float(value)
                 return "" if value is None else value
-            elif role == Qt.EditRole and col == 1:
-                # Return the calibration name for the combo box editor
-                return value
-            elif role == Qt.DisplayRole and col == 1:
-                # Display the calibration name
-                return value
-            elif role == Qt.ToolTipRole and col == 1:
-                return value
         return None
+
 
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid():
@@ -87,8 +68,8 @@ class FileTableModel(QAbstractTableModel):
 
         if row == 0:
             # Default values row
-            if col == 0:
-                # Filename column is not editable
+            if col in [0, 1]:
+                # Filename and Calibration columns are not editable
                 return False
             if role == Qt.EditRole:
                 # Update default value and use_default flag
@@ -118,15 +99,13 @@ class FileTableModel(QAbstractTableModel):
 
         if row == 0:
             # Default values row
-            if col == 0:
-                return Qt.ItemIsEnabled  # Filename column is not editable
+            if col in [0, 1]:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable  # No checkable flag for default row
         else:
             # Regular file rows
-            if col == 0:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-            elif col == 1:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable  # Enable editing for Calibration column
+            if col in [0, 1]:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable  # Not editable
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
@@ -137,10 +116,12 @@ class FileTableModel(QAbstractTableModel):
     def insertRows(self, position, rows, parent=QModelIndex()):
         self.beginInsertRows(parent, position + 1, position + rows)  # Skip the default row
         for _ in range(rows):
-            # Initialize the row with default values, including the default calibration
+            # Initialize the row with default values
             row_data = ['']
             for col in range(1, self.columnCount()):
-                if self._default_values[col]['use_default']:
+                if col == 1:
+                    value = ''  # Calibration column
+                elif self._default_values[col]['use_default']:
                     value = self._default_values[col]['value']
                 else:
                     value = None
@@ -163,19 +144,24 @@ class FileTableModel(QAbstractTableModel):
         for filepath in filepaths:
             file_data = [os.path.basename(filepath)]
             for col in range(1, self.columnCount()):
-                if self._default_values[col]['use_default']:
+                if col == 1:
+                    value = default_calibration  # Set the calibration
+                elif self._default_values[col]['use_default']:
                     value = self._default_values[col]['value']
                 else:
                     value = None
                 file_data.append(value)
-            # Set the default calibration
-            if default_calibration is not None:
-                file_data[1] = default_calibration  # Calibration column is at index 1
             new_files.append(file_data)
         self._add_files_to_model(new_files)
 
-    def addFilesWithMetadata(self, files_with_metadata):
-        self._add_files_to_model([list(metadata) for metadata in files_with_metadata])
+    def addFilesWithMetadata(self, files_with_metadata, default_calibration=None):
+        # Adjust the metadata to include the default calibration
+        adjusted_files = []
+        for metadata in files_with_metadata:
+            metadata = list(metadata)
+            metadata[1] = default_calibration  # Set calibration to default
+            adjusted_files.append(metadata)
+        self._add_files_to_model(adjusted_files)
 
     def sort(self, column, order=Qt.AscendingOrder):
         if column == 0:
@@ -195,7 +181,7 @@ class FileTableModel(QAbstractTableModel):
         self.layoutChanged.emit()
 
     def _is_editable_column(self, column):
-        return column != 0  # Filename column is not editable
+        return column > 1  # Columns after 'Calibration' are editable
 
     def _validate_and_set_data(self, index, value):
         try:
@@ -247,5 +233,12 @@ class FileTableModel(QAbstractTableModel):
                 self.removeRows(i, 1)
                 break
 
+    def setCalibrationForAllFiles(self, calibration_name):
+        for i in range(len(self._files)):
+            self._files[i][1] = calibration_name
+        # Emit dataChanged signal for the 'Calibration' column
+        top_left = self.index(1, 1)  # start from row 1, column 1
+        bottom_right = self.index(self.rowCount() - 1, 1)
+        self.dataChanged.emit(top_left, bottom_right, [Qt.DisplayRole])
 
 
