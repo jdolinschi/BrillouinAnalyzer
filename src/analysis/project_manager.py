@@ -318,8 +318,7 @@ class ProjectManager:
                             # Store the calibration name as metadata
                             self.project.add_metadata_to_dataset(filename, key, value)
                             continue
-                        if value is None and key in ['chi_angle', 'pinhole', 'power', 'polarization', 'scans',
-                                                     'laser_wavelength', 'mirror_spacing', 'scattering_angle']:
+                        if value is None and key in ['chi_angle', 'pinhole', 'power', 'polarization', 'scans']:
                             value = np.nan  # Use np.nan for missing numeric values
                         self.project.add_metadata_to_dataset(filename, key, value)
                     self.last_action('Table modified')
@@ -373,10 +372,7 @@ class ProjectManager:
                     self.project.get_metadata_from_dataset(filename, 'pinhole'),
                     self.project.get_metadata_from_dataset(filename, 'power'),
                     self.project.get_metadata_from_dataset(filename, 'polarization'),
-                    self.project.get_metadata_from_dataset(filename, 'scans'),
-                    self.project.get_metadata_from_dataset(filename, 'laser_wavelength'),
-                    self.project.get_metadata_from_dataset(filename, 'mirror_spacing'),
-                    self.project.get_metadata_from_dataset(filename, 'scattering_angle'),
+                    self.project.get_metadata_from_dataset(filename, 'scans')
                 )
                 for filename in matching_files
             ]
@@ -688,10 +684,7 @@ class ProjectManager:
                         'pinhole': self.file_model.data(self.file_model.index(row, 3), Qt.DisplayRole),
                         'power': self.file_model.data(self.file_model.index(row, 4), Qt.DisplayRole),
                         'polarization': self.file_model.data(self.file_model.index(row, 5), Qt.DisplayRole),
-                        'scans': self.file_model.data(self.file_model.index(row, 6), Qt.DisplayRole),
-                        'laser_wavelength': self.file_model.data(self.file_model.index(row, 7), Qt.DisplayRole),
-                        'mirror_spacing': self.file_model.data(self.file_model.index(row, 8), Qt.DisplayRole),
-                        'scattering_angle': self.file_model.data(self.file_model.index(row, 9), Qt.DisplayRole),
+                        'scans': self.file_model.data(self.file_model.index(row, 6), Qt.DisplayRole)
                     }
                     for key, value in metadata.items():
                         if value is not None:

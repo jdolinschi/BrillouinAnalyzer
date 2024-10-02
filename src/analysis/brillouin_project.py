@@ -364,9 +364,6 @@ class BrillouinProject:
         group.attrs['power'] = np.nan
         group.attrs['polarization'] = np.nan
         group.attrs['scans'] = np.nan
-        group.attrs['laser_wavelength'] = np.nan
-        group.attrs['mirror_spacing'] = np.nan
-        group.attrs['scattering_angle'] = np.nan
 
         # Optionally, add the file content
         with open(file_path, 'rb') as file:

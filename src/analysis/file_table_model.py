@@ -17,10 +17,7 @@ class FileTableModel(QAbstractTableModel):
             'Pinhole',
             'Power',
             'Polarization',
-            'Scans',
-            'Laser wavelength (nm)',
-            'Mirror spacing (mm)',
-            'Scattering angle (degrees)'
+            'Scans'
         ]
         self._sort_order = Qt.AscendingOrder
         self._sort_column = -1  # No sorting by default
@@ -29,8 +26,7 @@ class FileTableModel(QAbstractTableModel):
         self._default_values = {col: {'value': None, 'use_default': False} for col in range(1, len(self._headers)) if col != 1}
 
     def rowCount(self, parent=QModelIndex()):
-        # Include an extra row for default values (row 0)
-        return len(self._files) + 1
+        return len(self._files) + 1  # Include an extra row for default values
 
     def columnCount(self, parent=QModelIndex()):
         return len(self._headers)
@@ -58,7 +54,6 @@ class FileTableModel(QAbstractTableModel):
                 return "" if value is None else value
         return None
 
-
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid():
             return False
@@ -69,10 +64,8 @@ class FileTableModel(QAbstractTableModel):
         if row == 0:
             # Default values row
             if col in [0, 1]:
-                # Filename and Calibration columns are not editable
                 return False
             if role == Qt.EditRole:
-                # Update default value and use_default flag
                 if isinstance(value, dict):
                     self._default_values[col]['value'] = value['value'] if value['value'] != '' else None
                     self._default_values[col]['use_default'] = value['use_default']
@@ -101,7 +94,7 @@ class FileTableModel(QAbstractTableModel):
             # Default values row
             if col in [0, 1]:
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable  # No checkable flag for default row
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         else:
             # Regular file rows
             if col in [0, 1]:
@@ -155,7 +148,6 @@ class FileTableModel(QAbstractTableModel):
         self._add_files_to_model(new_files)
 
     def addFilesWithMetadata(self, files_with_metadata, default_calibration=None):
-        # Adjust the metadata to include the default calibration
         adjusted_files = []
         for metadata in files_with_metadata:
             metadata = list(metadata)
@@ -169,12 +161,10 @@ class FileTableModel(QAbstractTableModel):
 
         self.layoutAboutToBeChanged.emit()
 
-        # Sort only the file rows (ignore the default row at index 0)
         try:
             self._files.sort(key=lambda x: (x[column] if x[column] is not None else float('-inf')),
                              reverse=(order == Qt.DescendingOrder))
         except TypeError:
-            # Handle mixed data types by converting to string for comparison
             self._files.sort(key=lambda x: (str(x[column]) if x[column] is not None else ''),
                              reverse=(order == Qt.DescendingOrder))
 
@@ -186,7 +176,6 @@ class FileTableModel(QAbstractTableModel):
     def _validate_and_set_data(self, index, value):
         try:
             if index.column() == 1:
-                # Calibration column
                 self._files[index.row() - 1][index.column()] = value  # Store the calibration name
             elif index.column() > 1:
                 value = float(value) if value else None  # Convert to float or None for empty
@@ -222,9 +211,6 @@ class FileTableModel(QAbstractTableModel):
             'power': self._files[row][4],
             'polarization': self._files[row][5],
             'scans': self._files[row][6],
-            'laser_wavelength': self._files[row][7],
-            'mirror_spacing': self._files[row][8],
-            'scattering_angle': self._files[row][9]
         }
 
     def _remove_file_by_condition(self, condition):
@@ -236,9 +222,6 @@ class FileTableModel(QAbstractTableModel):
     def setCalibrationForAllFiles(self, calibration_name):
         for i in range(len(self._files)):
             self._files[i][1] = calibration_name
-        # Emit dataChanged signal for the 'Calibration' column
         top_left = self.index(1, 1)  # start from row 1, column 1
         bottom_right = self.index(self.rowCount() - 1, 1)
         self.dataChanged.emit(top_left, bottom_right, [Qt.DisplayRole])
-
-
