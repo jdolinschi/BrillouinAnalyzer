@@ -497,7 +497,19 @@ class CalibrationManager(QObject):
         if self.project:
             calibration_name = self.ui.comboBox_calibSelect.currentText()
             if calibration_name:
-                filename = self.calib_files_model.data(index, Qt.DisplayRole)
+                # Get the filename from column 0 of the selected row
+                filename_index = self.calib_files_model.index(index.row(), 0)
+                filename = self.calib_files_model.data(filename_index, Qt.DisplayRole)
+
+                # Check and uncheck fitting buttons if they are still checked
+                if self.ui.pushButton_calibFitLeftPeak.isChecked():
+                    self.ui.pushButton_calibFitLeftPeak.setChecked(False)
+                    self.calibration_plot_widget.fit_left_peak_clicked()
+
+                if self.ui.pushButton_calibFitRightPeak.isChecked():
+                    self.ui.pushButton_calibFitRightPeak.setChecked(False)
+                    self.calibration_plot_widget.fit_right_peak_clicked()
+
                 # Store the current calibration and file
                 self.current_calibration_name = calibration_name
                 self.current_calibration_file = filename

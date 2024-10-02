@@ -90,9 +90,8 @@ class CalibrationFileTableModel(QAbstractTableModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
 
-        if index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        # All columns should be selectable but not editable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
