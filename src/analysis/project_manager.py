@@ -3,12 +3,13 @@ import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QClipboard
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QAbstractItemView, QTableWidgetItem, QMenu, \
-    QApplication, QTableView
+    QApplication, QTableView, QPlainTextEdit, QVBoxLayout, QWidget
 
 from .brillouin_project import BrillouinProject
 from .file_table_model import FileTableModel  # Import the custom model
 from .calibration_file_table_model import CalibrationFileTableModel
 from ..utils.checkbox_lineedit_delegate import CheckboxLineEditDelegate
+from .peak_fits_table_model import PeakFitsTableModel
 import os
 
 
@@ -34,6 +35,13 @@ class ProjectManager:
         self.ui.tableWidget_crystals.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ui.tableWidget_velocities.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
+        # Create an instance of the PeakFitsTableModel
+        self.peak_fits_model = PeakFitsTableModel(project=self.project)
+        self.ui.tableView_peakFits.setModel(self.peak_fits_model)
+
+        # Connect double-click on files table to method
+        self.ui.tableView_files.doubleClicked.connect(self.file_double_clicked)
+
         # Define columns for the pressures, crystals, and velocities tables
         self.ui.tableWidget_pressures.setColumnCount(1)
         self.ui.tableWidget_pressures.setHorizontalHeaderLabels(["Pressure (GPa)"])
@@ -58,6 +66,17 @@ class ProjectManager:
         self.setup_connections()
 
         self.save_status()
+
+    def file_double_clicked(self, index):
+        # Get the filename from the file model
+        if index.isValid():
+            row = index.row()
+            filename = self.file_model.data(self.file_model.index(row, 0), Qt.DisplayRole)
+            if filename:
+                self.peak_fits_model.set_current_file(filename)
+                self.last_action(f'Selected file {filename}')
+        else:
+            self.peak_fits_model.set_current_file(None)
 
     def set_calibration_manager(self, calibration_manager):
         self.calibration_manager = calibration_manager
@@ -254,7 +273,23 @@ class ProjectManager:
         msg_box.setIcon(QMessageBox.Warning)
         msg_box.setWindowTitle("Unsaved Changes")
         msg_box.setText("There are unsaved changes in the project:")
-        msg_box.setInformativeText(change_message)
+
+        # Create a scrollable text area for the changes
+        text_area = QPlainTextEdit()
+        text_area.setPlainText(change_message)
+        text_area.setReadOnly(True)
+        text_area.setFixedHeight(200)  # Adjust the height as necessary
+
+        # Create a custom layout to include the text area within the QMessageBox
+        custom_layout = QVBoxLayout()
+        custom_layout.addWidget(text_area)
+
+        # Create a custom widget to contain the layout
+        custom_widget = QWidget()
+        custom_widget.setLayout(custom_layout)
+
+        msg_box.layout().addWidget(custom_widget, 0, 1, 1, -1)
+
         msg_box.setStandardButtons(QMessageBox.Cancel | QMessageBox.Save | QMessageBox.Discard)
         msg_box.setDefaultButton(QMessageBox.Save)
 
@@ -404,6 +439,8 @@ class ProjectManager:
         self.project.create_h5file()
         self.ui.lineEdit_currentProject.setText(project_name)
         self.update_file_count()
+        self.peak_fits_model.project = self.project
+        self.peak_fits_model.update_data()
 
     def load_project_clicked(self):
         """Handle the load project button click."""
@@ -552,9 +589,10 @@ class ProjectManager:
             new_velocity, ok = QInputDialog.getText(None, "Rename Velocity", "Enter new velocity name:",
                                                     text=old_velocity)
             if ok and new_velocity:
-                self.project.rename_velocity(old_velocity, new_velocity)  # Rename in project file
+                self.rename_velocity(old_velocity, new_velocity)  # Use self.rename_velocity
                 self.populate_table_widgets()  # Update tableWidget
                 self.last_action('Velocity renamed')
+                self.peak_fits_model.update_data()
                 self.save_status()
 
     def new_crystal_clicked(self):
@@ -586,9 +624,10 @@ class ProjectManager:
         """Handle the new velocity button click."""
         velocity_name, ok = QInputDialog.getText(None, "New Velocity", "Enter velocity name:")
         if ok and velocity_name:
-            self.project.add_velocity(velocity_name)  # Add to project file
+            self.add_velocity(velocity_name)  # Use self.add_velocity
             self.populate_table_widgets()  # Update tableWidget
             self.last_action('Velocity added')
+            self.peak_fits_model.update_data()
             self.save_status()
 
     def delete_velocity_clicked(self):
@@ -600,10 +639,35 @@ class ProjectManager:
             if confirm == QMessageBox.Yes:
                 for row in selected_rows:
                     velocity = self.ui.tableWidget_velocities.item(row.row(), 0).text()
-                    self.project.remove_velocity(velocity)  # Remove from project file
+                    self.delete_velocity(velocity)  # Use self.delete_velocity
                 self.populate_table_widgets()  # Update tableWidget
                 self.last_action('Velocity deleted')
+                self.peak_fits_model.update_data()
                 self.save_status()
+
+    def add_velocity(self, velocity_name):
+        self.project.add_velocity(velocity_name)
+        # Update velocities under each file
+        for filename in self.project.list_datasets():
+            self.project.update_file_velocities(filename)
+        self.populate_table_widgets()
+        self.peak_fits_model.update_data()
+
+    def delete_velocity(self, velocity_name):
+        self.project.remove_velocity(velocity_name)
+        # Update velocities under each file
+        for filename in self.project.list_datasets():
+            self.project.update_file_velocities(filename)
+        self.populate_table_widgets()
+        self.peak_fits_model.update_data()
+
+    def rename_velocity(self, old_velocity, new_velocity):
+        self.project.rename_velocity(old_velocity, new_velocity)
+        # Update velocities under each file
+        for filename in self.project.list_datasets():
+            self.project.update_file_velocities(filename)
+        self.populate_table_widgets()
+        self.peak_fits_model.update_data()
 
     def add_files_clicked(self):
         """Handle the add files button click."""
@@ -624,6 +688,7 @@ class ProjectManager:
             try:
                 self.project.load_all_files_with_metadata(filepaths, pressure, crystal_name)
                 self.file_model.addFiles(filepaths, default_calibration=default_calibration)
+                self.peak_fits_model.update_data()
             except Exception as e:
                 QMessageBox.critical(None, "Error", f"Failed to add files: {e}")
 

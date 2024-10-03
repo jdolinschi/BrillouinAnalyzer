@@ -20,7 +20,7 @@
       <item>
        <widget class="QTabWidget" name="tabWidget_project">
         <property name="currentIndex">
-         <number>2</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="Project">
          <attribute name="title">
@@ -950,7 +950,7 @@
                </item>
               </layout>
              </widget>
-             <widget class="QWidget" name="">
+             <widget class="QWidget" name="layoutWidget">
               <layout class="QVBoxLayout" name="verticalLayout_15">
                <item>
                 <layout class="QHBoxLayout" name="horizontalLayout_19">

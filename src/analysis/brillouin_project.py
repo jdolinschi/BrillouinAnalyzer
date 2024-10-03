@@ -365,6 +365,22 @@ class BrillouinProject:
         group.attrs['polarization'] = np.nan
         group.attrs['scans'] = np.nan
 
+        # Create velocities group under the file group
+        velocities_group = group.create_group('velocities')
+
+        # Initialize velocities per file
+        project_velocities = self.h5file.attrs.get('velocities', [])
+        for velocity in project_velocities:
+            velocity_group = velocities_group.create_group(velocity)
+            # Initialize peak fit data as attributes
+            for key in ['left_center_mps', 'right_center_mps', 'offset_mps',
+                        'left_center_ch', 'right_center_ch', 'offset_ch',
+                        'left_goodness_of_fit', 'left_amplitude', 'left_sigma',
+                        'left_gamma', 'left_fwhm', 'left_area',
+                        'right_goodness_of_fit', 'right_amplitude', 'right_sigma',
+                        'right_gamma', 'right_fwhm', 'right_area']:
+                velocity_group.attrs[key] = np.nan  # Initialize as NaN
+
         # Optionally, add the file content
         with open(file_path, 'rb') as file:
             raw_data = file.read()
@@ -478,6 +494,33 @@ class BrillouinProject:
         if scattering_angle is not None:
             calibration_group.attrs['scattering_angle'] = scattering_angle
 
+        self.h5file.flush()
+
+    def update_file_velocities(self, file_name):
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        data_group = self.h5file['data']
+        if file_name not in data_group:
+            return
+        dataset_group = data_group[file_name]
+        velocities_group = dataset_group.require_group('velocities')
+        project_velocities = self.h5file.attrs.get('velocities', [])
+        # Add new velocities
+        for velocity in project_velocities:
+            if velocity not in velocities_group:
+                velocity_group = velocities_group.create_group(velocity)
+                # Initialize peak fit data as attributes
+                for key in ['left_center_mps', 'right_center_mps', 'offset_mps',
+                            'left_center_ch', 'right_center_ch', 'offset_ch',
+                            'left_goodness_of_fit', 'left_amplitude', 'left_sigma',
+                            'left_gamma', 'left_fwhm', 'left_area',
+                            'right_goodness_of_fit', 'right_amplitude', 'right_sigma',
+                            'right_gamma', 'right_fwhm', 'right_area']:
+                    velocity_group.attrs[key] = np.nan  # Initialize as NaN
+        # Remove velocities no longer in project
+        for velocity in list(velocities_group.keys()):
+            if velocity not in project_velocities:
+                del velocities_group[velocity]
         self.h5file.flush()
 
     def update_calibration_file_data(self, calibration_name, file_name, **attributes):
@@ -597,6 +640,33 @@ class BrillouinProject:
         pressures = self.h5file.attrs.get('pressures', [])
         crystals = self.h5file.attrs.get('crystals', [])
         return sorted(pressures), sorted(crystals)
+
+    def set_peak_fit_data(self, file_name, velocity_name, data_dict):
+        # Stores the peak fit data for the specified file and velocity.
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        data_group = self.h5file['data']
+        if file_name not in data_group:
+            raise ValueError(f"Dataset {file_name} does not exist in the HDF5 file.")
+        dataset_group = data_group[file_name]
+        velocities_group = dataset_group.require_group('velocities')
+        velocity_group = velocities_group.require_group(velocity_name)
+        for key, value in data_dict.items():
+            velocity_group.attrs[key] = value
+        self.h5file.flush()
+
+    def get_peak_fit_data(self, file_name, velocity_name):
+        # Retrieves the peak fit data for the specified file and velocity.
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        data_group = self.h5file['data']
+        if file_name not in data_group:
+            raise ValueError(f"Dataset {file_name} does not exist in the HDF5 file.")
+        dataset_group = data_group[file_name]
+        velocities_group = dataset_group.get('velocities', {})
+        velocity_group = velocities_group.get(velocity_name, {})
+        data_dict = dict(velocity_group.attrs.items()) if velocity_group else {}
+        return data_dict
 
     def get_peak_fit(self, calibration_name, file_name, peak_type):
         """
