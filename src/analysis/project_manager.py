@@ -383,7 +383,7 @@ class ProjectManager:
         self.save_status()
 
     def update_table(self):
-        """Update table based on selected pressure and crystal."""
+        """Update the file table based on selected pressure and crystal."""
         if not self.project:
             return
 
@@ -395,24 +395,35 @@ class ProjectManager:
             # Clear the table before adding new data
             self.file_model.clear()
 
+            # Use optimized method to find matching files
             matching_files = self.project.find_files_by_pressure_and_crystal(
                 float(selected_pressure), selected_crystal
             )
 
+            # Fetch metadata for all matching files in bulk
+            metadata_keys = ['chi_angle', 'pinhole', 'power', 'polarization', 'scans']
+            metadata_dict = self.project.get_metadata_for_files(matching_files, keys=metadata_keys)
+
+            # Prepare the data to add to the model
             files_with_metadata = [
                 (
                     filename,
                     default_calibration,  # Use current calibration
-                    self.project.get_metadata_from_dataset(filename, 'chi_angle'),
-                    self.project.get_metadata_from_dataset(filename, 'pinhole'),
-                    self.project.get_metadata_from_dataset(filename, 'power'),
-                    self.project.get_metadata_from_dataset(filename, 'polarization'),
-                    self.project.get_metadata_from_dataset(filename, 'scans')
+                    metadata_dict[filename].get('chi_angle'),
+                    metadata_dict[filename].get('pinhole'),
+                    metadata_dict[filename].get('power'),
+                    metadata_dict[filename].get('polarization'),
+                    metadata_dict[filename].get('scans')
                 )
                 for filename in matching_files
             ]
 
+            # Add files to the model without emitting unnecessary signals
             self.file_model.addFilesWithMetadata(files_with_metadata, default_calibration)
+            self.last_action('Table updated')
+        else:
+            # If pressure or crystal is not selected, clear the table
+            self.file_model.clear()
 
     def new_project_clicked(self):
         """Handle the new project button click."""
@@ -735,13 +746,14 @@ class ProjectManager:
             QMessageBox.critical(None, "Error", f"Failed to delete files: {e}")
 
     def save_table_data(self):
-        """Save the table data as metadata for each file."""
         pressure = self.ui.comboBox_pressure.currentText()
         crystal_name = self.ui.comboBox_crystal.currentText()
         if self.project and pressure and crystal_name:
-            row_count = self.file_model.rowCount() - 1  # Exclude default values row
-            if row_count > 0:  # Ensure there are rows to process
-                for row in range(1, row_count+1):
+            row_count = self.file_model.rowCount() - 1
+            if row_count > 0:
+                filenames = []
+                metadata_list = []
+                for row in range(1, row_count + 1):
                     filename = self.file_model.data(self.file_model.index(row, 0), Qt.DisplayRole)
                     metadata = {
                         'calibration': self.file_model.data(self.file_model.index(row, 1), Qt.DisplayRole),
@@ -751,6 +763,6 @@ class ProjectManager:
                         'polarization': self.file_model.data(self.file_model.index(row, 5), Qt.DisplayRole),
                         'scans': self.file_model.data(self.file_model.index(row, 6), Qt.DisplayRole)
                     }
-                    for key, value in metadata.items():
-                        if value is not None:
-                            self.project.add_metadata_to_dataset(filename, key, value)
+                    filenames.append(filename)
+                    metadata_list.append(metadata)
+                self.project.set_metadata_for_multiple_files(filenames, metadata_list)

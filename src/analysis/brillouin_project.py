@@ -607,6 +607,24 @@ class BrillouinProject:
 
         self.h5file.flush()
 
+    def get_metadata_for_files(self, filenames, keys=None):
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not opened.")
+        data_group = self.h5file['data']
+        metadata_dict = {}
+        for dataset_name in filenames:
+            if dataset_name not in data_group:
+                print(f'Warning: Dataset {dataset_name} does not exist.')
+                continue
+            group = data_group[dataset_name]
+            attrs = {key: group.attrs.get(key, None) for key in keys}
+            # Replace np.nan with None
+            for key, value in attrs.items():
+                if isinstance(value, float) and np.isnan(value):
+                    attrs[key] = None
+            metadata_dict[dataset_name] = attrs
+        return metadata_dict
+
     def get_metadata_from_dataset(self, dataset_name, key):
         """
         Retrieves the value of a specific metadata key from a given dataset in the temporary HDF5 file.
@@ -640,6 +658,19 @@ class BrillouinProject:
         pressures = self.h5file.attrs.get('pressures', [])
         crystals = self.h5file.attrs.get('crystals', [])
         return sorted(pressures), sorted(crystals)
+
+    def set_metadata_for_multiple_files(self, filenames, metadata_list):
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not opened.")
+        data_group = self.h5file['data']
+        for dataset_name, metadata in zip(filenames, metadata_list):
+            if dataset_name not in data_group:
+                print(f'Warning: Dataset {dataset_name} does not exist.')
+                continue
+            group = data_group[dataset_name]
+            for key, value in metadata.items():
+                group.attrs[key] = value if value is not None else np.nan
+        self.h5file.flush()
 
     def set_peak_fit_data(self, file_name, velocity_name, data_dict):
         # Stores the peak fit data for the specified file and velocity.
@@ -960,12 +991,19 @@ class BrillouinProject:
         return matching_datasets
 
     def find_files_by_pressure_and_crystal(self, pressure, crystal):
-        matching_files = []
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not opened.")
         data_group = self.h5file['data']
-        for dataset_name in data_group.keys():
-            group = data_group[dataset_name]
-            if group.attrs['pressure'] == pressure and group.attrs['crystal'] == crystal:
-                matching_files.append(dataset_name)
+        # Fetch pressures and crystals for all datasets
+        dataset_attrs = {
+            dataset_name: (group.attrs.get('pressure', None), group.attrs.get('crystal', None))
+            for dataset_name, group in data_group.items()
+        }
+        # Filter datasets
+        matching_files = [
+            dataset_name for dataset_name, (p, c) in dataset_attrs.items()
+            if p == pressure and c == crystal
+        ]
         return matching_files
 
     def save_project(self):

@@ -9,7 +9,8 @@ class FileTableModel(QAbstractTableModel):
 
     def __init__(self, files=None, parent=None):
         super(FileTableModel, self).__init__(parent)
-        self._files = files if files else []
+        self._all_files = files if files else []
+        self._files = self._all_files.copy()
         self._headers = [
             'Filename',
             'Calibration',
@@ -24,6 +25,14 @@ class FileTableModel(QAbstractTableModel):
 
         # Initialize default values for each column (excluding the 'Calibration' column)
         self._default_values = {col: {'value': None, 'use_default': False} for col in range(1, len(self._headers)) if col != 1}
+
+    def filter_by_pressure_and_crystal(self, pressure, crystal):
+        self.beginResetModel()
+        self._files = [
+            file for file in self._all_files
+            if file['pressure'] == pressure and file['crystal'] == crystal
+        ]
+        self.endResetModel()
 
     def rowCount(self, parent=QModelIndex()):
         return len(self._files) + 1  # Include an extra row for default values
@@ -151,9 +160,9 @@ class FileTableModel(QAbstractTableModel):
         adjusted_files = []
         for metadata in files_with_metadata:
             metadata = list(metadata)
-            metadata[1] = default_calibration  # Set calibration to default
+            metadata[1] = default_calibration
             adjusted_files.append(metadata)
-        self._add_files_to_model(adjusted_files)
+        self._add_files_to_model(adjusted_files, emit_signal=False)
 
     def sort(self, column, order=Qt.AscendingOrder):
         if column == 0:
@@ -194,14 +203,13 @@ class FileTableModel(QAbstractTableModel):
         metadata = self._get_metadata(row)
         self.data_changed_signal.emit(row, filename, metadata)
 
-    def _add_files_to_model(self, files):
-        self.blockSignals(True)
-        self.insertRows(self.rowCount() - 1, len(files))  # Insert before the last row (default values row)
-        self._files[-len(files):] = files
-        self.blockSignals(False)
-        for i, file in enumerate(files, start=self.rowCount() - len(files) - 1):
-            self.data_changed_signal.emit(i, file[0], self._get_metadata(i))
-        self.layoutChanged.emit()
+    def _add_files_to_model(self, files, emit_signal=True):
+        self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount() + len(files) - 1)
+        self._files.extend(files)
+        self.endInsertRows()
+        if emit_signal:
+            for i, file in enumerate(files, start=self.rowCount() - len(files)):
+                self.data_changed_signal.emit(i, file[0], self._get_metadata(i))
 
     def _get_metadata(self, row):
         return {
