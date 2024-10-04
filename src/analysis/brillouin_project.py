@@ -504,7 +504,10 @@ class BrillouinProject:
             return
         dataset_group = data_group[file_name]
         velocities_group = dataset_group.require_group('velocities')
-        project_velocities = self.h5file.attrs.get('velocities', [])
+        if 'velocities' in self.h5file:
+            project_velocities = self.h5file['velocities'][:].tolist()
+        else:
+            project_velocities = []
         # Add new velocities
         for velocity in project_velocities:
             if velocity not in velocities_group:
@@ -756,13 +759,17 @@ class BrillouinProject:
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
 
-        if 'velocities' not in self.h5file.attrs:
-            self.h5file.attrs['velocities'] = []
+        dt = h5py.string_dtype(encoding='utf-8')
 
-        velocities = list(self.h5file.attrs['velocities'])
-        if velocity not in velocities:
-            velocities.append(velocity)
-            self.h5file.attrs['velocities'] = velocities
+        if 'velocities' not in self.h5file:
+            self.h5file.create_dataset('velocities', data=np.array([velocity], dtype=dt), maxshape=(None,), chunks=True)
+        else:
+            velocities_dataset = self.h5file['velocities']
+            velocities = [v.decode('utf-8') if isinstance(v, bytes) else v for v in velocities_dataset[:]]
+            if velocity not in velocities:
+                velocities.append(velocity)
+                velocities_dataset.resize((len(velocities),))
+                velocities_dataset[:] = np.array(velocities, dtype=dt)
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
@@ -771,10 +778,13 @@ class BrillouinProject:
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
 
-        velocities = list(self.h5file.attrs['velocities'])
-        if velocity in velocities:
-            velocities.remove(velocity)
-            self.h5file.attrs['velocities'] = velocities
+        if 'velocities' in self.h5file:
+            velocities_dataset = self.h5file['velocities']
+            velocities = [v.decode('utf-8') if isinstance(v, bytes) else v for v in velocities_dataset[:]]
+            if velocity in velocities:
+                velocities.remove(velocity)
+                velocities_dataset.resize((len(velocities),))
+                velocities_dataset[:] = np.array(velocities, dtype=h5py.string_dtype(encoding='utf-8'))
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
@@ -783,10 +793,12 @@ class BrillouinProject:
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
 
-        velocities = list(self.h5file.attrs['velocities'])
-        if old_velocity in velocities:
-            velocities[velocities.index(old_velocity)] = new_velocity
-            self.h5file.attrs['velocities'] = velocities
+        if 'velocities' in self.h5file:
+            velocities_dataset = self.h5file['velocities']
+            velocities = [v.decode('utf-8') if isinstance(v, bytes) else v for v in velocities_dataset[:].tolist()]
+            if old_velocity in velocities:
+                velocities[velocities.index(old_velocity)] = new_velocity
+                velocities_dataset[:] = np.array(velocities, dtype=h5py.string_dtype(encoding='utf-8'))
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
@@ -794,7 +806,10 @@ class BrillouinProject:
         """Return the unique pressures, crystals, and velocities."""
         pressures = self.h5file.attrs.get('pressures', [])
         crystals = self.h5file.attrs.get('crystals', [])
-        velocities = self.h5file.attrs.get('velocities', [])
+        if 'velocities' in self.h5file:
+            velocities = [v.decode('utf-8') if isinstance(v, bytes) else v for v in self.h5file['velocities'][:]]
+        else:
+            velocities = []
         return sorted(pressures), sorted(crystals), sorted(velocities)
 
     def get_calibration_attributes(self, calibration_name):

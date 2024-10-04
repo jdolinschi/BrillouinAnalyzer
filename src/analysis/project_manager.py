@@ -334,6 +334,8 @@ class ProjectManager:
             # Populate velocity tableWidget
             self.ui.tableWidget_velocities.setRowCount(0)  # Clear previous entries
             for velocity in velocities:
+                if isinstance(velocity, bytes):
+                    velocity = velocity.decode('utf-8')  # Decode bytes to string
                 row_position = self.ui.tableWidget_velocities.rowCount()
                 self.ui.tableWidget_velocities.insertRow(row_position)
                 self.ui.tableWidget_velocities.setItem(row_position, 0, QTableWidgetItem(velocity))
@@ -635,8 +637,8 @@ class ProjectManager:
         """Handle the new velocity button click."""
         velocity_name, ok = QInputDialog.getText(None, "New Velocity", "Enter velocity name:")
         if ok and velocity_name:
-            self.add_velocity(velocity_name)  # Use self.add_velocity
-            self.populate_table_widgets()  # Update tableWidget
+            self.add_velocity(velocity_name)
+            self.populate_table_widgets()
             self.last_action('Velocity added')
             self.peak_fits_model.update_data()
             self.save_status()
