@@ -40,9 +40,8 @@ class PeakFitsTableModel(QAbstractTableModel):
         self.beginResetModel()
         if self.project and self.current_file:
             # Get velocities for the current file
-            self.project.update_file_velocities(self.current_file)
             velocities_group = self.project.h5file['data'][self.current_file]['velocities']
-            self._velocities = [v.decode('utf-8') if isinstance(v, bytes) else v for v in velocities_group.keys()]
+            self._velocities = list(velocities_group.keys())
         else:
             self._velocities = []
         self.endResetModel()

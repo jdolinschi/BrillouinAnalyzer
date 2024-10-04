@@ -504,11 +504,13 @@ class BrillouinProject:
             return
         dataset_group = data_group[file_name]
         velocities_group = dataset_group.require_group('velocities')
-        if 'velocities' in self.h5file:
-            project_velocities = self.h5file['velocities'][:].tolist()
-        else:
-            project_velocities = []
+        project_velocities = self.h5file.attrs.get('velocities', [])
+        # Ensure all velocities are strings
+        project_velocities = [str(v) for v in project_velocities]
         # Add new velocities
+        print(f"Updating velocities for file: {file_name}")
+        print(f"Project velocities: {project_velocities}")
+        print(f"Current velocities in file before update: {list(velocities_group.keys())}")
         for velocity in project_velocities:
             if velocity not in velocities_group:
                 velocity_group = velocities_group.create_group(velocity)
@@ -524,6 +526,7 @@ class BrillouinProject:
         for velocity in list(velocities_group.keys()):
             if velocity not in project_velocities:
                 del velocities_group[velocity]
+        print(f"Current velocities in file after update: {list(velocities_group.keys())}")
         self.h5file.flush()
 
     def update_calibration_file_data(self, calibration_name, file_name, **attributes):
@@ -754,62 +757,60 @@ class BrillouinProject:
 
         return peak_fit
 
-    def add_velocity(self, velocity):
+    def add_velocity(self, velocity_name):
         """Add a new velocity to the project."""
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
 
-        dt = h5py.string_dtype(encoding='utf-8')
+        if 'velocities' not in self.h5file.attrs:
+            self.h5file.attrs['velocities'] = []
 
-        if 'velocities' not in self.h5file:
-            self.h5file.create_dataset('velocities', data=np.array([velocity], dtype=dt), maxshape=(None,), chunks=True)
-        else:
-            velocities_dataset = self.h5file['velocities']
-            velocities = [v.decode('utf-8') if isinstance(v, bytes) else v for v in velocities_dataset[:]]
-            if velocity not in velocities:
-                velocities.append(velocity)
-                velocities_dataset.resize((len(velocities),))
-                velocities_dataset[:] = np.array(velocities, dtype=dt)
+        velocities = list(self.h5file.attrs['velocities'])
+        if velocity_name not in velocities:
+            velocities.append(velocity_name)
+            self.h5file.attrs['velocities'] = velocities
 
-        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+        self.h5file.flush()
 
-    def remove_velocity(self, velocity):
+    def remove_velocity(self, velocity_name):
         """Remove an existing velocity from the project."""
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
 
-        if 'velocities' in self.h5file:
-            velocities_dataset = self.h5file['velocities']
-            velocities = [v.decode('utf-8') if isinstance(v, bytes) else v for v in velocities_dataset[:]]
-            if velocity in velocities:
-                velocities.remove(velocity)
-                velocities_dataset.resize((len(velocities),))
-                velocities_dataset[:] = np.array(velocities, dtype=h5py.string_dtype(encoding='utf-8'))
+        if 'velocities' in self.h5file.attrs:
+            velocities = list(self.h5file.attrs['velocities'])
+            if velocity_name in velocities:
+                velocities.remove(velocity_name)
+                self.h5file.attrs['velocities'] = velocities
 
-        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+        self.h5file.flush()
 
     def rename_velocity(self, old_velocity, new_velocity):
         """Rename an existing velocity in the project."""
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
 
-        if 'velocities' in self.h5file:
-            velocities_dataset = self.h5file['velocities']
-            velocities = [v.decode('utf-8') if isinstance(v, bytes) else v for v in velocities_dataset[:].tolist()]
-            if old_velocity in velocities:
-                velocities[velocities.index(old_velocity)] = new_velocity
-                velocities_dataset[:] = np.array(velocities, dtype=h5py.string_dtype(encoding='utf-8'))
+        velocities = list(self.h5file.attrs.get('velocities', []))
+        if old_velocity in velocities:
+            index = velocities.index(old_velocity)
+            velocities[index] = new_velocity
+            self.h5file.attrs['velocities'] = velocities
 
-        self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+            # Update velocities under each file
+            data_group = self.h5file['data']
+            for file_name in data_group:
+                dataset_group = data_group[file_name]
+                velocities_group = dataset_group.get('velocities', None)
+                if velocities_group and old_velocity in velocities_group:
+                    velocities_group.move(old_velocity, new_velocity)
+
+            self.h5file.flush()
 
     def get_unique_pressures_crystals_velocities(self):
         """Return the unique pressures, crystals, and velocities."""
         pressures = self.h5file.attrs.get('pressures', [])
         crystals = self.h5file.attrs.get('crystals', [])
-        if 'velocities' in self.h5file:
-            velocities = [v.decode('utf-8') if isinstance(v, bytes) else v for v in self.h5file['velocities'][:]]
-        else:
-            velocities = []
+        velocities = self.h5file.attrs.get('velocities', [])
         return sorted(pressures), sorted(crystals), sorted(velocities)
 
     def get_calibration_attributes(self, calibration_name):
