@@ -212,13 +212,16 @@ class FileTableModel(QAbstractTableModel):
                 self.data_changed_signal.emit(i, file[0], self._get_metadata(i))
 
     def _get_metadata(self, row):
+        if row == 0:
+            return {}  # No metadata for the default values row
+        file_row = row - 1  # Adjust for default row
         return {
-            'calibration': self._files[row][1],  # Calibration column
-            'chi_angle': self._files[row][2],
-            'pinhole': self._files[row][3],
-            'power': self._files[row][4],
-            'polarization': self._files[row][5],
-            'scans': self._files[row][6],
+            'calibration': self._files[file_row][1],  # Calibration column
+            'chi_angle': self._files[file_row][2],
+            'pinhole': self._files[file_row][3],
+            'power': self._files[file_row][4],
+            'polarization': self._files[file_row][5],
+            'scans': self._files[file_row][6],
         }
 
     def _remove_file_by_condition(self, condition):
