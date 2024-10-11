@@ -386,6 +386,7 @@ class BrillouinProject:
         group.attrs['pressure'] = pressure
         group.attrs['crystal'] = crystal
         group.attrs['chi_angle'] = np.nan
+        group.attrs['elastic_peak_ch'] = np.nan
         group.attrs['pinhole'] = np.nan
         group.attrs['power'] = np.nan
         group.attrs['polarization'] = np.nan
@@ -1045,38 +1046,20 @@ class BrillouinProject:
     def save_project(self):
         """
         Saves and closes the temporary HDF5 file, updating the modification date,
-        and then copies the contents of the temporary file to the original HDF5 file.
+        and then replaces the original HDF5 file with the temporary file.
         """
         self._update_modification_date()
 
         if self.h5file is not None:
-            self.h5file.flush()  # Ensure everything in memory is written to the temporary file
+            # Close the temporary h5file to ensure all data is written to disk
+            self.h5file.close()
+            self.h5file = None
 
-            # Copy the temporary file contents to the original HDF5 file
-            with h5py.File(self.temp_h5file_path, 'r') as temp_file, h5py.File(self.h5file_path, 'w') as orig_file:
+            # Replace the original hdf5 file with the temp hdf5 file
+            shutil.copyfile(self.temp_h5file_path, self.h5file_path)
 
-                # Copy attributes of the root
-                for key, value in temp_file.attrs.items():
-                    orig_file.attrs[key] = value
-
-                # Copy datasets, groups, and their attributes
-                def copy_items(source, target):
-                    for key in source.keys():
-                        item = source[key]
-                        if isinstance(item, h5py.Group):
-                            # Create the group and copy its attributes
-                            new_group = target.create_group(key)
-                            for attr_key, attr_value in item.attrs.items():
-                                new_group.attrs[attr_key] = attr_value
-                            copy_items(item, new_group)
-                        elif isinstance(item, h5py.Dataset):
-                            # Create the dataset and copy its data
-                            target.create_dataset(key, data=item[()])
-                            # Copy dataset attributes
-                            for attr_key, attr_value in item.attrs.items():
-                                target[key].attrs[attr_key] = attr_value
-
-                copy_items(temp_file, orig_file)
+            # Re-open the temp h5file for further use
+            self.h5file = h5py.File(self.temp_h5file_path, 'a')
 
         else:
             print("No open temporary HDF5 file to save.")

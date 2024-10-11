@@ -29,6 +29,7 @@ class FitManager(QObject):
     def setup(self):
         self.file_model = FileTableModel()
         self.ui.tableView_files.setModel(self.file_model)
+
         # Allow multiple selection but keep cells editable
         self.ui.tableView_files.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.ui.tableView_files.setSelectionBehavior(QAbstractItemView.SelectItems)
@@ -49,9 +50,11 @@ class FitManager(QObject):
         # Enable copy-paste shortcuts in the tableView_files
         self.ui.tableView_files.keyPressEvent = self.table_keyPressEvent
 
-        # Assign the custom delegate to the default values row
+        # Assign the custom delegate to the default values row, excluding 'calibration' (col 1) and 'elastic_peak_ch' (col 3)
         delegate = CheckboxLineEditDelegate(self.ui.tableView_files)
-        self.ui.tableView_files.setItemDelegateForRow(0, delegate)
+        for col in range(self.file_model.columnCount()):
+            if col not in [1, 3]:  # Exclude calibration and elastic_peak_ch columns in the 0th row
+                self.ui.tableView_files.setItemDelegateForRow(0, delegate)
 
     def set_project(self):
         self.project = self.project_manager.project
@@ -206,7 +209,7 @@ class FitManager(QObject):
                             # Store the calibration name as metadata
                             self.project.add_metadata_to_dataset(filename, key, value)
                             continue
-                        if value is None and key in ['chi_angle', 'pinhole', 'power', 'polarization', 'scans']:
+                        if value is None and key in ['chi_angle', 'elastic_peak_ch', 'pinhole', 'power', 'polarization', 'scans']:
                             value = np.nan  # Use np.nan for missing numeric values
                         self.project.add_metadata_to_dataset(filename, key, value)
                     self.project_manager.last_action('Table modified')
@@ -254,7 +257,7 @@ class FitManager(QObject):
             )
 
             # Fetch metadata for all matching files in bulk
-            metadata_keys = ['chi_angle', 'pinhole', 'power', 'polarization', 'scans']
+            metadata_keys = ['chi_angle', 'elastic_peak_ch', 'pinhole', 'power', 'polarization', 'scans']
             metadata_dict = self.project.get_metadata_for_files(matching_files, keys=metadata_keys)
 
             # Prepare the data to add to the model
@@ -263,6 +266,7 @@ class FitManager(QObject):
                     filename,
                     default_calibration,  # Use current calibration
                     metadata_dict[filename].get('chi_angle'),
+                    metadata_dict[filename].get('elastic_peak_ch'),
                     metadata_dict[filename].get('pinhole'),
                     metadata_dict[filename].get('power'),
                     metadata_dict[filename].get('polarization'),
@@ -386,10 +390,11 @@ class FitManager(QObject):
                     metadata = {
                         'calibration': self.file_model.data(self.file_model.index(row, 1), Qt.DisplayRole),
                         'chi_angle': self.file_model.data(self.file_model.index(row, 2), Qt.DisplayRole),
-                        'pinhole': self.file_model.data(self.file_model.index(row, 3), Qt.DisplayRole),
-                        'power': self.file_model.data(self.file_model.index(row, 4), Qt.DisplayRole),
-                        'polarization': self.file_model.data(self.file_model.index(row, 5), Qt.DisplayRole),
-                        'scans': self.file_model.data(self.file_model.index(row, 6), Qt.DisplayRole)
+                        'elastic_peak_ch': self.file_model.data(self.file_model.index(row, 3), Qt.DisplayRole),
+                        'pinhole': self.file_model.data(self.file_model.index(row, 4), Qt.DisplayRole),
+                        'power': self.file_model.data(self.file_model.index(row, 5), Qt.DisplayRole),
+                        'polarization': self.file_model.data(self.file_model.index(row, 6), Qt.DisplayRole),
+                        'scans': self.file_model.data(self.file_model.index(row, 7), Qt.DisplayRole)
                     }
                     filenames.append(filename)
                     metadata_list.append(metadata)

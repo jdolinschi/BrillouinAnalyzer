@@ -1,13 +1,8 @@
 # src/analysis/project_manager.py
-import numpy as np
-from PySide6.QtCore import Qt, QObject, Signal
-from PySide6.QtGui import QKeySequence, QClipboard
+from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QTableWidgetItem, QPlainTextEdit, QVBoxLayout, QWidget
 
 from .brillouin_project import BrillouinProject
-from .calibration_file_table_model import CalibrationFileTableModel
-from ..utils.checkbox_lineedit_delegate import CheckboxLineEditDelegate
-from .peak_fits_table_model import PeakFitsTableModel
 import os
 
 

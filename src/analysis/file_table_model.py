@@ -14,10 +14,11 @@ class FileTableModel(QAbstractTableModel):
         self._headers = [
             'Filename',
             'Calibration',
-            'Chi angle (degrees)',
-            'Pinhole',
-            'Power',
-            'Polarization',
+            'Chi angle (deg)',
+            'Elastic peak Ch',
+            'Pinhole (um)',
+            'Power (mW)',
+            'Polarization (deg)',
             'Scans'
         ]
         self._sort_order = Qt.AscendingOrder
@@ -72,7 +73,7 @@ class FileTableModel(QAbstractTableModel):
 
         if row == 0:
             # Default values row
-            if col in [0, 1]:
+            if col in [0, 1, 3]:  # Do not allow editing of Filename, Calibration, or Elastic Peak Ch
                 return False
             if role == Qt.EditRole:
                 if isinstance(value, dict):
@@ -85,6 +86,8 @@ class FileTableModel(QAbstractTableModel):
             return False
         else:
             # Regular file rows
+            if col in [0, 1, 3]:  # Prevent editing Filename, Calibration, or Elastic Peak Ch
+                return False
             if role == Qt.EditRole and self._is_editable_column(col):
                 if not self._validate_and_set_data(index, value):
                     return False
@@ -101,13 +104,13 @@ class FileTableModel(QAbstractTableModel):
 
         if row == 0:
             # Default values row
-            if col in [0, 1]:
+            if col in [0, 1, 3]:  # Filename, Calibration, and Elastic Peak Ch are not editable
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         else:
             # Regular file rows
-            if col in [0, 1]:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable  # Not editable
+            if col in [0, 1, 3]:  # Filename, Calibration, and Elastic Peak Ch are not editable
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
@@ -218,10 +221,11 @@ class FileTableModel(QAbstractTableModel):
         return {
             'calibration': self._files[file_row][1],  # Calibration column
             'chi_angle': self._files[file_row][2],
-            'pinhole': self._files[file_row][3],
-            'power': self._files[file_row][4],
-            'polarization': self._files[file_row][5],
-            'scans': self._files[file_row][6],
+            'elastic_peak_ch': self._files[file_row][3],
+            'pinhole': self._files[file_row][4],
+            'power': self._files[file_row][5],
+            'polarization': self._files[file_row][6],
+            'scans': self._files[file_row][7],
         }
 
     def _remove_file_by_condition(self, condition):
