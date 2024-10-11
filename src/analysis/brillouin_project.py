@@ -20,22 +20,48 @@ class BrillouinProject:
     Methods:
         create_h5file(): Creates a new HDF5 file in the specified folder.
         load_h5file(): Loads an existing HDF5 file for reading and writing.
-        add_calibration(): Adds a new calibration to the project.
+        load_all_files_with_metadata(): Loads all files into the project, assigning metadata for each.
+        load_all_files(): Adds provided files into the project without metadata.
+        add_metadata_to_dataset(): Adds metadata to a specific dataset.
+        add_array_to_dataset(): Adds a new array to a dataset.
+        add_pressure(): Adds a new pressure value to the project.
+        add_crystal(): Adds a new crystal to the project.
+        remove_crystal(): Removes an existing crystal from the project.
+        remove_dataset(): Removes a dataset from the project.
+        add_calibration(): Adds a new calibration with specified attributes.
+        rename_calibration(): Renames an existing calibration.
         remove_calibration(): Removes an existing calibration from the project.
-        update_calibration_attributes(): Updates attributes of a calibration.
-        add_file_to_calibration(): Adds a file to a calibration.
+        add_file_to_h5(): Adds a single .dat file to the temporary HDF5 file with optional pressure and crystal metadata.
+        add_file_to_calibration(): Adds a file to a specific calibration.
         remove_file_from_calibration(): Removes a file from a calibration.
-        update_calibration_file_data(): Updates file-level data within a calibration.
-        update_peak_fit(): Updates peak fit data for a file within a calibration.
+        update_calibration_attributes(): Updates the attributes of a specified calibration.
+        update_file_velocities(): Updates velocities data for a specified file.
+        update_calibration_file_data(): Updates the file-level data within a calibration.
+        update_peak_fit(): Updates the peak fit data for a file within a calibration.
+        get_metadata_for_files(): Retrieves metadata for multiple datasets by their names.
+        get_metadata_from_dataset(): Retrieves metadata for a specific dataset by key.
+        get_file_count(): Returns the number of datasets/files in the project.
+        set_metadata_for_multiple_files(): Sets metadata for multiple datasets/files.
+        set_peak_fit_data(): Sets peak fit data for a specific file and velocity.
+        get_peak_fit_data(): Retrieves peak fit data for a specific file and velocity.
         get_peak_fit(): Retrieves peak fit data for a file within a calibration.
-        get_calibration_attributes(): Retrieves attributes of a calibration.
-        get_calibration_file_data(): Retrieves data from a file within a calibration.
+        add_velocity(): Adds a new velocity to the project.
+        remove_velocity(): Removes an existing velocity from the project.
+        rename_velocity(): Renames a velocity in the project.
+        get_unique_pressures_crystals_velocities(): Returns unique pressures, crystals, and velocities.
+        get_calibration_attributes(): Retrieves attributes for a specific calibration.
+        get_calibration_file_data(): Retrieves the original data from a file within a calibration.
+        get_calibration_file_attributes(): Retrieves attributes for a specific file in a calibration.
+        get_calibration_file_attribute(): Retrieves a specific attribute from a calibration file.
         list_calibrations(): Lists all calibrations in the project.
         list_files_in_calibration(): Lists all files in a calibration.
-        save_project(): Saves the temporary HDF5 file to the main project file.
-        check_unsaved_changes(): Checks if there are unsaved changes.
-        cleanup_temp_file(): Cleans up the temporary HDF5 file.
-        Other methods for managing pressures, crystals, and datasets.
+        cleanup_temp_file(): Cleans up and removes the temporary HDF5 file.
+        find_datasets_by_metadata_dict(): Finds datasets based on multiple key-value pairs in metadata.
+        find_datasets_by_metadata(): Finds datasets based on a single key-value pair in metadata.
+        find_files_by_pressure_and_crystal(): Finds datasets based on pressure and crystal.
+        save_project(): Saves the temporary file to the main project file, copying all data.
+        check_unsaved_changes(): Checks for unsaved changes in the temporary HDF5 file.
+        list_datasets(): Lists all datasets in the 'data' group of the project.
     """
 
     def __init__(self, folder, project_name):
@@ -658,12 +684,6 @@ class BrillouinProject:
         """Return the number of files in the project."""
         data_group = self.h5file['data']
         return len(data_group.keys())
-
-    def get_unique_pressures_and_crystals(self):
-        """Return the unique pressures and crystals."""
-        pressures = self.h5file.attrs.get('pressures', [])
-        crystals = self.h5file.attrs.get('crystals', [])
-        return sorted(pressures), sorted(crystals)
 
     def set_metadata_for_multiple_files(self, filenames, metadata_list):
         if self.h5file is None:

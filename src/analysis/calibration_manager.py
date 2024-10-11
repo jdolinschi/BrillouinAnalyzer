@@ -1,4 +1,4 @@
-# calibration_manager.py
+# src/analysis/calibration_manager.py
 import numpy as np
 from PySide6.QtCore import Qt, QObject, Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
@@ -46,6 +46,11 @@ class CalibrationManager(QObject):
         self.ui.pushButton_calibDeleteLeftPeak.clicked.connect(self.calibration_plot_widget.delete_left_peak)
         self.ui.pushButton_calibDeleteRightPeak.clicked.connect(self.calibration_plot_widget.delete_right_peak)
         self.ui.pushButton_calibSaveCalib.clicked.connect(self.save_current_calibration)
+
+    def set_project(self):
+        self.project = self.project_manager.project
+        if self.project:
+            self.populate_calibration_dropdown()
 
     def update_calibration_stats(self):
         nm_values = self.calib_files_model.get_nm_per_channel_values()
@@ -175,12 +180,6 @@ class CalibrationManager(QObject):
         QMessageBox.information(None, "Calibration Saved", f"Calibration '{calibration_name}' has been saved.")
         self.last_action('Calibration saved')
         self.save_status()
-
-    def update_project(self):
-        """Update the project instance when it changes in ProjectManager."""
-        self.project = self.project_manager.project
-        if self.project:
-            self.populate_calibration_dropdown()
 
     def calib_new_calibration_clicked(self):
         if self.project is None:
