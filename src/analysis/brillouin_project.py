@@ -879,6 +879,27 @@ class BrillouinProject:
         data = group['original_data'][()]
         return data
 
+    def get_dataset_data(self, dataset_name):
+        """
+        Retrieves the original data from a dataset in the 'data' group.
+
+        Parameters:
+            dataset_name (str): The name of the dataset.
+
+        Returns:
+            numpy.ndarray: The original data from the dataset.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'data' not in self.h5file:
+            raise ValueError("No 'data' group in the HDF5 file.")
+        data_group = self.h5file['data']
+        if dataset_name not in data_group:
+            raise ValueError(f"Dataset '{dataset_name}' does not exist in the 'data' group.")
+        group = data_group[dataset_name]
+        data = group['original_data'][()]
+        return data
+
     def get_calibration_file_attributes(self, calibration_name, file_name):
         """
         Retrieves attributes of a calibration file.

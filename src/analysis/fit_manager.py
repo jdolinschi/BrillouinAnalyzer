@@ -1,4 +1,6 @@
 # src/analysis/fit_manager.py
+import os
+
 import numpy as np
 from PySide6.QtCore import QObject, Signal, Qt
 from PySide6.QtGui import QKeySequence
@@ -8,6 +10,7 @@ from PySide6.QtWidgets import QAbstractItemView, QMenu, QApplication, QTableView
 from src.analysis.file_table_model import FileTableModel
 from src.analysis.peak_fits_table_model import PeakFitsTableModel
 from src.utils.checkbox_lineedit_delegate import CheckboxLineEditDelegate
+from ..utils.voigt_profile import VoigtFitter
 
 
 class FitManager(QObject):
@@ -286,7 +289,6 @@ class FitManager(QObject):
         self.populate_dropdowns(pressures, crystals, velocities)
 
     def populate_dropdowns(self, pressures, crystals, velocities):
-        print('fit_manager populating dropdowns')
         """Populate pressure, crystal, and calibration comboboxes with unique values from the project."""
         if self.project:
             print('inside project')
@@ -330,7 +332,26 @@ class FitManager(QObject):
             try:
                 self.project.load_all_files_with_metadata(filepaths, pressure, crystal_name)
                 self.file_model.addFiles(filepaths, default_calibration=default_calibration)
-                self.peak_fits_model.update_data()
+                # Now, for each file, read the data, fit the elastic peak, and save the result
+                for filepath in filepaths:
+                    filename = os.path.basename(filepath)
+                    # Get the data from the project
+                    data = self.project.get_dataset_data(filename)
+                    if data is not None:
+                        # Fit the elastic peak
+                        elastic_peak_ch = self.fit_elastic_peak(data)
+                        if elastic_peak_ch is not None:
+                            # Save the elastic peak channel in the project metadata
+                            self.project.add_metadata_to_dataset(filename, 'elastic_peak_ch', elastic_peak_ch)
+                            # Update the file model
+                            row = self.file_model.getRowByFilename(filename)
+                            if row is not None:
+                                index = self.file_model.index(row, 3)  # Column 3 is 'Elastic peak Ch'
+                                self.file_model.setData(index, str(elastic_peak_ch), Qt.UserRole)
+                        else:
+                            print(f"Elastic peak fitting failed for {filename}")
+                    else:
+                        print(f"Failed to get data for {filename}")
                 self.peak_fits_model.update_data()
             except Exception as e:
                 QMessageBox.critical(None, "Error", f"Failed to add files: {e}")
@@ -399,3 +420,43 @@ class FitManager(QObject):
                     filenames.append(filename)
                     metadata_list.append(metadata)
                 self.project.set_metadata_for_multiple_files(filenames, metadata_list)
+
+    def fit_elastic_peak(self, data):
+        """Fit the central elastic peak in the data and return the peak center."""
+        num_channels = len(data)
+        print('num_channels: ', num_channels)
+        # Determine central channel
+        central_channel = num_channels // 2
+        print('central_channel: ', central_channel)
+        # Determine fit range (±8% of total channels)
+        delta = int(0.08 * num_channels)
+        print('delta: ', delta)
+        start = max(0, central_channel - delta)
+        print('start: ', start)
+        end = min(num_channels, central_channel + delta)
+        print('send: ', end)
+        x = np.arange(start, end)
+        y = data[start:end]
+        print('x: ', x)
+        print('y: ', y)
+        # Decide if we need to invert the data
+        inverted=False
+        # Initialize the fitter
+        fitter = VoigtFitter(inverted=inverted, fit_baseline=True)
+        try:
+            # Perform the fit
+            fitter.fit(x, y)
+            # Check goodness of fit
+            gof = fitter.goodness_of_fit()
+            print('gof: ', gof)
+            threshold = 0.8  # Define an acceptable threshold
+            if gof >= threshold:
+                # Get peak center
+                peak_center = fitter.get_parameter('center')
+                print('peak_center: ', peak_center)
+                return peak_center
+            else:
+                return None
+        except Exception as e:
+            print(f"Fit failed: {e}")
+            return None

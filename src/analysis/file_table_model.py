@@ -27,6 +27,23 @@ class FileTableModel(QAbstractTableModel):
         # Initialize default values for each column (excluding the 'Calibration' column)
         self._default_values = {col: {'value': None, 'use_default': False} for col in range(1, len(self._headers)) if col != 1}
 
+    def getRowByFilename(self, filename):
+        """
+        Returns the row index in the table corresponding to the given filename.
+
+        Parameters:
+            filename (str): The filename to search for.
+
+        Returns:
+            int or None: The row index (including the default row offset) if found, None otherwise.
+        """
+        if not filename:
+            return None
+        for idx, file_row in enumerate(self._files):
+            if file_row[0] == filename:
+                return idx + 1  # Adjust for default row at index 0
+        return None
+
     def filter_by_pressure_and_crystal(self, pressure, crystal):
         self.beginResetModel()
         self._files = [
@@ -86,9 +103,10 @@ class FileTableModel(QAbstractTableModel):
             return False
         else:
             # Regular file rows
-            if col in [0, 1, 3]:  # Prevent editing Filename, Calibration, or Elastic Peak Ch
-                return False
-            if role == Qt.EditRole and self._is_editable_column(col):
+            if col in [0, 1, 3]:
+                if role != Qt.UserRole:
+                    return False  # Only allow setting data in these columns programmatically
+            if role == Qt.EditRole or role == Qt.UserRole:
                 if not self._validate_and_set_data(index, value):
                     return False
                 self._emit_data_changed(index)
@@ -187,11 +205,15 @@ class FileTableModel(QAbstractTableModel):
 
     def _validate_and_set_data(self, index, value):
         try:
-            if index.column() == 1:
-                self._files[index.row() - 1][index.column()] = value  # Store the calibration name
-            elif index.column() > 1:
+            column = index.column()
+            row = index.row() - 1  # Adjust for default row
+
+            if column in [0, 1]:  # Filename or Calibration column
+                self._files[row][column] = value  # Store the string value
+            else:
+                # For numeric columns (including Elastic peak Ch)
                 value = float(value) if value else None  # Convert to float or None for empty
-                self._files[index.row() - 1][index.column()] = value  # Adjust for default row
+                self._files[row][column] = value
             return True
         except ValueError:
             return False
