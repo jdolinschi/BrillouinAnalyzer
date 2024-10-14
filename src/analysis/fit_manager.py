@@ -11,6 +11,7 @@ from src.analysis.file_table_model import FileTableModel
 from src.analysis.peak_fits_table_model import PeakFitsTableModel
 from src.utils.checkbox_lineedit_delegate import CheckboxLineEditDelegate
 from ..utils.voigt_profile import VoigtFitter
+from src.analysis.fitting_plot_widget import FittingPlotWidget
 
 
 class FitManager(QObject):
@@ -18,10 +19,14 @@ class FitManager(QObject):
 
     def __init__(self, ui, project_manager):
         super().__init__()
+        self.current_plotted_data = None
         self.file_model = None
         self.ui = ui
         self.project_manager = project_manager
         self.project = self.project_manager.project
+        self.current_plotted_filename = None
+
+        self.fitting_plot_widget = FittingPlotWidget(self.ui.main_plotwidget, self.ui.left_plotwidget, self.ui.right_plotwidget, self.ui, self)
 
         self.setup()
 
@@ -100,12 +105,21 @@ class FitManager(QObject):
         # Get the filename from the file model
         if index.isValid():
             row = index.row()
-            filename = self.file_model.data(self.file_model.index(row, 0), Qt.DisplayRole)
-            if filename:
-                self.peak_fits_model.set_current_file(filename)
-                self.project_manager.last_action(f'Selected file {filename}')
+            self.current_plotted_filename = self.file_model.data(self.file_model.index(row, 0), Qt.DisplayRole)
+            if self.current_plotted_filename:
+                self.peak_fits_model.set_current_file(self.current_plotted_filename)
+                self.project_manager.last_action(f'Selected file {self.current_plotted_filename}')
+                data = self.project.get_dataset_data(self.current_plotted_filename)
+                if data is not None:
+                    self.current_plotted_data = data
+                    self.plot_file(self.current_plotted_data)
         else:
             self.peak_fits_model.set_current_file(None)
+
+    def plot_file(self, data):
+        self.calib_x_data = np.arange(len(data))
+        self.calib_y_data = data
+        self.fitting_plot_widget.plot_data(self.calib_x_data, self.calib_y_data)
 
     def show_context_menu(self, pos):
         index = self.ui.tableView_files.indexAt(pos)
@@ -424,21 +438,14 @@ class FitManager(QObject):
     def fit_elastic_peak(self, data):
         """Fit the central elastic peak in the data and return the peak center."""
         num_channels = len(data)
-        print('num_channels: ', num_channels)
         # Determine central channel
         central_channel = num_channels // 2
-        print('central_channel: ', central_channel)
         # Determine fit range (±8% of total channels)
         delta = int(0.08 * num_channels)
-        print('delta: ', delta)
         start = max(0, central_channel - delta)
-        print('start: ', start)
         end = min(num_channels, central_channel + delta)
-        print('send: ', end)
         x = np.arange(start, end)
         y = data[start:end]
-        print('x: ', x)
-        print('y: ', y)
         # Decide if we need to invert the data
         inverted=False
         # Initialize the fitter
