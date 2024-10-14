@@ -23,6 +23,10 @@ class FittingPlotWidget(QObject):
         self.data_curve_left = None
         self.data_curve_right = None
 
+        # Initialize elastic peak fit items
+        self.elastic_fit_curve = None
+        self.elastic_peak_line = None
+
         # Variables for interactions
         self.zoom_mode = False
         self.left_plot_fitting = False
@@ -65,34 +69,49 @@ class FittingPlotWidget(QObject):
         self.initial_view_range = None
 
     def reset_view_main(self):
-        print('reset_view_main')
+        if self.initial_view_range:
+            self.plot_item_main.setRange(xRange=self.initial_view_range[0], yRange=self.initial_view_range[1])
+            self.view_box_main.setLimits(
+                xMin=self.min_x, xMax=self.max_x,
+            )
 
     def zoom_button_clicked_main(self):
-        print('zoom_button_clicked_main')
+        if self.ui.pushButton_fitZoom.isChecked():
+            self.view_box_main.enable_zoom_mode()
+        else:
+            self.view_box_main.disable_zoom_mode()
 
     def inverted_peaks_changed(self):
-        print('inverted_peaks_changed')
+        # Handle changes when inverted peaks checkbox state changes
+        pass  # Implement as needed
 
     def manual_fit_left_checkbox(self):
-        print('manual_fit_left_checkbox')
+        # Implement manual fitting for left plot
+        pass  # Implement as needed
 
     def manual_fit_right_checkbox(self):
-        print('manual_fit_right_checkbox')
+        # Implement manual fitting for right plot
+        pass  # Implement as needed
 
     def match_x_checkbox(self):
-        print('match_x_checkbox')
+        # Handle matching X axes between plots
+        pass  # Implement as needed
 
     def match_y_checkbox(self):
-        print('match_y_checkbox')
+        # Handle matching Y axes between plots
+        pass  # Implement as needed
 
     def overlap_mode_clicked(self):
-        print('overlap_mode_clicked')
+        # Handle overlap mode
+        pass  # Implement as needed
 
     def reset_view_left(self):
-        print('reset_view_left')
+        # Reset left plot view
+        pass  # Implement as needed
 
     def reset_view_right(self):
-        print('reset_view_right')
+        # Reset right plot view
+        pass  # Implement as needed
 
     def plot_data(self, x, y):
         self.x_data = x
@@ -103,6 +122,10 @@ class FittingPlotWidget(QObject):
         self.plot_item_left.clear()
         self.plot_item_right.clear()
 
+        # Reset elastic peak fit items
+        self.elastic_fit_curve = None
+        self.elastic_peak_line = None
+
         # Reset interaction modes
         self.ui.pushButton_fitZoom.setChecked(False)
         self.view_box_main.disable_zoom_mode()
@@ -111,6 +134,24 @@ class FittingPlotWidget(QObject):
         self.data_curve_main = self.plot_item_main.plot(x, y, pen='w')
         self.data_curve_right = self.plot_item_right.plot(pen='w')
         self.data_curve_left = self.plot_item_left.plot(pen='w')
+
+        # Now plot the elastic peak fit if available
+        filename = self.fit_manager.current_plotted_filename
+        if filename:
+            project = self.fit_manager.project
+            if project:
+                peak_fit = project.get_dataset_peak_fit(filename, 'elastic_peak')
+                if peak_fit:
+                    # Plot the fit curve
+                    x_fit = peak_fit.get('x_fit')
+                    y_fit = peak_fit.get('y_fit')
+                    if x_fit is not None and y_fit is not None and len(x_fit) > 0 and len(y_fit) > 0:
+                        self.elastic_fit_curve = self.plot_item_main.plot(x_fit, y_fit, pen=pg.mkPen('grey'))
+                    # Plot the peak center as a vertical dashed line
+                    center = peak_fit.get('center')
+                    if center is not None and not np.isnan(center):
+                        self.elastic_peak_line = pg.InfiniteLine(pos=center, angle=90, pen=pg.mkPen('grey', style=Qt.DashLine))
+                        self.plot_item_main.addItem(self.elastic_peak_line)
 
         # Enable auto-ranging to adjust the view to the new data
         self.plot_item_main.enableAutoRange()
@@ -141,7 +182,7 @@ class FittingPlotWidget(QObject):
 
     def inverted_peaks_changed(self, state):
         # Handle changes when inverted peaks checkbox state changes
-        pass  # We can implement this later
+        pass  # Implement as needed
 
     def clear_plot(self):
         # Clear the plot and reset variables
@@ -149,6 +190,10 @@ class FittingPlotWidget(QObject):
         self.x_data = None
         self.y_data = None
         self.data_curve_main = None
+
+        # Reset elastic peak fit items
+        self.elastic_fit_curve = None
+        self.elastic_peak_line = None
 
         # Reset interaction modes
         self.ui.pushButton_fitZoom.setChecked(False)

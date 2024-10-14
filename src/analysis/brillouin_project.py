@@ -523,6 +523,89 @@ class BrillouinProject:
 
         self.h5file.flush()
 
+    def update_dataset_peak_fit(self, dataset_name, peak_name, peak_fit_data):
+        """
+        Updates peak fit data for a dataset.
+
+        Parameters:
+            dataset_name (str): The name of the dataset.
+            peak_name (str): The name of the peak (e.g., 'elastic_peak').
+            peak_fit_data (dict): Dictionary containing the fit parameters, including x_fit and y_fit arrays.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'data' not in self.h5file:
+            raise ValueError("No 'data' group in the HDF5 file.")
+        data_group = self.h5file['data']
+        if dataset_name not in data_group:
+            raise ValueError(f"Dataset '{dataset_name}' does not exist in the 'data' group.")
+        dataset_group = data_group[dataset_name]
+
+        # Create or get 'peak_fits' group under the dataset
+        peak_fits_group = dataset_group.require_group('peak_fits')
+
+        # Create or get the group for the specific peak
+        peak_group = peak_fits_group.require_group(peak_name)
+
+        # Save the fit parameters
+        for key, value in peak_fit_data.items():
+            if key in ['x_fit', 'y_fit']:
+                # Save x_fit and y_fit as datasets
+                if key in peak_group:
+                    del peak_group[key]  # Delete existing dataset if it exists
+                peak_group.create_dataset(key, data=np.array(value))  # Save as numpy array
+            else:
+                # Save as attribute
+                peak_group.attrs[key] = value  # Scalar attributes
+
+        self.h5file.flush()
+
+    def get_dataset_peak_fit(self, dataset_name, peak_name):
+        """
+        Retrieves peak fit data for a dataset.
+
+        Parameters:
+            dataset_name (str): The name of the dataset.
+            peak_name (str): The name of the peak (e.g., 'elastic_peak').
+
+        Returns:
+            dict: A dictionary containing the peak fit parameters.
+        """
+        if self.h5file is None:
+            raise ValueError("Temporary HDF5 file not created or opened.")
+        if 'data' not in self.h5file:
+            raise ValueError("No 'data' group in the HDF5 file.")
+        data_group = self.h5file['data']
+        if dataset_name not in data_group:
+            raise ValueError(f"Dataset '{dataset_name}' does not exist in the 'data' group.")
+        dataset_group = data_group[dataset_name]
+
+        # Check if 'peak_fits' group exists
+        if 'peak_fits' not in dataset_group:
+            return {}  # No peak fits saved for this dataset
+        peak_fits_group = dataset_group['peak_fits']
+
+        # Check if the peak_name exists
+        if peak_name not in peak_fits_group:
+            return {}  # No peak fit with this name
+
+        peak_group = peak_fits_group[peak_name]
+
+        # Retrieve the fit parameters
+        peak_fit = {}
+        # Get attributes
+        for key, value in peak_group.attrs.items():
+            peak_fit[key] = value
+
+        # Get x_fit and y_fit datasets
+        for key in ['x_fit', 'y_fit']:
+            if key in peak_group:
+                peak_fit[key] = peak_group[key][()]  # Load as numpy array
+            else:
+                peak_fit[key] = np.array([])  # Default to empty array if dataset does not exist
+
+        return peak_fit
+
     def update_file_velocities(self, file_name):
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")

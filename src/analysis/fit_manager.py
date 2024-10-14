@@ -353,15 +353,34 @@ class FitManager(QObject):
                     data = self.project.get_dataset_data(filename)
                     if data is not None:
                         # Fit the elastic peak
-                        elastic_peak_ch = self.fit_elastic_peak(data)
-                        if elastic_peak_ch is not None:
+                        fitter = self.fit_elastic_peak(data)
+                        if fitter is not None:
+                            # Get peak center
+                            peak_center = fitter.get_parameter('center')
                             # Save the elastic peak channel in the project metadata
-                            self.project.add_metadata_to_dataset(filename, 'elastic_peak_ch', elastic_peak_ch)
+                            self.project.add_metadata_to_dataset(filename, 'elastic_peak_ch', peak_center)
                             # Update the file model
                             row = self.file_model.getRowByFilename(filename)
                             if row is not None:
                                 index = self.file_model.index(row, 3)  # Column 3 is 'Elastic peak Ch'
-                                self.file_model.setData(index, str(elastic_peak_ch), Qt.UserRole)
+                                self.file_model.setData(index, str(peak_center), Qt.UserRole)
+                            # Collect the fit parameters
+                            peak_fit_data = {
+                                'center': fitter.get_parameter('center'),
+                                'amplitude': fitter.get_parameter('amplitude'),
+                                'sigma': fitter.get_parameter('sigma'),
+                                'gamma': fitter.get_parameter('gamma'),
+                                'fwhm': fitter.get_parameter('fwhm'),
+                                'area': fitter.get_parameter('area'),
+                                'goodness_of_fit': fitter.goodness_of_fit(),
+                                'x_min': fitter.x_min,
+                                'x_max': fitter.x_max,
+                                'x_fit': fitter.x_fit,
+                                'y_fit': fitter.y_fit,
+                                # Add any other parameters if needed
+                            }
+                            # Save the peak fit data to the project
+                            self.project.update_dataset_peak_fit(filename, 'elastic_peak', peak_fit_data)
                         else:
                             print(f"Elastic peak fitting failed for {filename}")
                     else:
@@ -436,7 +455,7 @@ class FitManager(QObject):
                 self.project.set_metadata_for_multiple_files(filenames, metadata_list)
 
     def fit_elastic_peak(self, data):
-        """Fit the central elastic peak in the data and return the peak center."""
+        """Fit the central elastic peak in the data and return the fitter object."""
         num_channels = len(data)
         # Determine central channel
         central_channel = num_channels // 2
@@ -447,21 +466,23 @@ class FitManager(QObject):
         x = np.arange(start, end)
         y = data[start:end]
         # Decide if we need to invert the data
-        inverted=False
+        inverted = False
         # Initialize the fitter
-        fitter = VoigtFitter(inverted=inverted, fit_baseline=True)
+        fitter = VoigtFitter(inverted=inverted, fit_baseline=True, method='pseudo_voigt')
         try:
             # Perform the fit
             fitter.fit(x, y)
+            # Set x_min, x_max, x_fit, y_fit attributes
+            fitter.x_min = x[0]
+            fitter.x_max = x[-1]
+            fitter.x_fit = x
+            fitter.y_fit = fitter.get_fit_curve(x)
             # Check goodness of fit
             gof = fitter.goodness_of_fit()
             print('gof: ', gof)
             threshold = 0.8  # Define an acceptable threshold
             if gof >= threshold:
-                # Get peak center
-                peak_center = fitter.get_parameter('center')
-                print('peak_center: ', peak_center)
-                return peak_center
+                return fitter  # Return the fitter object
             else:
                 return None
         except Exception as e:
