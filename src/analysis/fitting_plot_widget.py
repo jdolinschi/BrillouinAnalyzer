@@ -150,16 +150,36 @@ class FittingPlotWidget(QObject):
                     # Plot the peak center as a vertical dashed line
                     center = peak_fit.get('center')
                     if center is not None and not np.isnan(center):
-                        self.elastic_peak_line = pg.InfiniteLine(pos=center, angle=90, pen=pg.mkPen('grey', style=Qt.DashLine))
+                        self.elastic_peak_line = pg.InfiniteLine(pos=center, angle=90,
+                                                                 pen=pg.mkPen('grey', style=Qt.DashLine))
                         self.plot_item_main.addItem(self.elastic_peak_line)
 
-        # Enable auto-ranging to adjust the view to the new data
-        self.plot_item_main.enableAutoRange()
-        self.plot_item_main.autoRange()
-        self.initial_view_range_main = self.plot_item_main.viewRange()
+        # Compute initial view range excluding elastic peak
+        num_channels = len(y)
+        central_channel = num_channels // 2
+        delta = int(0.06 * num_channels)
+        start = max(0, central_channel - delta)
+        end = min(num_channels, central_channel + delta)
+        exclude_indices = np.r_[0:start, end:num_channels]
+        y_excl = y[exclude_indices]
+
+        # Check if y_excl is valid
+        if len(y_excl) > 0:
+            y_min = np.min(y_excl)
+            y_max = np.max(y_excl)
+        else:
+            y_min = np.min(y)
+            y_max = np.max(y)
+
+        x_min = np.min(x)
+        x_max = np.max(x)
+
+        # Set initial view range
+        self.initial_view_range_main = [[x_min, x_max], [y_min, y_max]]
+        self.plot_item_main.setRange(xRange=[x_min, x_max], yRange=[y_min, y_max])
 
         # Set x-axis limits only
-        self.min_x, self.max_x = np.min(x), np.max(x)
+        self.min_x, self.max_x = x_min, x_max
         self.view_box_main.setLimits(xMin=self.min_x, xMax=self.max_x)
         # Remove any y-axis limits
         self.view_box_main.setLimits(yMin=None, yMax=None)
