@@ -156,6 +156,15 @@ class BrillouinProject:
             raise ValueError(f"Dataset {dataset_name} does not exist in the HDF5 file.")
 
         group = data_group[dataset_name]
+
+        # Enforce float type for numerical attributes
+        if key in ['elastic_peak_ch', 'elastic_peak_ch_uncertainty', 'chi_angle', 'pinhole', 'power', 'polarization',
+                   'scans']:
+            try:
+                value = float(value)
+            except (ValueError, TypeError):
+                value = np.nan
+
         group.attrs[key] = value
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
@@ -1215,8 +1224,17 @@ class BrillouinProject:
                 else:
                     if isinstance(obj, h5py.Group):
                         for attr_key in obj.attrs:
-                            if attr_key not in file2[name].attrs or obj.attrs[attr_key] != file2[name].attrs[attr_key]:
+                            if attr_key not in file2[name].attrs:
                                 differences["altered"].append(name + " attribute " + attr_key)
+                            else:
+                                val1 = obj.attrs[attr_key]
+                                val2 = file2[name].attrs[attr_key]
+                                if isinstance(val1, np.ndarray) or isinstance(val2, np.ndarray):
+                                    if not np.array_equal(val1, val2):
+                                        differences["altered"].append(name + " attribute " + attr_key)
+                                else:
+                                    if val1 != val2:
+                                        differences["altered"].append(name + " attribute " + attr_key)
                         for sub_name in obj:
                             compare_items(name + '/' + sub_name, obj[sub_name])
                     elif isinstance(obj, h5py.Dataset):

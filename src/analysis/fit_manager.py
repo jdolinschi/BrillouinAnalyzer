@@ -256,7 +256,6 @@ class FitManager(QObject):
         self.save_status()
 
     def update_table(self):
-        """Update the file table based on selected pressure and crystal."""
         if not self.project:
             return
 
@@ -265,38 +264,42 @@ class FitManager(QObject):
         default_calibration = self.ui.comboBox_calibration.currentText()
 
         if selected_pressure and selected_crystal:
-            # Clear the table before adding new data
             self.file_model.clear()
 
-            # Use optimized method to find matching files
             matching_files = self.project.find_files_by_pressure_and_crystal(
                 float(selected_pressure), selected_crystal
             )
 
-            # Fetch metadata for all matching files in bulk
-            metadata_keys = ['chi_angle', 'elastic_peak_ch', 'pinhole', 'power', 'polarization', 'scans']
+            metadata_keys = [
+                'chi_angle', 'elastic_peak_ch', 'elastic_peak_ch_uncertainty',
+                'pinhole', 'power', 'polarization', 'scans'
+            ]
             metadata_dict = self.project.get_metadata_for_files(matching_files, keys=metadata_keys)
 
-            # Prepare the data to add to the model
-            files_with_metadata = [
-                (
+            files_with_metadata = []
+            for filename in matching_files:
+                metadata = metadata_dict[filename]
+                elastic_peak_ch = metadata.get('elastic_peak_ch')
+                elastic_peak_ch_uncertainty = metadata.get('elastic_peak_ch_uncertainty')
+
+                # Store elastic_peak_ch and its uncertainty as a tuple
+                elastic_peak_value = (elastic_peak_ch, elastic_peak_ch_uncertainty)
+
+                files_with_metadata.append((
                     filename,
                     default_calibration,  # Use current calibration
-                    metadata_dict[filename].get('chi_angle'),
-                    metadata_dict[filename].get('elastic_peak_ch'),
-                    metadata_dict[filename].get('pinhole'),
-                    metadata_dict[filename].get('power'),
-                    metadata_dict[filename].get('polarization'),
-                    metadata_dict[filename].get('scans')
-                )
-                for filename in matching_files
-            ]
+                    metadata.get('chi_angle'),
+                    elastic_peak_value,  # Store as tuple
+                    metadata.get('pinhole'),
+                    metadata.get('power'),
+                    metadata.get('polarization'),
+                    metadata.get('scans')
+                ))
 
             # Add files to the model without emitting unnecessary signals
             self.file_model.addFilesWithMetadata(files_with_metadata, default_calibration)
             self.project_manager.last_action('Table updated')
         else:
-            # If pressure or crystal is not selected, clear the table
             self.file_model.clear()
 
     def group_changed(self, pressures, crystals, velocities):
@@ -349,27 +352,32 @@ class FitManager(QObject):
                 # Now, for each file, read the data, fit the elastic peak, and save the result
                 for filepath in filepaths:
                     filename = os.path.basename(filepath)
-                    # Get the data from the project
                     data = self.project.get_dataset_data(filename)
                     if data is not None:
-                        # Fit the elastic peak
                         fitter = self.fit_elastic_peak(data)
                         if fitter is not None:
-                            # Get peak center
                             peak_center = fitter.get_parameter('center')
-                            # Save the elastic peak channel in the project metadata
-                            self.project.add_metadata_to_dataset(filename, 'elastic_peak_ch', peak_center)
+                            peak_center_uncertainty = fitter.get_parameter_uncertainty('center')
+                            # Save the elastic peak channel and its uncertainty in the project metadata
+                            self.project.add_metadata_to_dataset(filename, 'elastic_peak_ch', float(peak_center))
+                            self.project.add_metadata_to_dataset(filename, 'elastic_peak_ch_uncertainty',
+                                                                 float(peak_center_uncertainty))
                             # Update the file model
                             row = self.file_model.getRowByFilename(filename)
                             if row is not None:
                                 index = self.file_model.index(row, 3)  # Column 3 is 'Elastic peak Ch'
-                                self.file_model.setData(index, str(peak_center), Qt.UserRole)
-                            # Collect the fit parameters
+                                value = (peak_center, peak_center_uncertainty)
+                                self.file_model.setData(index, value, Qt.UserRole)
+                            # Collect the fit parameters, including uncertainties
                             peak_fit_data = {
-                                'center': fitter.get_parameter('center'),
+                                'center': peak_center,
+                                'center_uncertainty': peak_center_uncertainty,
                                 'amplitude': fitter.get_parameter('amplitude'),
+                                'amplitude_uncertainty': fitter.get_parameter_uncertainty('amplitude'),
                                 'sigma': fitter.get_parameter('sigma'),
+                                'sigma_uncertainty': fitter.get_parameter_uncertainty('sigma'),
                                 'gamma': fitter.get_parameter('gamma'),
+                                'gamma_uncertainty': fitter.get_parameter_uncertainty('gamma'),
                                 'fwhm': fitter.get_parameter('fwhm'),
                                 'area': fitter.get_parameter('area'),
                                 'goodness_of_fit': fitter.goodness_of_fit(),
@@ -377,7 +385,6 @@ class FitManager(QObject):
                                 'x_max': fitter.x_max,
                                 'x_fit': fitter.x_fit,
                                 'y_fit': fitter.y_fit,
-                                # Add any other parameters if needed
                             }
                             # Save the peak fit data to the project
                             self.project.update_dataset_peak_fit(filename, 'elastic_peak', peak_fit_data)
@@ -441,14 +448,21 @@ class FitManager(QObject):
                 metadata_list = []
                 for row in range(1, row_count + 1):
                     filename = self.file_model.data(self.file_model.index(row, 0), Qt.DisplayRole)
+                    elastic_peak_value = self.file_model.get_raw_value(row, 3)
+                    if elastic_peak_value is not None and isinstance(elastic_peak_value, tuple):
+                        elastic_peak_ch, elastic_peak_ch_uncertainty = elastic_peak_value
+                    else:
+                        elastic_peak_ch = None
+                        elastic_peak_ch_uncertainty = None
                     metadata = {
                         'calibration': self.file_model.data(self.file_model.index(row, 1), Qt.DisplayRole),
-                        'chi_angle': self.file_model.data(self.file_model.index(row, 2), Qt.DisplayRole),
-                        'elastic_peak_ch': self.file_model.data(self.file_model.index(row, 3), Qt.DisplayRole),
-                        'pinhole': self.file_model.data(self.file_model.index(row, 4), Qt.DisplayRole),
-                        'power': self.file_model.data(self.file_model.index(row, 5), Qt.DisplayRole),
-                        'polarization': self.file_model.data(self.file_model.index(row, 6), Qt.DisplayRole),
-                        'scans': self.file_model.data(self.file_model.index(row, 7), Qt.DisplayRole)
+                        'chi_angle': self.file_model.get_raw_value(row, 2),
+                        'elastic_peak_ch': elastic_peak_ch,
+                        'elastic_peak_ch_uncertainty': elastic_peak_ch_uncertainty,
+                        'pinhole': self.file_model.get_raw_value(row, 4),
+                        'power': self.file_model.get_raw_value(row, 5),
+                        'polarization': self.file_model.get_raw_value(row, 6),
+                        'scans': self.file_model.get_raw_value(row, 7)
                     }
                     filenames.append(filename)
                     metadata_list.append(metadata)
@@ -459,8 +473,8 @@ class FitManager(QObject):
         num_channels = len(data)
         # Determine central channel
         central_channel = num_channels // 2
-        # Determine fit range (±8% of total channels)
-        delta = int(0.08 * num_channels)
+        # Determine fit range (±4% of total channels)
+        delta = int(0.06 * num_channels)
         start = max(0, central_channel - delta)
         end = min(num_channels, central_channel + delta)
         x = np.arange(start, end)
@@ -468,10 +482,10 @@ class FitManager(QObject):
         # Decide if we need to invert the data
         inverted = False
         # Initialize the fitter
-        fitter = VoigtFitter(inverted=inverted, fit_baseline=True, method='pseudo_voigt')
+        fitter = VoigtFitter(inverted=inverted, fit_baseline=True, method='voigt')
         try:
             # Perform the fit
-            fitter.fit(x, y)
+            fitter.fit(x, y, increase_fit_time_on_failure=True)
             # Set x_min, x_max, x_fit, y_fit attributes
             fitter.x_min = x[0]
             fitter.x_max = x[-1]

@@ -66,11 +66,11 @@ class FittingPlotWidget(QObject):
         self.ui.checkBox_fitMatchY.clicked.connect(self.match_y_checkbox)
 
         # Keep track of the initial view range for resetting
-        self.initial_view_range = None
+        self.initial_view_range_main = None
 
     def reset_view_main(self):
-        if self.initial_view_range:
-            self.plot_item_main.setRange(xRange=self.initial_view_range[0], yRange=self.initial_view_range[1])
+        if self.initial_view_range_main:
+            self.plot_item_main.setRange(xRange=self.initial_view_range_main[0], yRange=self.initial_view_range_main[1])
             self.view_box_main.setLimits(
                 xMin=self.min_x, xMax=self.max_x,
             )
@@ -156,7 +156,7 @@ class FittingPlotWidget(QObject):
         # Enable auto-ranging to adjust the view to the new data
         self.plot_item_main.enableAutoRange()
         self.plot_item_main.autoRange()
-        self.initial_view_range = self.plot_item_main.viewRange()
+        self.initial_view_range_main = self.plot_item_main.viewRange()
 
         # Set x-axis limits only
         self.min_x, self.max_x = np.min(x), np.max(x)
@@ -168,8 +168,8 @@ class FittingPlotWidget(QObject):
         self.plot_item_main.disableAutoRange()
 
     def reset_view(self):
-        if self.initial_view_range:
-            self.plot_item_main.setRange(xRange=self.initial_view_range[0], yRange=self.initial_view_range[1])
+        if self.initial_view_range_main:
+            self.plot_item_main.setRange(xRange=self.initial_view_range_main[0], yRange=self.initial_view_range_main[1])
             self.view_box_main.setLimits(
                 xMin=self.min_x, xMax=self.max_x,
             )
@@ -200,4 +200,4 @@ class FittingPlotWidget(QObject):
         self.view_box_main.disable_zoom_mode()
 
         # Clear the initial view range
-        self.initial_view_range = None
+        self.initial_view_range_main = None

@@ -116,8 +116,8 @@ class FittingViewBoxMain(ViewBox):
             end = self.mapSceneToView(ev.scenePos())
             x0, x1 = sorted([start.x(), end.x()])
             y0, y1 = sorted([start.y(), end.y()])
-            self.fitting_plot_widget.plot_item.setXRange(x0, x1, padding=0)
-            self.fitting_plot_widget.plot_item.setYRange(y0, y1, padding=0)
+            self.fitting_plot_widget.plot_item_main.setXRange(x0, x1, padding=0)
+            self.fitting_plot_widget.plot_item_main.setYRange(y0, y1, padding=0)
             self.zoom_start_pos = None
             # Re-enable view limits
             self.setLimits(xMin=None, xMax=None, yMin=None, yMax=None)  # Remove limits after zooming
@@ -126,8 +126,8 @@ class FittingViewBoxMain(ViewBox):
             current_pos = self.mapSceneToView(ev.scenePos())
             x0, x1 = sorted([self.zoom_start_pos.x(), current_pos.x()])
             y0, y1 = sorted([self.zoom_start_pos.y(), current_pos.y()])
-            self.fitting_plot_widget.plot_item.setXRange(x0, x1, padding=0)
-            self.fitting_plot_widget.plot_item.setYRange(y0, y1, padding=0)
+            self.fitting_plot_widget.plot_item_main.setXRange(x0, x1, padding=0)
+            self.fitting_plot_widget.plot_item_main.setYRange(y0, y1, padding=0)
             if self.zoom_rect:
                 self.removeItem(self.zoom_rect)
                 self.zoom_rect = None

@@ -115,6 +115,25 @@ class VoigtFitter:
 
         return self.get_fit_curve(x)
 
+    def get_parameter_uncertainty(self, param_name):
+        if self.fit_params is None or self.fit_cov is None:
+            raise ValueError("No fit performed yet or covariance not available.")
+
+        param_names = ['amplitude', 'center', 'sigma', 'gamma']
+        if self.method == 'asymmetric_pseudo_voigt':
+            param_names.append('asymmetry')
+        if self.fit_baseline:
+            param_names.append('baseline')
+
+        param_map = dict(zip(param_names, range(len(param_names))))
+        if param_name not in param_map:
+            raise ValueError(f"Parameter '{param_name}' not recognized.")
+
+        index = param_map[param_name]
+        variance = self.fit_cov[index, index]
+        uncertainty = np.sqrt(variance)
+        return uncertainty
+
     def get_fit_curve(self, x):
         if self.fit_params is None:
             raise ValueError("No fit performed yet.")

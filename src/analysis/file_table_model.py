@@ -58,6 +58,12 @@ class FileTableModel(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex()):
         return len(self._headers)
 
+    def get_raw_value(self, row, col):
+        if row == 0:
+            return self._default_values[col]['value']
+        else:
+            return self._files[row - 1][col]
+
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
             return None
@@ -76,9 +82,19 @@ class FileTableModel(QAbstractTableModel):
             # Regular file rows
             value = self._files[row - 1][col]  # Adjust for default row
             if role in (Qt.DisplayRole, Qt.EditRole):
-                if isinstance(value, np.float64):
-                    value = float(value)
-                return "" if value is None else value
+                if col == 3 and isinstance(value, tuple):
+                    # 'Elastic peak Ch' column with uncertainty
+                    center, uncertainty = value
+                    if center is not None and uncertainty is not None:
+                        return f"{float(center):.2f} ± {float(uncertainty):.3f}"
+                    elif center is not None:
+                        return f"{float(center):.2f}"
+                    else:
+                        return ""
+                else:
+                    if isinstance(value, np.float64):
+                        value = float(value)
+                    return "" if value is None else value
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
@@ -103,12 +119,23 @@ class FileTableModel(QAbstractTableModel):
             return False
         else:
             # Regular file rows
-            if col in [0, 1, 3]:
+            if col in [0, 1]:
                 if role != Qt.UserRole:
                     return False  # Only allow setting data in these columns programmatically
             if role == Qt.EditRole or role == Qt.UserRole:
-                if not self._validate_and_set_data(index, value):
-                    return False
+                if col == 3 and isinstance(value, str):
+                    # Parse the string to extract center and uncertainty
+                    try:
+                        center_str, uncertainty_str = value.split('±')
+                        center = float(center_str.strip())
+                        uncertainty = float(uncertainty_str.strip())
+                        self._files[row - 1][col] = (center, uncertainty)
+                    except ValueError:
+                        # If parsing fails, store as None
+                        self._files[row - 1][col] = (None, None)
+                else:
+                    if not self._validate_and_set_data(index, value):
+                        return False
                 self._emit_data_changed(index)
                 return True
         return False
@@ -180,9 +207,33 @@ class FileTableModel(QAbstractTableModel):
     def addFilesWithMetadata(self, files_with_metadata, default_calibration=None):
         adjusted_files = []
         for metadata in files_with_metadata:
-            metadata = list(metadata)
-            metadata[1] = default_calibration
-            adjusted_files.append(metadata)
+            # Unpack the metadata tuple
+            (
+                filename,
+                calibration,
+                chi_angle,
+                elastic_peak_value,  # This is now a tuple (center, uncertainty)
+                pinhole,
+                power,
+                polarization,
+                scans
+            ) = metadata
+
+            # Ensure calibration is set to default
+            calibration = default_calibration
+
+            # Prepare the row data
+            row_data = [
+                filename,
+                calibration,
+                chi_angle,
+                elastic_peak_value,  # Already a tuple
+                pinhole,
+                power,
+                polarization,
+                scans
+            ]
+            adjusted_files.append(row_data)
         self._add_files_to_model(adjusted_files, emit_signal=False)
 
     def sort(self, column, order=Qt.AscendingOrder):
@@ -209,10 +260,27 @@ class FileTableModel(QAbstractTableModel):
             row = index.row() - 1  # Adjust for default row
 
             if column in [0, 1]:  # Filename or Calibration column
-                self._files[row][column] = value  # Store the string value
+                self._files[row][column] = value
+            elif column == 3:  # 'Elastic peak Ch' column
+                if isinstance(value, tuple):
+                    self._files[row][column] = value
+                elif isinstance(value, str):
+                    # Try to parse the string
+                    try:
+                        parts = value.split('±')
+                        center = float(parts[0].strip())
+                        if len(parts) > 1:
+                            uncertainty = float(parts[1].strip())
+                        else:
+                            uncertainty = None
+                        self._files[row][column] = (center, uncertainty)
+                    except ValueError:
+                        self._files[row][column] = (None, None)
+                else:
+                    self._files[row][column] = (None, None)
             else:
-                # For numeric columns (including Elastic peak Ch)
-                value = float(value) if value else None  # Convert to float or None for empty
+                # For numeric columns
+                value = float(value) if value else None
                 self._files[row][column] = value
             return True
         except ValueError:
