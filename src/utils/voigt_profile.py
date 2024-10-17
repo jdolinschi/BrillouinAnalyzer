@@ -52,7 +52,7 @@ class VoigtFitter:
         self.fit_cov = None
         self.inverted = inverted
         self.method = method
-        self.fit_baseline = fit_baseline  # New attribute to control baseline fitting
+        self.fit_baseline = fit_baseline  # Attribute to control baseline fitting
 
     def fit(self, x, y, initial_guess=None, maxfev=1000, increase_fit_time_on_failure=False):
         self.x = x
@@ -218,3 +218,40 @@ class VoigtFitter:
         ss_res = np.sum(residuals ** 2)
         ss_tot = np.sum((self.y - np.mean(self.y)) ** 2)
         return 1 - (ss_res / ss_tot)
+
+    # Add properties for x_min, x_max, y_min, y_max, x_fit, y_fit
+    @property
+    def x_min(self):
+        if self.x is None:
+            raise ValueError("No data has been fitted yet.")
+        return np.min(self.x)
+
+    @property
+    def x_max(self):
+        if self.x is None:
+            raise ValueError("No data has been fitted yet.")
+        return np.max(self.x)
+
+    @property
+    def y_min(self):
+        if self.y is None:
+            raise ValueError("No data has been fitted yet.")
+        return np.min(self.y)
+
+    @property
+    def y_max(self):
+        if self.y is None:
+            raise ValueError("No data has been fitted yet.")
+        return np.max(self.y)
+
+    @property
+    def x_fit(self):
+        if self.x is None:
+            raise ValueError("No data has been fitted yet.")
+        return self.x
+
+    @property
+    def y_fit(self):
+        if self.fit_params is None:
+            raise ValueError("No fit has been performed yet.")
+        return self.get_fit_curve(self.x)
