@@ -109,6 +109,7 @@ class FittingPlotWidget(QObject):
         # Re-plot the data accordingly
         if self.x_data is not None and self.y_data is not None:
             self.plot_data(self.x_data, self.y_data)
+            self.reset_view_main()
 
     def reset_view_left(self):
         # Reset left plot view
@@ -202,44 +203,16 @@ class FittingPlotWidget(QObject):
             # Include center channel in both sides
             index_center = int(np.round(center))
 
-            print('first index_center: ', index_center)
-
             # Ensure indices are within bounds
             index_center = max(0, min(num_channels - 1, index_center))
-
-            print('second index_center: ', index_center)
-
-            print('x[index_center]: ', x[index_center])
-            print('y[index_center]: ', y[index_center])
 
             # Left side includes indices 0 to index_center inclusive
             x_left = x[0:index_center + 1]
             y_left = y[0:index_center + 1]
 
-            print('x_left[-1]: ', x_left[-1])
-            print('y_left[-1]: ', y_left[-1])
-
             # Right side includes indices index_center to end
             x_right = x[index_center:]
             y_right = y[index_center:]
-
-            print('x_right[0]: ', x_right[0])
-            print('y_right[0]: ', y_right[0])
-
-            print('len x: ', len(x))
-            print('len y: ', len(y))
-            print('index_center: ', index_center)
-            print("len x_left: ", len(x_left))
-            print("len y_left: ", len(y_left))
-            print("len x_right: ", len(x_right))
-            print("len y_right: ", len(y_right))
-            print('x_left[-1]: ', x_left[-1])
-            print('x_right[0]: ', x_right[0])
-            print('x_min: ', x_min)
-            print('x_max: ', x_max)
-            print('y_min: ', y_min)
-            print('y_max: ', y_max)
-            print('--------------------------------')
 
             # Adjust x-values
             x_left_adjusted = (center - x_left[::-1])  # Reverse x_left and adjust
@@ -250,7 +223,7 @@ class FittingPlotWidget(QObject):
             # Plot left and right data
             self.data_curve_left = self.plot_item_main.plot(x_left_adjusted, y_left_adjusted, pen='lightgreen')
 
-            self.data_curve_right = self.plot_item_main.plot(x_right_adjusted, y_right, pen='lightblue')
+            self.data_curve_right = self.plot_item_main.plot(x_right_adjusted, y_right, pen='lightred')
 
             # Combine adjusted x and y data for computing x range
             x_combined = np.concatenate((x_left_adjusted, x_right_adjusted))

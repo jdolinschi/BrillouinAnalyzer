@@ -851,8 +851,11 @@ class BrillouinProject:
         # Initialize an empty dictionary to store peak fit parameters
         peak_fit = {}
 
-        # Retrieve attributes (center, amplitude, sigma, gamma, fwhm, area, goodness_of_fit, etc.)
-        params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area', 'goodness_of_fit', 'x_min', 'x_max']
+        # Retrieve attributes (including uncertainties)
+        params = ['center', 'center_uncertainty', 'amplitude', 'amplitude_uncertainty',
+                  'sigma', 'sigma_uncertainty', 'gamma', 'gamma_uncertainty',
+                  'fwhm', 'fwhm_uncertainty', 'area', 'area_uncertainty',
+                  'goodness_of_fit', 'x_min', 'x_max', 'method']
         for param in params:
             attr_name = f'{peak_type}_peak_{param}'
             if attr_name in group.attrs:

@@ -103,9 +103,14 @@ class CalibrationManager(QObject):
                     right_peak_fit and 'center' in right_peak_fit and not np.isnan(right_peak_fit['center']):
                 # Get centers and uncertainties
                 x1 = left_peak_fit['center']
-                x1_uncertainty = left_peak_fit.get('center_uncertainty', 0)
+                x1_uncertainty = left_peak_fit.get('center_uncertainty')
                 x2 = right_peak_fit['center']
-                x2_uncertainty = right_peak_fit.get('center_uncertainty', 0)
+                x2_uncertainty = right_peak_fit.get('center_uncertainty')
+                # Ensure uncertainties are not None or NaN
+                if x1_uncertainty is None or np.isnan(x1_uncertainty):
+                    x1_uncertainty = 0
+                if x2_uncertainty is None or np.isnan(x2_uncertainty):
+                    x2_uncertainty = 0
                 # Get calibration parameters
                 laser_wavelength_text = self.ui.lineEdit_calibLaserWavelength.text()
                 mirror_spacing_text = self.ui.lineEdit_calibMirrorSpacing.text()
@@ -147,7 +152,6 @@ class CalibrationManager(QObject):
                     print("Calibration parameters not set")
             else:
                 print("Both peaks are not fitted")
-
 
     def save_current_calibration(self):
         if not self.project:
@@ -622,17 +626,27 @@ class CalibrationManager(QObject):
 
     def update_left_peak_list_from_saved_fit(self, peak_fit):
         self.ui.listWidget_calibLeftPeak.clear()
+        self.ui.listWidget_calibLeftPeak.addItem(f"Fit Method: {peak_fit.get('method', '')}")
         params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area']
         for param in params:
             value = peak_fit.get(param)
-            self.ui.listWidget_calibLeftPeak.addItem(f"{param.capitalize()}: {value}")
+            uncertainty = peak_fit.get(f'{param}_uncertainty')
+            if uncertainty is not None and not np.isnan(uncertainty):
+                self.ui.listWidget_calibLeftPeak.addItem(f"{param.capitalize()}: {value:.6f} ± {uncertainty:.6f}")
+            else:
+                self.ui.listWidget_calibLeftPeak.addItem(f"{param.capitalize()}: {value:.6f}")
 
     def update_right_peak_list_from_saved_fit(self, peak_fit):
         self.ui.listWidget_calibRightPeak.clear()
+        self.ui.listWidget_calibRightPeak.addItem(f"Fit Method: {peak_fit.get('method', '')}")
         params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area']
         for param in params:
             value = peak_fit.get(param)
-            self.ui.listWidget_calibRightPeak.addItem(f"{param.capitalize()}: {value}")
+            uncertainty = peak_fit.get(f'{param}_uncertainty')
+            if uncertainty is not None and not np.isnan(uncertainty):
+                self.ui.listWidget_calibRightPeak.addItem(f"{param.capitalize()}: {value:.6f} ± {uncertainty:.6f}")
+            else:
+                self.ui.listWidget_calibRightPeak.addItem(f"{param.capitalize()}: {value:.6f}")
 
     def plot_calibration_data(self, data):
         # Store the x and y data for fitting
