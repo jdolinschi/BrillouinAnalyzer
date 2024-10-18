@@ -21,6 +21,17 @@ class CalibrationFileTableModel(QAbstractTableModel):
                 values.append(nm_per_channel)
         return values
 
+    def get_nm_per_channel_values_and_uncertainties(self):
+        values = []
+        uncertainties = []
+        for file_data in self._files:
+            nm_per_channel = file_data['nm_per_channel']
+            nm_per_channel_uncertainty = file_data['nm_per_channel_uncertainty']
+            if nm_per_channel is not None and not np.isnan(nm_per_channel):
+                values.append(nm_per_channel)
+                uncertainties.append(nm_per_channel_uncertainty if nm_per_channel_uncertainty is not None else np.nan)
+        return values, uncertainties
+
     def get_ghz_per_channel_values(self):
         values = []
         for file_data in self._files:
@@ -28,6 +39,17 @@ class CalibrationFileTableModel(QAbstractTableModel):
             if ghz_per_channel is not None and not np.isnan(ghz_per_channel):
                 values.append(ghz_per_channel)
         return values
+
+    def get_ghz_per_channel_values_and_uncertainties(self):
+        values = []
+        uncertainties = []
+        for file_data in self._files:
+            ghz_per_channel = file_data['ghz_per_channel']
+            ghz_per_channel_uncertainty = file_data['ghz_per_channel_uncertainty']
+            if ghz_per_channel is not None and not np.isnan(ghz_per_channel):
+                values.append(ghz_per_channel)
+                uncertainties.append(ghz_per_channel_uncertainty if ghz_per_channel_uncertainty is not None else np.nan)
+        return values, uncertainties
 
     def rowCount(self, parent=QModelIndex()):
         return len(self._files)
@@ -42,16 +64,35 @@ class CalibrationFileTableModel(QAbstractTableModel):
         row = index.row()
         col = index.column()
 
-        value = self._files[row][col]
+        file_data = self._files[row]
 
         if role in (Qt.DisplayRole, Qt.EditRole):
-            if isinstance(value, (np.float64, float)):
-                value = float(value)
-                return "" if np.isnan(value) else f"{value:.6f}"
-            return "" if value is None else value
+            if col == 0:  # Filename
+                return file_data['filename']
+            elif col == 1:  # Channels
+                return file_data['channels'] if file_data['channels'] is not None else ""
+            elif col == 2:  # nm/Channel
+                value = file_data['nm_per_channel']
+                uncertainty = file_data['nm_per_channel_uncertainty']
+                if value is not None and not np.isnan(value):
+                    if uncertainty is not None and not np.isnan(uncertainty):
+                        return f"{value:.6f} ± {uncertainty:.6f}"
+                    else:
+                        return f"{value:.6f}"
+                else:
+                    return ""
+            elif col == 3:  # GHz/Channel
+                value = file_data['ghz_per_channel']
+                uncertainty = file_data['ghz_per_channel_uncertainty']
+                if value is not None and not np.isnan(value):
+                    if uncertainty is not None and not np.isnan(uncertainty):
+                        return f"{value:.6f} ± {uncertainty:.6f}"
+                    else:
+                        return f"{value:.6f}"
+                else:
+                    return ""
         elif role == Qt.BackgroundRole:
-            if self._plotted_file is not None and self._files[row][0] == self._plotted_file:
-                # Return a special background color
+            if self._plotted_file is not None and file_data['filename'] == self._plotted_file:
                 return QBrush(QColor(255, 255, 0, 127))  # Semi-transparent yellow
         return None
 
@@ -60,7 +101,7 @@ class CalibrationFileTableModel(QAbstractTableModel):
         prev_row = None
         if self._plotted_file is not None:
             for row, file_data in enumerate(self._files):
-                if file_data[0] == self._plotted_file:
+                if file_data['filename'] == self._plotted_file:
                     prev_row = row
                     break
         # Update the plotted file
@@ -69,7 +110,7 @@ class CalibrationFileTableModel(QAbstractTableModel):
         new_row = None
         if self._plotted_file is not None:
             for row, file_data in enumerate(self._files):
-                if file_data[0] == self._plotted_file:
+                if file_data['filename'] == self._plotted_file:
                     new_row = row
                     break
         # Emit dataChanged for the previous and new rows
@@ -106,7 +147,14 @@ class CalibrationFileTableModel(QAbstractTableModel):
     def addFiles(self, files):
         new_files = []
         for filename in files:
-            file_data = [filename, None, None, None]
+            file_data = {
+                'filename': filename,
+                'channels': None,
+                'nm_per_channel': None,
+                'nm_per_channel_uncertainty': None,
+                'ghz_per_channel': None,
+                'ghz_per_channel_uncertainty': None,
+            }
             new_files.append(file_data)
         self._add_files_to_model(new_files)
 
@@ -117,22 +165,25 @@ class CalibrationFileTableModel(QAbstractTableModel):
 
     def dataChangedSignal(self, index):
         row = index.row()
-        filename = self._files[row][0]
+        filename = self._files[row]['filename']
         metadata = self._get_metadata(row)
         self.data_changed_signal.emit(row, filename, metadata)
 
     def _get_metadata(self, row):
         return {
-            'channels': self._files[row][1],
-            'nm_per_channel': self._files[row][2],
-            'ghz_per_channel': self._files[row][3]
+            'channels': self._files[row]['channels'],
+            'nm_per_channel': self._files[row]['nm_per_channel'],
+            'ghz_per_channel': self._files[row]['ghz_per_channel']
         }
 
-    def update_calibration_constants(self, filename, nm_per_channel, ghz_per_channel):
+    def update_calibration_constants(self, filename, nm_per_channel, nm_per_channel_uncertainty, ghz_per_channel,
+                                     ghz_per_channel_uncertainty):
         for row, file_data in enumerate(self._files):
-            if file_data[0] == filename:
-                file_data[2] = nm_per_channel  # nm_per_channel column
-                file_data[3] = ghz_per_channel  # ghz_per_channel column
+            if file_data['filename'] == filename:
+                file_data['nm_per_channel'] = nm_per_channel
+                file_data['nm_per_channel_uncertainty'] = nm_per_channel_uncertainty
+                file_data['ghz_per_channel'] = ghz_per_channel
+                file_data['ghz_per_channel_uncertainty'] = ghz_per_channel
                 index_nm = self.index(row, 2)
                 index_ghz = self.index(row, 3)
                 self.dataChanged.emit(index_nm, index_nm, [Qt.DisplayRole])
@@ -141,21 +192,26 @@ class CalibrationFileTableModel(QAbstractTableModel):
 
     def clear_calibration_constants(self, filename):
         for row, file_data in enumerate(self._files):
-            if file_data[0] == filename:
-                file_data[2] = None
-                file_data[3] = None
+            if file_data['filename'] == filename:
+                file_data['nm_per_channel'] = None
+                file_data['nm_per_channel_uncertainty'] = None
+                file_data['ghz_per_channel'] = None
+                file_data['ghz_per_channel_uncertainty'] = None
                 index_nm = self.index(row, 2)
                 index_ghz = self.index(row, 3)
                 self.dataChanged.emit(index_nm, index_nm, [Qt.DisplayRole])
                 self.dataChanged.emit(index_ghz, index_ghz, [Qt.DisplayRole])
                 break
 
-    def update_file_data(self, filename, channels, nm_per_channel, ghz_per_channel):
+    def update_file_data(self, filename, channels, nm_per_channel, nm_per_channel_uncertainty, ghz_per_channel,
+                         ghz_per_channel_uncertainty):
         for row, file_data in enumerate(self._files):
-            if file_data[0] == filename:
-                file_data[1] = channels
-                file_data[2] = nm_per_channel
-                file_data[3] = ghz_per_channel
+            if file_data['filename'] == filename:
+                file_data['channels'] = channels
+                file_data['nm_per_channel'] = nm_per_channel
+                file_data['nm_per_channel_uncertainty'] = nm_per_channel_uncertainty
+                file_data['ghz_per_channel'] = ghz_per_channel
+                file_data['ghz_per_channel_uncertainty'] = ghz_per_channel_uncertainty
                 index_channels = self.index(row, 1)
                 index_nm = self.index(row, 2)
                 index_ghz = self.index(row, 3)

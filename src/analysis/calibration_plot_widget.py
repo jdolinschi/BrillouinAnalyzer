@@ -486,10 +486,10 @@ class CalibrationViewBox(ViewBox):
                 fitter = VoigtFitter(inverted=inverted, method='pseudo_voigt', fit_baseline=True)
                 try:
                     fitter.fit(x_fit, y_fit, increase_fit_time_on_failure=True)
-                    fitter.x_min = x_min
-                    fitter.x_max = x_max
-                    fitter.x_fit = x_fit
-                    fitter.y_fit = fitter.get_fit_curve(x_fit)
+                    #fitter.x_min = x_min
+                    #fitter.x_max = x_max
+                    #fitter.x_fit = x_fit
+                    #fitter.y_fit = fitter.get_fit_curve(x_fit)
                     fit_curve = fitter.get_fit_curve(x_fit)
                     center = fitter.get_parameter('center')
                     if np.min(x_data) < center < np.max(x_data):

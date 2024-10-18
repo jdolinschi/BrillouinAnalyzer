@@ -487,10 +487,10 @@ class FitManager(QObject):
             # Perform the fit
             fitter.fit(x, y, increase_fit_time_on_failure=True)
             # Set x_min, x_max, x_fit, y_fit attributes
-            fitter.x_min = x[0]
-            fitter.x_max = x[-1]
-            fitter.x_fit = x
-            fitter.y_fit = fitter.get_fit_curve(x)
+            #fitter.x_min = x[0]
+            #fitter.x_max = x[-1]
+            #fitter.x_fit = x
+            #fitter.y_fit = fitter.get_fit_curve(x)
             # Check goodness of fit
             gof = fitter.goodness_of_fit()
             print('gof: ', gof)

@@ -115,6 +115,27 @@ class VoigtFitter:
 
         return self.get_fit_curve(x)
 
+    def get_all_parameter_uncertainties(self):
+        if self.fit_params is None or self.fit_cov is None:
+            raise ValueError("No fit performed yet or covariance not available.")
+
+        param_names = ['amplitude', 'center', 'sigma', 'gamma']
+        if self.method == 'asymmetric_pseudo_voigt':
+            param_names.append('asymmetry')
+        if self.fit_baseline:
+            param_names.append('baseline')
+
+        uncertainties = {}
+        for i, param in enumerate(param_names):
+            variance = self.fit_cov[i, i]
+            uncertainty = np.sqrt(variance)
+            uncertainties[param] = uncertainty
+
+        # Calculate uncertainties for derived parameters
+        uncertainties['fwhm'] = self.calculate_fwhm_uncertainty()
+        uncertainties['area'] = self.calculate_area_uncertainty()
+        return uncertainties
+
     def get_parameter_uncertainty(self, param_name):
         if self.fit_params is None or self.fit_cov is None:
             raise ValueError("No fit performed yet or covariance not available.")
@@ -196,6 +217,38 @@ class VoigtFitter:
             return 0.5346 * 2 * gamma + np.sqrt(
                 0.2166 * (2 * gamma) ** 2 + (2 * sigma * np.sqrt(2 * np.log(2))) ** 2
             )
+
+    def calculate_area_uncertainty(self):
+        # Implement error propagation for area uncertainty
+        # Simplified example; please adjust as needed
+        amplitude_unc = self.get_parameter_uncertainty('amplitude')
+        sigma_unc = self.get_parameter_uncertainty('sigma')
+        gamma_unc = self.get_parameter_uncertainty('gamma')
+        amplitude = self.get_parameter('amplitude')
+        sigma = self.get_parameter('sigma')
+        gamma = self.get_parameter('gamma')
+        area_unc = np.sqrt(
+            (np.pi * (gamma + sigma) * amplitude_unc) ** 2 +
+            (amplitude * np.pi * gamma_unc) ** 2 +
+            (amplitude * np.pi * sigma_unc) ** 2
+        )
+        return area_unc
+
+    def calculate_fwhm_uncertainty(self):
+        # Implement error propagation for fwhm uncertainty
+        # Simplified example; please adjust as needed
+        sigma_unc = self.get_parameter_uncertainty('sigma')
+        gamma_unc = self.get_parameter_uncertainty('gamma')
+        sigma = self.get_parameter('sigma')
+        gamma = self.get_parameter('gamma')
+        # Error propagation formula for fwhm
+        fwhm_unc = np.sqrt(
+            (0.5346 * 2 * gamma_unc) ** 2 +
+            (np.sqrt(0.2166 * (2 * gamma) ** 2 + (2 * sigma * np.sqrt(2 * np.log(2))) ** 2) *
+             ((0.2166 * (2 * gamma) * 2 * gamma_unc) +
+              (2 * np.sqrt(2 * np.log(2)) * sigma_unc))) ** 2
+        )
+        return fwhm_unc
 
     def calculate_area(self):
         amplitude = self.fit_params[0]

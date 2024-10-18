@@ -53,23 +53,45 @@ class CalibrationManager(QObject):
             self.populate_calibration_dropdown()
 
     def update_calibration_stats(self):
-        nm_values = self.calib_files_model.get_nm_per_channel_values()
-        ghz_values = self.calib_files_model.get_ghz_per_channel_values()
+        nm_values, nm_uncertainties = self.calib_files_model.get_nm_per_channel_values_and_uncertainties()
+        ghz_values, ghz_uncertainties = self.calib_files_model.get_ghz_per_channel_values_and_uncertainties()
 
-        if len(nm_values) >= 2:
-            nm_avg = np.mean(nm_values)
-            nm_std = np.std(nm_values, ddof=1)
-            self.ui.label_calibStatsNM.setText(f"{nm_avg:.6f} ± {nm_std:.6f}")
+        # Filter out NaN values
+        nm_values_filtered = []
+        nm_weights = []
+        for value, uncertainty in zip(nm_values, nm_uncertainties):
+            if not np.isnan(value) and not np.isnan(uncertainty) and uncertainty > 0:
+                nm_values_filtered.append(value)
+                nm_weights.append(1 / uncertainty ** 2)
+
+        if len(nm_values_filtered) >= 1:
+            # Compute weighted mean
+            weights = np.array(nm_weights)
+            values = np.array(nm_values_filtered)
+            nm_avg = np.average(values, weights=weights)
+            nm_uncertainty = np.sqrt(1 / np.sum(weights))
+            self.ui.label_calibStatsNM.setText(f"{nm_avg:.6f} ± {nm_uncertainty:.6f}")
         else:
             self.ui.label_calibStatsNM.setText("")
 
-        if len(ghz_values) >= 2:
-            ghz_avg = np.mean(ghz_values)
-            ghz_std = np.std(ghz_values, ddof=1)
-            self.ui.label_calibStatsGHz.setText(f"{ghz_avg:.6f} ± {ghz_std:.6f}")
+        # Similar handling for ghz_per_channel
+        ghz_values_filtered = []
+        ghz_weights = []
+        for value, uncertainty in zip(ghz_values, ghz_uncertainties):
+            if not np.isnan(value) and not np.isnan(uncertainty) and uncertainty > 0:
+                ghz_values_filtered.append(value)
+                ghz_weights.append(1 / uncertainty ** 2)
+
+        if len(ghz_values_filtered) >= 1:
+            weights = np.array(ghz_weights)
+            values = np.array(ghz_values_filtered)
+            ghz_avg = np.average(values, weights=weights)
+            ghz_uncertainty = np.sqrt(1 / np.sum(weights))
+            self.ui.label_calibStatsGHz.setText(f"{ghz_avg:.6f} ± {ghz_uncertainty:.6f}")
         else:
             self.ui.label_calibStatsGHz.setText("")
 
+    # Updated attempt_calculate_calibration_constants in CalibrationManager
     def attempt_calculate_calibration_constants(self, filename):
         if self.project:
             calibration_name = self.ui.comboBox_calibSelect.currentText()
@@ -78,7 +100,12 @@ class CalibrationManager(QObject):
             right_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'right')
             # Check if centers are valid
             if left_peak_fit and 'center' in left_peak_fit and not np.isnan(left_peak_fit['center']) and \
-               right_peak_fit and 'center' in right_peak_fit and not np.isnan(right_peak_fit['center']):
+                    right_peak_fit and 'center' in right_peak_fit and not np.isnan(right_peak_fit['center']):
+                # Get centers and uncertainties
+                x1 = left_peak_fit['center']
+                x1_uncertainty = left_peak_fit.get('center_uncertainty', 0)
+                x2 = right_peak_fit['center']
+                x2_uncertainty = right_peak_fit.get('center_uncertainty', 0)
                 # Get calibration parameters
                 laser_wavelength_text = self.ui.lineEdit_calibLaserWavelength.text()
                 mirror_spacing_text = self.ui.lineEdit_calibMirrorSpacing.text()
@@ -91,21 +118,28 @@ class CalibrationManager(QObject):
                         # Perform calculation
                         calibration = BrillouinCalibration()
                         calibration.set_parameters(laser_wavelength, mirror_spacing, scattering_angle)
-                        x1 = left_peak_fit['center']
-                        x2 = right_peak_fit['center']
-                        calibration.set_peak_positions(x1, x2)
+                        calibration.set_peak_positions(x1, x2, x1_uncertainty, x2_uncertainty)
                         calibration.calculate()
                         results = calibration.get_results()
                         nm_per_channel = results['nm_per_channel']
+                        nm_per_channel_uncertainty = results['nm_per_channel_uncertainty']
                         ghz_per_channel = results['ghz_per_channel']
+                        ghz_per_channel_uncertainty = results['ghz_per_channel_uncertainty']
+
                         # Update the table model
-                        self.calib_files_model.update_calibration_constants(filename, nm_per_channel, ghz_per_channel)
+                        self.calib_files_model.update_calibration_constants(
+                            filename, nm_per_channel, nm_per_channel_uncertainty, ghz_per_channel,
+                            ghz_per_channel_uncertainty
+                        )
+
                         # Update the calibration file data in the project
                         self.project.update_calibration_file_data(
                             calibration_name,
                             filename,
                             nm_per_channel=nm_per_channel,
-                            ghz_per_channel=ghz_per_channel
+                            nm_per_channel_uncertainty=nm_per_channel_uncertainty,
+                            ghz_per_channel=ghz_per_channel,
+                            ghz_per_channel_uncertainty=ghz_per_channel_uncertainty
                         )
                     except ValueError as e:
                         print(f"Error in calibration calculation: {e}")
@@ -153,13 +187,27 @@ class CalibrationManager(QObject):
             filename = self.calib_files_model.data(filename_index, Qt.DisplayRole)
 
             channels_text = self.calib_files_model.data(channels_index, Qt.DisplayRole)
-            nm_per_channel_text = self.calib_files_model.data(nm_per_channel_index, Qt.DisplayRole)
-            ghz_per_channel_text = self.calib_files_model.data(ghz_per_channel_index, Qt.DisplayRole)
-
             # Convert to float, or np.nan if empty
             channels = float(channels_text) if channels_text else np.nan
-            nm_per_channel = float(nm_per_channel_text) if nm_per_channel_text else np.nan
-            ghz_per_channel = float(ghz_per_channel_text) if ghz_per_channel_text else np.nan
+            # Retrieve value and uncertainty for nm_per_channel
+            nm_per_channel_text = self.calib_files_model.data(nm_per_channel_index, Qt.DisplayRole)
+            if '±' in nm_per_channel_text:
+                nm_value_str, nm_unc_str = nm_per_channel_text.split('±')
+                nm_per_channel = float(nm_value_str.strip())
+                nm_per_channel_uncertainty = float(nm_unc_str.strip())
+            else:
+                nm_per_channel = float(nm_per_channel_text.strip())
+                nm_per_channel_uncertainty = np.nan
+
+            # Retrieve value and uncertainty for ghz_per_channel
+            ghz_per_channel_text = self.calib_files_model.data(ghz_per_channel_index, Qt.DisplayRole)
+            if '±' in ghz_per_channel_text:
+                ghz_value_str, ghz_unc_str = ghz_per_channel_text.split('±')
+                ghz_per_channel = float(ghz_value_str.strip())
+                ghz_per_channel_uncertainty = float(ghz_unc_str.strip())
+            else:
+                ghz_per_channel = float(ghz_per_channel_text.strip())
+                ghz_per_channel_uncertainty = np.nan
 
             # Retrieve peak fits if they have been fitted
             left_peak_fit = self.project.get_peak_fit(calibration_name, filename, 'left')
@@ -171,7 +219,9 @@ class CalibrationManager(QObject):
                 filename,
                 channels=channels,
                 nm_per_channel=nm_per_channel,
+                nm_per_channel_uncertainty=nm_per_channel_uncertainty,
                 ghz_per_channel=ghz_per_channel,
+                ghz_per_channel_uncertainty=ghz_per_channel_uncertainty,
                 left_peak_fit=left_peak_fit,
                 right_peak_fit=right_peak_fit
             )
@@ -225,20 +275,27 @@ class CalibrationManager(QObject):
         calibration_name = self.ui.comboBox_calibSelect.currentText()
         filename = self.current_calibration_file
 
-        # Prepare the fit parameters, including x_min and x_max
+        # Prepare the fit parameters, including uncertainties
+        uncertainties = fitter.get_all_parameter_uncertainties()
         peak_fit = {
             'center': fitter.get_parameter('center'),
+            'center_uncertainty': uncertainties.get('center'),
             'amplitude': fitter.get_parameter('amplitude'),
+            'amplitude_uncertainty': uncertainties.get('amplitude'),
             'sigma': fitter.get_parameter('sigma'),
+            'sigma_uncertainty': uncertainties.get('sigma'),
             'gamma': fitter.get_parameter('gamma'),
+            'gamma_uncertainty': uncertainties.get('gamma'),
             'fwhm': fitter.get_parameter('fwhm'),
+            'fwhm_uncertainty': uncertainties.get('fwhm'),
             'area': fitter.get_parameter('area'),
+            'area_uncertainty': uncertainties.get('area'),
             'goodness_of_fit': fitter.goodness_of_fit(),
             'x_min': fitter.x_min,
             'x_max': fitter.x_max,
             'x_fit': fitter.x_fit.tolist(),
-            'y_fit': fitter.y_fit.tolist()
-            # Note: 'inverted' is saved as a file attribute below
+            'y_fit': fitter.y_fit.tolist(),
+            'method': fitter.method
         }
 
         # Save to the project
@@ -280,19 +337,30 @@ class CalibrationManager(QObject):
         else:
             QMessageBox.warning(None, "No File Selected", "Please select a calibration file first.")
 
+    # Updated update_left_peak_list and update_right_peak_list in CalibrationManager
     def update_left_peak_list(self, fitter):
         self.ui.listWidget_calibLeftPeak.clear()
+        self.ui.listWidget_calibLeftPeak.addItem(f"Fit Method: {fitter.method}")
         params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area']
         for param in params:
             value = fitter.get_parameter(param)
-            self.ui.listWidget_calibLeftPeak.addItem(f"{param.capitalize()}: {value}")
+            try:
+                uncertainty = fitter.get_parameter_uncertainty(param)
+                self.ui.listWidget_calibLeftPeak.addItem(f"{param.capitalize()}: {value:.6f} ± {uncertainty:.6f}")
+            except ValueError:
+                self.ui.listWidget_calibLeftPeak.addItem(f"{param.capitalize()}: {value:.6f}")
 
     def update_right_peak_list(self, fitter):
         self.ui.listWidget_calibRightPeak.clear()
+        self.ui.listWidget_calibRightPeak.addItem(f"Fit Method: {fitter.method}")
         params = ['center', 'amplitude', 'sigma', 'gamma', 'fwhm', 'area']
         for param in params:
             value = fitter.get_parameter(param)
-            self.ui.listWidget_calibRightPeak.addItem(f"{param.capitalize()}: {value}")
+            try:
+                uncertainty = fitter.get_parameter_uncertainty(param)
+                self.ui.listWidget_calibRightPeak.addItem(f"{param.capitalize()}: {value:.6f} ± {uncertainty:.6f}")
+            except ValueError:
+                self.ui.listWidget_calibRightPeak.addItem(f"{param.capitalize()}: {value:.6f}")
 
     def clear_calibration_constants(self, filename):
         # Update the table model
@@ -359,7 +427,6 @@ class CalibrationManager(QObject):
                 self.calib_files_model.clear()
                 self.calib_files_model.addFiles(files)
 
-                # Update file data in the model
                 for filename in files:
                     data = self.project.get_calibration_file_data(calibration_name, filename)
                     channels = len(data) if data is not None else None
@@ -367,10 +434,15 @@ class CalibrationManager(QObject):
                     # Get attributes from the project
                     file_attributes = self.project.get_calibration_file_attributes(calibration_name, filename)
                     nm_per_channel = file_attributes.get('nm_per_channel', None)
+                    nm_per_channel_uncertainty = file_attributes.get('nm_per_channel_uncertainty', None)
                     ghz_per_channel = file_attributes.get('ghz_per_channel', None)
+                    ghz_per_channel_uncertainty = file_attributes.get('ghz_per_channel_uncertainty', None)
 
                     # Update the model
-                    self.calib_files_model.update_file_data(filename, channels, nm_per_channel, ghz_per_channel)
+                    self.calib_files_model.update_file_data(
+                        filename, channels, nm_per_channel, nm_per_channel_uncertainty, ghz_per_channel,
+                        ghz_per_channel_uncertainty
+                    )
 
                 self.last_action('Calibration selected')
                 self.save_status()

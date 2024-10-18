@@ -673,6 +673,12 @@ class BrillouinProject:
                 continue  # Handle peak fits separately
             group.attrs[attr_name] = attr_value
 
+        # Handle uncertainties separately
+        if 'nm_per_channel_uncertainty' in attributes:
+            group.attrs['nm_per_channel_uncertainty'] = attributes['nm_per_channel_uncertainty']
+        if 'ghz_per_channel_uncertainty' in attributes:
+            group.attrs['ghz_per_channel_uncertainty'] = attributes['ghz_per_channel_uncertainty']
+
         # Update peak fits if provided
         if 'left_peak_fit' in attributes:
             left_peak_fit = attributes['left_peak_fit']
@@ -1014,7 +1020,9 @@ class BrillouinProject:
         attributes = {
             'channels': group.attrs.get('channels', np.nan),
             'nm_per_channel': group.attrs.get('nm_per_channel', np.nan),
-            'ghz_per_channel': group.attrs.get('ghz_per_channel', np.nan)
+            'nm_per_channel_uncertainty': group.attrs.get('nm_per_channel_uncertainty', np.nan),
+            'ghz_per_channel': group.attrs.get('ghz_per_channel', np.nan),
+            'ghz_per_channel_uncertainty': group.attrs.get('ghz_per_channel_uncertainty', np.nan),
         }
         return attributes
 
