@@ -110,18 +110,16 @@ class BrillouinProject:
         self.h5file.create_group('data')  # Create 'data' group
 
     def load_all_files_with_metadata(self, file_paths, pressure, crystal):
-        for file_path in file_paths:
-            self.add_file_to_h5(file_path, pressure, crystal)
-
-    def load_all_files(self, file_paths):
         """
-        Adds all provided .DAT file paths to the temporary HDF5 file.
+        Loads all files into the project, assigning metadata for each.
 
         Parameters:
-            file_paths (list of str): A list of file paths to .DAT files to be added.
+            file_paths (list of str): List of file paths to .dat files.
+            pressure (float): The pressure value.
+            crystal (str): The crystal name.
         """
         for file_path in file_paths:
-            self.add_file_to_h5(file_path)
+            self.add_file_to_h5(file_path, pressure, crystal)
 
     def load_h5file(self):
         """
@@ -141,21 +139,21 @@ class BrillouinProject:
         if 'data' not in self.h5file:
             self.h5file.create_group('data')
 
-    def add_metadata_to_dataset(self, dataset_name, key, value):
+    def add_metadata_to_dataset(self, filename, pressure, crystal, key, value):
         """
         Adds a key-value pair as metadata to a specific dataset within the temporary HDF5 file.
+
+        Parameters:
+            filename (str): The name of the dataset (file).
+            pressure (float): The pressure value.
+            crystal (str): The crystal name.
+            key (str): The metadata key.
+            value: The metadata value.
         """
         if self.h5file is None:
-            raise ValueError(
-                "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
+            raise ValueError("Temporary HDF5 file not created or opened.")
 
-        data_group = self.h5file['data']
-
-        if dataset_name not in data_group:
-            print('Error in add_metadata_to_dataset')
-            raise ValueError(f"Dataset {dataset_name} does not exist in the HDF5 file.")
-
-        group = data_group[dataset_name]
+        group = self.get_dataset_group(filename, pressure, crystal)
 
         # Enforce float type for numerical attributes
         if key in ['elastic_peak_ch', 'elastic_peak_ch_uncertainty', 'chi_angle', 'pinhole', 'power', 'polarization',
@@ -169,12 +167,14 @@ class BrillouinProject:
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
-    def add_array_to_dataset(self, dataset_name, array_name, array_data):
+    def add_array_to_dataset(self, filename, pressure, crystal, array_name, array_data):
         """
         Adds a new array to the specified dataset within the temporary HDF5 file.
 
         Parameters:
-            dataset_name (str): The name of the dataset to which the array will be added.
+            filename (str): The name of the dataset (file).
+            pressure (float): The pressure value.
+            crystal (str): The crystal name.
             array_name (str): The name to be given to the new array.
             array_data (array-like): The data to be stored in the new array.
 
@@ -182,16 +182,9 @@ class BrillouinProject:
             ValueError: If the temporary HDF5 file is not open or the dataset does not exist.
         """
         if self.h5file is None:
-            raise ValueError(
-                "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
+            raise ValueError("Temporary HDF5 file not created or opened.")
 
-        data_group = self.h5file['data']
-
-        if dataset_name not in data_group:
-            print('Error in add_array_to_dataset')
-            raise ValueError(f"Dataset {dataset_name} does not exist in the HDF5 file.")
-
-        group = data_group[dataset_name]
+        group = self.get_dataset_group(filename, pressure, crystal)
         group.create_dataset(array_name, data=array_data)
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
@@ -201,13 +194,9 @@ class BrillouinProject:
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
 
-        if 'pressures' not in self.h5file.attrs:
-            self.h5file.attrs['pressures'] = []
-
-        pressures = list(self.h5file.attrs['pressures'])
-        if pressure not in pressures:
-            pressures.append(pressure)
-            self.h5file.attrs['pressures'] = pressures
+        pressures = set(self.h5file.attrs.get('pressures', []))
+        pressures.add(pressure)
+        self.h5file.attrs['pressures'] = sorted(pressures)
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
@@ -216,13 +205,9 @@ class BrillouinProject:
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
 
-        if 'crystals' not in self.h5file.attrs:
-            self.h5file.attrs['crystals'] = []
-
-        crystals = list(self.h5file.attrs['crystals'])
-        if crystal not in crystals:
-            crystals.append(crystal)
-            self.h5file.attrs['crystals'] = crystals
+        crystals = set(self.h5file.attrs.get('crystals', []))
+        crystals.add(crystal)
+        self.h5file.attrs['crystals'] = sorted(crystals)
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
@@ -231,35 +216,74 @@ class BrillouinProject:
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
 
-        crystals = list(self.h5file.attrs['crystals'])
+        crystals = set(self.h5file.attrs.get('crystals', []))
         if crystal in crystals:
             crystals.remove(crystal)
-            self.h5file.attrs['crystals'] = crystals
-
+            self.h5file.attrs['crystals'] = sorted(crystals)
+            # Also remove any datasets under this crystal
+            data_group = self.h5file['data']
+            for pressure_group in data_group.values():
+                if f'crystal_{crystal}' in pressure_group:
+                    del pressure_group[f'crystal_{crystal}']
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
-    def remove_dataset(self, dataset_name):
+    def get_dataset_group(self, filename, pressure, crystal):
+        """
+        Retrieves the HDF5 group corresponding to a dataset identified by filename, pressure, and crystal.
+
+        Parameters:
+            filename (str): The name of the file.
+            pressure (float): The pressure value.
+            crystal (str): The crystal name.
+
+        Returns:
+            h5py.Group: The HDF5 group corresponding to the dataset.
+
+        Raises:
+            ValueError: If the dataset does not exist.
+        """
+        data_group = self.h5file['data']
+        pressure_group_name = f'pressure_{pressure}'
+        crystal_group_name = f'crystal_{crystal}'
+        try:
+            group = data_group[pressure_group_name][crystal_group_name][filename]
+            return group
+        except KeyError:
+            raise ValueError(
+                f"Dataset for filename '{filename}' under pressure '{pressure}' and crystal '{crystal}' does not exist.")
+
+    def remove_dataset(self, filename, pressure, crystal):
         """
         Removes a dataset (group) from the temporary HDF5 file.
 
         Parameters:
-            dataset_name (str): The name of the dataset to remove.
+            filename (str): The name of the dataset (file) to remove.
+            pressure (float): The pressure value.
+            crystal (str): The crystal name.
 
         Raises:
             ValueError: If the temporary HDF5 file is not open or the dataset does not exist.
         """
         if self.h5file is None:
-            raise ValueError(
-                "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
+            raise ValueError("Temporary HDF5 file not created or opened.")
 
         data_group = self.h5file['data']
+        pressure_group_name = f'pressure_{pressure}'
+        crystal_group_name = f'crystal_{crystal}'
 
-        if dataset_name not in data_group:
-            print('Error in remove_dataset')
-            raise ValueError(f"Dataset {dataset_name} does not exist in the HDF5 file.")
-
-        del data_group[dataset_name]
-        print(f"Dataset {dataset_name} has been removed from the HDF5 file.")
+        if pressure_group_name in data_group:
+            pressure_group = data_group[pressure_group_name]
+            if crystal_group_name in pressure_group:
+                crystal_group = pressure_group[crystal_group_name]
+                if filename in crystal_group:
+                    del crystal_group[filename]
+                    print(f"Dataset {filename} has been removed from the HDF5 file under pressure {pressure} and crystal {crystal}.")
+                else:
+                    print(f"Dataset {filename} does not exist under pressure {pressure} and crystal {crystal}.")
+            else:
+                print(f"Crystal {crystal} does not exist under pressure {pressure}.")
+        else:
+            print(f"Pressure {pressure} does not exist in the HDF5 file.")
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
 
@@ -375,27 +399,34 @@ class BrillouinProject:
     def add_file_to_h5(self, file_path, pressure=np.nan, crystal=''):
         """
         Adds the contents of a single .dat file to the temporary HDF5 file.
+
+        Parameters:
+            file_path (str): The path to the .dat file.
+            pressure (float): The pressure value.
+            crystal (str): The crystal name.
         """
         if self.h5file is None:
-            raise ValueError(
-                "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
+            raise ValueError("Temporary HDF5 file not created or opened.")
 
         dataset_name = os.path.basename(file_path)
-
         data_group = self.h5file['data']
 
-        if dataset_name in data_group:
-            print(f"Dataset {dataset_name} already exists in the HDF5 file. Skipping.")
+        pressure_group_name = f'pressure_{pressure}'
+        pressure_group = data_group.require_group(pressure_group_name)
+
+        crystal_group_name = f'crystal_{crystal}'
+        crystal_group = pressure_group.require_group(crystal_group_name)
+
+        if dataset_name in crystal_group:
+            print(f"Dataset {dataset_name} already exists under pressure {pressure} and crystal {crystal}. Skipping.")
             return
 
-        # Create the dataset under 'data' group
-        group = data_group.create_group(dataset_name)
-
-        # Use np.nan for numeric fields instead of None
+        group = crystal_group.create_group(dataset_name)
         group.attrs['pressure'] = pressure
         group.attrs['crystal'] = crystal
         group.attrs['chi_angle'] = np.nan
         group.attrs['elastic_peak_ch'] = np.nan
+        group.attrs['elastic_peak_ch_uncertainty'] = np.nan
         group.attrs['pinhole'] = np.nan
         group.attrs['power'] = np.nan
         group.attrs['polarization'] = np.nan
@@ -428,6 +459,22 @@ class BrillouinProject:
         group.create_dataset('original_data', data=numeric_data)
 
         self.h5file.flush()  # Ensure that the temporary file is immediately updated.
+
+    def get_dataset_data(self, filename, pressure, crystal):
+        """
+        Retrieves the original data from a dataset.
+
+        Parameters:
+            filename (str): The name of the dataset (file).
+            pressure (float): The pressure value.
+            crystal (str): The crystal name.
+
+        Returns:
+            numpy.ndarray: The original data from the dataset.
+        """
+        group = self.get_dataset_group(filename, pressure, crystal)
+        data = group['original_data'][()]
+        return data
 
     def add_file_to_calibration(self, calibration_name, file_path):
         """
@@ -472,6 +519,10 @@ class BrillouinProject:
             group.attrs[f'{peak}_x_min'] = np.nan
             group.attrs[f'{peak}_x_max'] = np.nan
             # Initialize empty datasets for x_fit and y_fit
+            if f'{peak}_x_fit' in group:
+                del group[f'{peak}_x_fit']
+            if f'{peak}_y_fit' in group:
+                del group[f'{peak}_y_fit']
             group.create_dataset(f'{peak}_x_fit', data=np.array([]), maxshape=(None,))
             group.create_dataset(f'{peak}_y_fit', data=np.array([]), maxshape=(None,))
 
@@ -738,39 +789,41 @@ class BrillouinProject:
 
         self.h5file.flush()
 
-    def get_metadata_for_files(self, filenames, keys=None):
+    def get_metadata_for_files(self, filenames, pressure, crystal, keys=None):
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not opened.")
-        data_group = self.h5file['data']
+
         metadata_dict = {}
-        for dataset_name in filenames:
-            if dataset_name not in data_group:
-                print(f'Warning: Dataset {dataset_name} does not exist.')
-                continue
-            group = data_group[dataset_name]
-            attrs = {key: group.attrs.get(key, None) for key in keys}
-            # Replace np.nan with None
-            for key, value in attrs.items():
-                if isinstance(value, float) and np.isnan(value):
-                    attrs[key] = None
-            metadata_dict[dataset_name] = attrs
+        for filename in filenames:
+            try:
+                group = self.get_dataset_group(filename, pressure, crystal)
+                attrs = {key: group.attrs.get(key, None) for key in keys}
+                # Replace np.nan with None
+                for key, value in attrs.items():
+                    if isinstance(value, float) and np.isnan(value):
+                        attrs[key] = None
+                metadata_dict[filename] = attrs
+            except ValueError:
+                print(f'Warning: Dataset {filename} does not exist under pressure {pressure} and crystal {crystal}.')
         return metadata_dict
 
-    def get_metadata_from_dataset(self, dataset_name, key):
+    def get_metadata_from_dataset(self, filename, pressure, crystal, key):
         """
         Retrieves the value of a specific metadata key from a given dataset in the temporary HDF5 file.
+
+        Parameters:
+            filename (str): The name of the dataset (file).
+            pressure (float): The pressure value.
+            crystal (str): The crystal name.
+            key (str): The metadata key to retrieve.
+
+        Returns:
+            The value of the metadata key.
         """
         if self.h5file is None:
-            raise ValueError(
-                "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
+            raise ValueError("Temporary HDF5 file not created or opened.")
 
-        data_group = self.h5file['data']
-
-        if dataset_name not in data_group:
-            print('Error in get_metadata_from_dataset')
-            raise ValueError(f"Dataset {dataset_name} does not exist in the HDF5 file.")
-
-        group = data_group[dataset_name]
+        group = self.get_dataset_group(filename, pressure, crystal)
 
         value = group.attrs[key]
 
@@ -782,44 +835,64 @@ class BrillouinProject:
     def get_file_count(self):
         """Return the number of files in the project."""
         data_group = self.h5file['data']
-        return len(data_group.keys())
+        count = 0
+        for pressure_group in data_group.values():
+            for crystal_group in pressure_group.values():
+                count += len(crystal_group)
+        return count
 
-    def set_metadata_for_multiple_files(self, filenames, metadata_list):
+    def set_metadata_for_multiple_files(self, filenames, pressure, crystal, metadata_list):
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not opened.")
-        data_group = self.h5file['data']
-        for dataset_name, metadata in zip(filenames, metadata_list):
-            if dataset_name not in data_group:
-                print(f'Warning: Dataset {dataset_name} does not exist.')
-                continue
-            group = data_group[dataset_name]
-            for key, value in metadata.items():
-                group.attrs[key] = value if value is not None else np.nan
+
+        for filename, metadata in zip(filenames, metadata_list):
+            try:
+                group = self.get_dataset_group(filename, pressure, crystal)
+                for key, value in metadata.items():
+                    group.attrs[key] = value if value is not None else np.nan
+            except ValueError:
+                print(f'Warning: Dataset {filename} does not exist under pressure {pressure} and crystal {crystal}.')
         self.h5file.flush()
 
-    def set_peak_fit_data(self, file_name, velocity_name, data_dict):
-        # Stores the peak fit data for the specified file and velocity.
+    def set_peak_fit_data(self, filename, pressure, crystal, velocity_name, data_dict):
+        """
+        Stores the peak fit data for the specified file and velocity.
+
+        Parameters:
+            filename (str): The name of the dataset (file).
+            pressure (float): The pressure value.
+            crystal (str): The crystal name.
+            velocity_name (str): The velocity name.
+            data_dict (dict): A dictionary containing peak fit data.
+        """
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
-        data_group = self.h5file['data']
-        if file_name not in data_group:
-            raise ValueError(f"Dataset {file_name} does not exist in the HDF5 file.")
-        dataset_group = data_group[file_name]
-        velocities_group = dataset_group.require_group('velocities')
+
+        group = self.get_dataset_group(filename, pressure, crystal)
+        velocities_group = group.require_group('velocities')
         velocity_group = velocities_group.require_group(velocity_name)
         for key, value in data_dict.items():
             velocity_group.attrs[key] = value
         self.h5file.flush()
 
-    def get_peak_fit_data(self, file_name, velocity_name):
-        # Retrieves the peak fit data for the specified file and velocity.
+    def get_peak_fit_data(self, filename, pressure, crystal, velocity_name):
+        """
+        Retrieves the peak fit data for the specified file and velocity.
+
+        Parameters:
+            filename (str): The name of the dataset (file).
+            pressure (float): The pressure value.
+            crystal (str): The crystal name.
+            velocity_name (str): The velocity name.
+
+        Returns:
+            dict: A dictionary containing peak fit data.
+        """
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
-        data_group = self.h5file['data']
-        if file_name not in data_group:
-            raise ValueError(f"Dataset {file_name} does not exist in the HDF5 file.")
-        dataset_group = data_group[file_name]
-        velocities_group = dataset_group.get('velocities', {})
+
+        group = self.get_dataset_group(filename, pressure, crystal)
+        velocities_group = group.get('velocities', {})
         velocity_group = velocities_group.get(velocity_name, {})
         data_dict = dict(velocity_group.attrs.items()) if velocity_group else {}
         return data_dict
@@ -884,13 +957,9 @@ class BrillouinProject:
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
 
-        if 'velocities' not in self.h5file.attrs:
-            self.h5file.attrs['velocities'] = []
-
-        velocities = list(self.h5file.attrs['velocities'])
-        if velocity_name not in velocities:
-            velocities.append(velocity_name)
-            self.h5file.attrs['velocities'] = velocities
+        velocities = set(self.h5file.attrs.get('velocities', []))
+        velocities.add(velocity_name)
+        self.h5file.attrs['velocities'] = sorted(velocities)
 
         self.h5file.flush()
 
@@ -899,12 +968,18 @@ class BrillouinProject:
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not created or opened.")
 
-        if 'velocities' in self.h5file.attrs:
-            velocities = list(self.h5file.attrs['velocities'])
-            if velocity_name in velocities:
-                velocities.remove(velocity_name)
-                self.h5file.attrs['velocities'] = velocities
-
+        velocities = set(self.h5file.attrs.get('velocities', []))
+        if velocity_name in velocities:
+            velocities.remove(velocity_name)
+            self.h5file.attrs['velocities'] = sorted(velocities)
+            # Remove velocity from all datasets
+            data_group = self.h5file['data']
+            for pressure_group in data_group.values():
+                for crystal_group in pressure_group.values():
+                    for group in crystal_group.values():
+                        velocities_group = group.get('velocities', None)
+                        if velocities_group and velocity_name in velocities_group:
+                            del velocities_group[velocity_name]
         self.h5file.flush()
 
     def rename_velocity(self, old_velocity, new_velocity):
@@ -920,18 +995,28 @@ class BrillouinProject:
 
             # Update velocities under each file
             data_group = self.h5file['data']
-            for file_name in data_group:
-                dataset_group = data_group[file_name]
-                velocities_group = dataset_group.get('velocities', None)
-                if velocities_group and old_velocity in velocities_group:
-                    velocities_group.move(old_velocity, new_velocity)
+            for pressure_group in data_group.values():
+                for crystal_group in pressure_group.values():
+                    for group in crystal_group.values():
+                        velocities_group = group.get('velocities', None)
+                        if velocities_group and old_velocity in velocities_group:
+                            velocities_group.move(old_velocity, new_velocity)
 
             self.h5file.flush()
 
     def get_unique_pressures_crystals_velocities(self):
         """Return the unique pressures, crystals, and velocities."""
-        pressures = self.h5file.attrs.get('pressures', [])
-        crystals = self.h5file.attrs.get('crystals', [])
+        pressures = set()
+        crystals = set()
+        data_group = self.h5file['data']
+        for pressure_group_name in data_group.keys():
+            pressure = float(pressure_group_name.replace('pressure_', ''))
+            pressures.add(pressure)
+            pressure_group = data_group[pressure_group_name]
+            for crystal_group_name in pressure_group.keys():
+                crystal = crystal_group_name.replace('crystal_', '')
+                crystals.add(crystal)
+
         velocities = self.h5file.attrs.get('velocities', [])
         return sorted(pressures), sorted(crystals), sorted(velocities)
 
@@ -1105,22 +1190,24 @@ class BrillouinProject:
             metadata_dict (dict): A dictionary of key-value pairs to match.
 
         Returns:
-            List[str]: A list of dataset names that match all key-value pairs.
+            List[Tuple[float, str, str]]: A list of tuples (pressure, crystal, filename) that match all key-value pairs.
 
         Raises:
             ValueError: If the temporary HDF5 file is not open.
         """
         if self.h5file is None:
-            raise ValueError(
-                "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
+            raise ValueError("Temporary HDF5 file not created or opened.")
 
         matching_datasets = []
         data_group = self.h5file['data']
-        for dataset_name in data_group.keys():
-            group = data_group[dataset_name]
-            match = all(group.attrs.get(key) == value for key, value in metadata_dict.items())
-            if match:
-                matching_datasets.append(dataset_name)
+        for pressure_group_name, pressure_group in data_group.items():
+            pressure = float(pressure_group_name.replace('pressure_', ''))
+            for crystal_group_name, crystal_group in pressure_group.items():
+                crystal = crystal_group_name.replace('crystal_', '')
+                for filename, group in crystal_group.items():
+                    match = all(group.attrs.get(key) == value for key, value in metadata_dict.items())
+                    if match:
+                        matching_datasets.append((pressure, crystal, filename))
 
         return matching_datasets
 
@@ -1133,39 +1220,36 @@ class BrillouinProject:
             value (Any): The metadata value to match.
 
         Returns:
-            List[str]: A list of dataset names that match the key-value pair.
+            List[Tuple[float, str, str]]: A list of tuples (pressure, crystal, filename) that match the key-value pair.
 
         Raises:
             ValueError: If the temporary HDF5 file is not open.
         """
-        if self.h5file is None:
-            raise ValueError(
-                "Temporary HDF5 file not created or opened. Please call create_h5file or load_h5file first.")
-
-        matching_datasets = []
-        data_group = self.h5file['data']
-        for dataset_name in data_group.keys():
-            group = data_group[dataset_name]
-            if key in group.attrs and group.attrs[key] == value:
-                matching_datasets.append(dataset_name)
-
-        return matching_datasets
+        return self.find_datasets_by_metadata_dict({key: value})
 
     def find_files_by_pressure_and_crystal(self, pressure, crystal):
+        """
+        Finds and returns the names of all datasets (files) under a specific pressure and crystal combination.
+
+        Parameters:
+            pressure (float): The pressure value.
+            crystal (str): The crystal name.
+
+        Returns:
+            list: A list of dataset names.
+        """
         if self.h5file is None:
             raise ValueError("Temporary HDF5 file not opened.")
+
         data_group = self.h5file['data']
-        # Fetch pressures and crystals for all datasets
-        dataset_attrs = {
-            dataset_name: (group.attrs.get('pressure', None), group.attrs.get('crystal', None))
-            for dataset_name, group in data_group.items()
-        }
-        # Filter datasets
-        matching_files = [
-            dataset_name for dataset_name, (p, c) in dataset_attrs.items()
-            if p == pressure and c == crystal
-        ]
-        return matching_files
+        pressure_group_name = f'pressure_{pressure}'
+        crystal_group_name = f'crystal_{crystal}'
+
+        if pressure_group_name in data_group and crystal_group_name in data_group[pressure_group_name]:
+            crystal_group = data_group[pressure_group_name][crystal_group_name]
+            return list(crystal_group.keys())
+        else:
+            return []
 
     def save_project(self):
         """
@@ -1273,8 +1357,17 @@ class BrillouinProject:
         Lists all datasets in the 'data' group of the project.
 
         Returns:
-            list: A list of dataset names.
+            list: A list of tuples (pressure, crystal, filename).
         """
         if self.h5file is None or 'data' not in self.h5file:
             return []
-        return list(self.h5file['data'].keys())
+
+        datasets = []
+        data_group = self.h5file['data']
+        for pressure_group_name, pressure_group in data_group.items():
+            pressure = float(pressure_group_name.replace('pressure_', ''))
+            for crystal_group_name, crystal_group in pressure_group.items():
+                crystal = crystal_group_name.replace('crystal_', '')
+                for filename in crystal_group.keys():
+                    datasets.append((pressure, crystal, filename))
+        return datasets

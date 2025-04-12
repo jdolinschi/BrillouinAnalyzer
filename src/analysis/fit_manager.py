@@ -220,6 +220,8 @@ class FitManager(QObject):
         if self.project:
             try:
                 # Ensure the file exists in the HDF5 file before updating metadata
+                selected_pressure = self.ui.comboBox_pressure.currentText()
+                selected_crystal = self.ui.comboBox_crystal.currentText()
                 if filename in self.project.h5file['data']:
                     for key, value in metadata.items():
                         if key == 'calibration':
